@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import tornado.ioloop
 import tornado.web
 import urllib
@@ -6,10 +8,20 @@ import vad
 import baidu
 import os
 import lean_cloud
+import convertor
+from urlparse import urlparse
+from os.path import splitext
 
 
 voice = baidu.BaiduNLP()
 voice.init_access_token()
+
+
+def get_ext(url):
+    """Return the filename extension from url, or ''."""
+    parsed = urlparse(url)
+    root, ext = splitext(parsed.path)
+    return ext  # or ext[1:] if you don't want the leading '.'
 
 
 class TranslateHandler(tornado.web.RequestHandler):
@@ -18,9 +30,13 @@ class TranslateHandler(tornado.web.RequestHandler):
         objectName = self.get_argument('object')
         lc = lean_cloud.LeanCloud(objectName)
         try:
-            tmp_file = tempfile.NamedTemporaryFile().name + ".wav"
+            ext = get_ext(addr)
+            tmp_file = tempfile.NamedTemporaryFile().name + ext
             urllib.urlretrieve(addr, tmp_file)
-            audio_dir = vad.slice(2, tmp_file)
+
+            target_file = convertor.convert_to_wav(ext, tmp_file)
+
+            audio_dir = vad.slice(2, target_file)
 
             start_at = 0
 
