@@ -9,6 +9,7 @@ import baidu
 import os
 import lean_cloud
 import convertor
+import shutil
 from urlparse import urlparse
 from os.path import splitext
 
@@ -27,8 +28,8 @@ def get_ext(url):
 class TranslateHandler(tornado.web.RequestHandler):
     def get(self):
         addr = self.get_argument('addr')
-        objectName = self.get_argument('object')
-        lc = lean_cloud.LeanCloud(objectName)
+        course_name = self.get_argument('course_name')
+        lc = lean_cloud.LeanCloud()
         try:
             ext = get_ext(addr)
             tmp_file = tempfile.NamedTemporaryFile().name + ext
@@ -44,13 +45,20 @@ class TranslateHandler(tornado.web.RequestHandler):
                 for i, file in enumerate(files):
                     duration, result = voice.vop(os.path.join(subdir, file))
                     end_at = start_at + duration
-                    lc.add(i, start_at, end_at, result)
+                    lc.add(i, start_at, end_at, result, course_name)
                     start_at = end_at
             lc.upload()
         except Exception as e:
             self.set_status(500)
             self.finish({'error_msg': e.message})
             return
+        finally:
+            try:
+                shutil.rmtree(audio_dir, ignore_errors=True)
+                os.remove(tmp_file)
+                os.remove(target_file)
+            except:
+                pass
 
         self.write("good")
 
