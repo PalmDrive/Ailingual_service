@@ -12,6 +12,6 @@ virtualenv env
 source env/bin/activate
 pip install -r requirement.txt
 
-1)python xiaobendeng/server.py
+1)python xiaobandeng/server.py
 2)curl 'localhost:8888/translate?object=audio_leancloud_class_name&&addr=audio_file_path' 
 ```

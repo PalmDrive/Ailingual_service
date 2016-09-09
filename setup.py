@@ -3,9 +3,9 @@ import sys, os
 
 version = '0.0.1'
 
-setup(name='xiaobendeng',
+setup(name='xiaobandeng',
       version=version,
-      description="xiao ben deng",
+      description="xiao ban deng",
       long_description="""\
 """,
       classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
