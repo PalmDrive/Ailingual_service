@@ -37,7 +37,7 @@ class TranslateHandler(tornado.web.RequestHandler):
 
             target_file = convertor.convert_to_wav(ext, tmp_file)
 
-            audio_dir = vad.slice(2, target_file)
+            audio_dir = vad.slice(0, target_file)
 
             start_at = 0
 
