@@ -6,7 +6,7 @@ import subprocess
 
 def convert_to_wav(ext, filename):
     if ext == 'mp4':
-        tmp_file = tempfile.NamedTemporaryFile().name + ext
+        tmp_file = tempfile.NamedTemporaryFile().name + '.wav'
         subprocess.call(
             'ffmpeg -i %s  -ac 1 -ar 16000 %s' % (filename, tmp_file),
             shell=True)
