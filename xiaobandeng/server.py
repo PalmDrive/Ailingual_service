@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import absolute_import
 
 import tornado.ioloop
@@ -10,6 +12,8 @@ import os
 import lean_cloud
 import convertor
 import shutil
+import preprocessor
+
 from urlparse import urlparse
 from os.path import splitext
 
@@ -25,7 +29,7 @@ def get_ext(url):
     return ext  # or ext[1:] if you don't want the leading '.'
 
 
-class TranslateHandler(tornado.web.RequestHandler):
+class TranscribeHandler(tornado.web.RequestHandler):
     def get(self):
         addr = self.get_argument('addr')
         course_name = self.get_argument('course_name')
@@ -39,11 +43,15 @@ class TranslateHandler(tornado.web.RequestHandler):
 
             audio_dir = vad.slice(0, target_file)
 
+            preprocessor.fixClipLength(audio_dir)
+
             start_at = 0
 
             for subdir, dirs, files in os.walk(audio_dir):
-                for i, file in enumerate(files):
+                for i in range(0, len(files)):
+                    file = "pchunk-%d.wav" % i
                     duration, result = voice.vop(os.path.join(subdir, file))
+                    print('transcript result of %s : %s' % (file, result))
                     end_at = start_at + duration
                     lc.add(i, start_at, end_at, result, course_name)
                     start_at = end_at
@@ -62,10 +70,9 @@ class TranslateHandler(tornado.web.RequestHandler):
 
         self.write("good")
 
-
 def make_app():
     return tornado.web.Application([
-        (r"/translate", TranslateHandler),
+        (r"/transcribe", TranscribeHandler),
     ])
 
 if __name__ == "__main__":
