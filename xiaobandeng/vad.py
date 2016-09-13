@@ -89,7 +89,7 @@ def slice(aggressive, filename):
 
     dirpath = tempfile.mkdtemp()
     for i, segment in enumerate(segments):
-        path = dirpath + '/chunk-%001d.wav' % (i,)
+        path = dirpath + '/chunk-%d.wav' % (i)
         print(' Writing %s' % (path,))
         write_wave(path, segment, sample_rate)
 

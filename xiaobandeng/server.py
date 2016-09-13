@@ -32,7 +32,7 @@ def get_ext(url):
 class TranscribeHandler(tornado.web.RequestHandler):
     def get(self):
         addr = self.get_argument('addr')
-        course_name = self.get_argument('course_name')
+        course_name = self.get_argument('course_name').encode("utf8")
         lc = lean_cloud.LeanCloud()
         try:
             ext = get_ext(addr)
