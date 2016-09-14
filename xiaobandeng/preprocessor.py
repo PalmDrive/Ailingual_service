@@ -7,7 +7,7 @@ def fixClipLength(audio_dir):
     # length limit of audio for VOP api
     length_limit = 60
     # length we prefer using to avoid non-context transcription issue
-    preferred_length = 60
+    preferred_length = 15
 
     # initialization
     output_count = 0
@@ -24,14 +24,14 @@ def fixClipLength(audio_dir):
                 frames = f.getnframes()
                 rate = f.getframerate()
                 duration = frames / float(rate)
-                print ('process clip %s duration %d, current total duration %d' % (file, duration, total_duration))
+                print ('process clip %s duration %f, current total duration %f' % (file, duration, total_duration))
                 # if concatenating next clip won't make the combined clip exceed the length limit, add the next clip
                 if total_duration + duration <= preferred_length:
                     total_duration += duration
                     data.append( [f.getparams(), f.readframes(f.getnframes())] )
                     f.close()
                     clip_count += 1
-                    print ('added to the previous clip %s duration %d - total duration %d' % (file, duration, total_duration))
+                    print ('added to the previous clip %s duration %d - total duration %f' % (file, duration, total_duration))
                 else:
                     if clip_count > 0:
                         # combine the preivous clips
@@ -40,7 +40,7 @@ def fixClipLength(audio_dir):
                         for params,frames in data:
                             output.writeframes(frames)
                         output.close()
-                        print('combine %d clips into %s - total_duration %d' % (clip_count, outfile, total_duration))
+                        print('combine %d clips into %s - total_duration %f' % (clip_count, outfile, total_duration))
                         output_count += 1
                     # if the current clip is too long, slice clip into smaller pieces with equal length
                     if duration > length_limit:
@@ -61,7 +61,7 @@ def fixClipLength(audio_dir):
         for params,frames in data:
             output.writeframes(frames)
         output.close()
-        print('combine %d clips into %s - total_duration %d' % (clip_count, outfile, total_duration))
+        print('combine %d clips into %s - total_duration %f' % (clip_count, outfile, total_duration))
 
 def outFilePath(dir,output_count):
     # return "pchunk-%d.wav" % output_count
