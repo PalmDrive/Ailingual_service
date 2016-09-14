@@ -6,6 +6,7 @@ import httplib2
 import json
 import os
 import wave
+import sys
 from uuid import getnode as get_mac
 
 
@@ -66,7 +67,10 @@ class BaiduNLP(object):
 
             if resp.status == 200:
                 data = json.loads(content)
-                result = data['result'][0]
+                if int(data['err_no']) == 0:
+                    result = data['result'][0]
+                else:
+                    result = 'Baidu API error: ' + data['err_msg']
             else:
                 result = u'这句话翻译失败: ' + str(content)
             return duration, result
@@ -75,4 +79,10 @@ class BaiduNLP(object):
 if __name__ == "__main__":
     b = BaiduNLP()
     b.init_access_token()
-    b.vop("/Users/junchaowu/Downloads/chunk-101.wav")
+    args = sys.argv[1:]
+    path = "/Users/yonglin/playground/pipeline_service/test_file/pchunk-2.wav"
+    if len(args) > 0:
+        path = args[0]
+    duration, result = b.vop(path)
+    print(duration)
+    print(result)
