@@ -53,16 +53,17 @@ class BaiduNLP(object):
             rate = w.getframerate()
             duration = frames / float(rate)
             h = httplib2.Http()
+            body = w.readframes(w.getnframes())
             http_header = {
                 'Content-Type': 'audio/wav; rate=%d' % rate,
-                'Content-Length': str(frames),
+                'Content-Length': str(len(body)),
             }
             resp, content = h.request(
                 uri=self.vop_url + '?cuid=' + str(
                     get_mac()) + '&token=' + str(self.access_token),
                 method='POST',
                 headers=http_header,
-                body=w.readframes(w.getnframes()),
+                body=body,
             )
 
             if resp.status == 200:
@@ -73,6 +74,7 @@ class BaiduNLP(object):
                     result = 'Baidu API error: ' + data['err_msg']
             else:
                 result = u'这句话翻译失败: ' + str(content)
+
             return duration, result
 
 
