@@ -3,7 +3,7 @@ import contextlib
 import math
 import os
 
-def fixClipLength(audio_dir):
+def fixClipLength(audio_dir, starts):
     # length limit of audio for VOP api
     length_limit = 60
     # length we prefer using to avoid non-context transcription issue
@@ -12,10 +12,11 @@ def fixClipLength(audio_dir):
     # initialization
     output_count = 0
     outfile = outFilePath(audio_dir, output_count)
-    total_duration = 0
+    clip_duration = 0
     data = []
     clip_count = 0
 
+    new_starts = []
     for subdir, dirs, files in os.walk(audio_dir):
         for i in range(0, len(files)):
             file = "chunk-%d.wav" % i
@@ -24,14 +25,17 @@ def fixClipLength(audio_dir):
                 frames = f.getnframes()
                 rate = f.getframerate()
                 duration = frames / float(rate)
-                print ('process clip %s duration %f, current total duration %f' % (file, duration, total_duration))
+                print ('process clip %s duration %f, current total duration %f' % (file, duration, clip_duration))
                 # if concatenating next clip won't make the combined clip exceed the length limit, add the next clip
-                if total_duration + duration <= preferred_length:
-                    total_duration += duration
+                if clip_duration + duration <= preferred_length:
+                    clip_duration += duration
                     data.append( [f.getparams(), f.readframes(f.getnframes())] )
                     f.close()
+                    if clip_count == 0:
+                        new_starts.append(starts[i])
+                        print('clip start: %f' % (new_starts[-1]))
                     clip_count += 1
-                    print ('added to the previous clip %s duration %d - total duration %f' % (file, duration, total_duration))
+                    print ('added to the previous clip %s duration %f - total duration %f' % (file, duration, clip_duration))
                 else:
                     if clip_count > 0:
                         # combine the preivous clips
@@ -40,20 +44,32 @@ def fixClipLength(audio_dir):
                         for params,frames in data:
                             output.writeframes(frames)
                         output.close()
-                        print('combine %d clips into %s - total_duration %f' % (clip_count, outfile, total_duration))
+                        print('combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
+                        print('\nend_at: %f\n' % (new_starts[-1] + clip_duration))
                         output_count += 1
-                    # if the current clip is too long, slice clip into smaller pieces with equal length
-                    if duration > length_limit:
-                        n = int(math.ceil(duration/length_limit))
-                        for i in range(0, n):
-                            slice(fname, outfile, i * duration / n * 1000, (i+1) * duration / n * 1000)
-                            print('slice audio %s into sub-audio %s' % (file, outfile))
-                            output_count += 1
-                            outfile = outFilePath(audio_dir, output_count)
                     outfile = outFilePath(audio_dir, output_count)
-                    total_duration = 0
+                    clip_duration = 0
                     data = []
                     clip_count = 0
+                    # if the current clip is too long, slice clip into smaller pieces with equal length
+                    if duration > preferred_length:
+                        n = int(math.ceil(duration/preferred_length))
+                        for j in range(0, n):
+                            slice(f, outfile, long(j * duration / n * 1000), long((j+1) * duration / n * 1000))
+                            print('slice audio %s into sub-audio %s' % (file, outfile))
+                            new_starts.append(starts[i] + j * duration / n)
+                            print('clip start: %f' % (new_starts[-1]))
+                            output_count += 1
+                            outfile = outFilePath(audio_dir, output_count)
+                        print('\nend_at: %f\n' % (new_starts[-1] + duration / n))
+                    else:
+                        clip_duration += duration
+                        data.append( [f.getparams(), f.readframes(f.getnframes())] )
+                        f.close()
+                        if clip_count == 0:
+                            new_starts.append(starts[i])
+                            print('clip start: %f' % (new_starts[-1]))
+                        clip_count += 1
             os.remove(fname)
     if clip_count > 0: # combine the remaining pieces
         output = wave.open(outfile, 'wb')
@@ -61,7 +77,10 @@ def fixClipLength(audio_dir):
         for params,frames in data:
             output.writeframes(frames)
         output.close()
-        print('combine %d clips into %s - total_duration %f' % (clip_count, outfile, total_duration))
+        print('combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
+        print('\nend_at: %f\n' % (new_starts[-1] + clip_duration))
+    print(str(len(new_starts)))
+    return new_starts
 
 def outFilePath(dir,output_count):
     # return "pchunk-%d.wav" % output_count

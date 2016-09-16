@@ -41,20 +41,17 @@ class TranscribeHandler(tornado.web.RequestHandler):
 
             target_file = convertor.convert_to_wav(ext, tmp_file)
 
-            audio_dir = vad.slice(0, target_file)
+            audio_dir, starts = vad.slice(0, target_file)
 
-            preprocessor.fixClipLength(audio_dir)
-
-            start_at = 0
+            starts = preprocessor.fixClipLength(audio_dir, starts)
 
             for subdir, dirs, files in os.walk(audio_dir):
                 for i in range(0, len(files)):
                     file = "pchunk-%d.wav" % i
                     duration, result = voice.vop(os.path.join(subdir, file))
-                    print('transcript result of %s : %s' % (file, result))
-                    end_at = start_at + duration
-                    lc.add(i, start_at, end_at, result, course_name)
-                    start_at = end_at
+                    end_at = starts[i] + duration
+                    print('transcript result of %s : %s, duration %f, end_at %f' % (file, result, duration, end_at))
+                    lc.add(i, starts[i], end_at, result, course_name)
             lc.upload()
         except Exception as e:
             self.set_status(500)

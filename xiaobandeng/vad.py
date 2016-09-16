@@ -50,6 +50,7 @@ def vad_collector(sample_rate, frame_duration_ms,
     ring_buffer = collections.deque(maxlen=num_padding_frames)
     triggered = False
     voiced_frames = []
+    clip_start = 0.0
     for frame in frames:
         sys.stdout.write(
             '1' if vad.is_speech(frame.bytes, sample_rate) else '0')
@@ -59,6 +60,7 @@ def vad_collector(sample_rate, frame_duration_ms,
                               if vad.is_speech(f.bytes, sample_rate)])
             if num_voiced > 0.9 * ring_buffer.maxlen:
                 sys.stdout.write('+(%s)' % (ring_buffer[0].timestamp,))
+                clip_start = ring_buffer[0].timestamp
                 triggered = True
                 voiced_frames.extend(ring_buffer)
                 ring_buffer.clear()
@@ -70,14 +72,14 @@ def vad_collector(sample_rate, frame_duration_ms,
             if num_unvoiced > 0.9 * ring_buffer.maxlen:
                 sys.stdout.write('-(%s)' % (frame.timestamp + frame.duration))
                 triggered = False
-                yield b''.join([f.bytes for f in voiced_frames])
+                yield b''.join([f.bytes for f in voiced_frames]), clip_start
                 ring_buffer.clear()
                 voiced_frames = []
     if triggered:
         sys.stdout.write('-(%s)' % (frame.timestamp + frame.duration))
     sys.stdout.write('\n')
     if voiced_frames:
-        yield b''.join([f.bytes for f in voiced_frames])
+        yield b''.join([f.bytes for f in voiced_frames]), clip_start
 
 
 def slice(aggressive, filename):
@@ -88,18 +90,19 @@ def slice(aggressive, filename):
     segments = vad_collector(sample_rate, 30, 300, vad, frames)
 
     dirpath = tempfile.mkdtemp()
-    for i, segment in enumerate(segments):
+    starts = []
+    for i, (segment, start) in enumerate(segments):
         path = dirpath + '/chunk-%d.wav' % (i)
         print(' Writing %s' % (path,))
         write_wave(path, segment, sample_rate)
-
-    return dirpath
+        starts.append(start)
+    return dirpath, starts
 
 
 def main(args):
     if len(args) != 2:
         sys.stderr.write(
-            'Usage: example.py <aggressiveness> <path to wav file>\n')
+            'Usage: vad.py <aggressiveness> <path to wav file>\n')
         sys.exit(1)
 
     slice(args[0], args[1])
