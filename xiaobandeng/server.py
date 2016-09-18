@@ -14,6 +14,7 @@ import convertor
 import shutil
 import preprocessor
 import uuid
+import json
 
 from urlparse import urlparse
 from os.path import splitext
@@ -67,7 +68,9 @@ class TranscribeHandler(tornado.web.RequestHandler):
             except:
                 pass
 
-        self.write("good")
+        self.write(json.dumps({
+          "media_id": media_id
+        }))
 
 def make_app():
     return tornado.web.Application([
