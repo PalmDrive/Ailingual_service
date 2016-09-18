@@ -54,7 +54,7 @@ class TranscribeHandler(tornado.web.RequestHandler):
                     duration, result = voice.vop(os.path.join(subdir, file))
                     end_at = starts[i] + duration
                     print('transcript result of %s : %s, duration %f, end_at %f' % (file, result, duration, end_at))
-                    lc.add(i, starts[i], end_at, result, media_name, media_id)
+                    lc.add(i, starts[i], end_at, result, media_name, media_id, addr)
             lc.upload()
         except Exception as e:
             self.set_status(500)
