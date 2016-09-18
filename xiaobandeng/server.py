@@ -20,6 +20,8 @@ import json
 from urlparse import urlparse
 from os.path import splitext
 
+#import re, urlparse
+
 
 voice = baidu.BaiduNLP()
 voice.init_access_token()
@@ -35,6 +37,8 @@ def get_ext(url):
 class TranscribeHandler(tornado.web.RequestHandler):
     def get(self):
         addr = self.get_argument('addr')
+        addr = urllib.quote(addr.encode('utf8'), ':/')
+
         media_name = self.get_argument('media_name').encode("utf8")
         lc = lean_cloud.LeanCloud()
         media_id = str(uuid.uuid4())
