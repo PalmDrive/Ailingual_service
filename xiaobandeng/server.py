@@ -2,13 +2,14 @@
 
 from __future__ import absolute_import
 
+import os
 import tornado.ioloop
 import tornado.web
+import tornado.httpserver
 import urllib
 import tempfile
 import vad
 import baidu
-import os
 import lean_cloud
 import convertor
 import shutil
@@ -78,6 +79,16 @@ def make_app():
     ])
 
 if __name__ == "__main__":
-    app = make_app()
-    app.listen(8888)
-    tornado.ioloop.IOLoop.current().start()
+    #app = make_app()
+    #app.listen(8888)
+    from tornado.options import define, options
+    define("port", default=8888, help="run on this port", type=int)
+    define("runmode", default="dev", help="dev gray prod")
+    define("debug", default=True, help="is ddebug")
+    tornado.options.parse_command_line()
+    if options.debug:
+        import tornado.autoreload
+    tornado.httpserver.HTTPServer(make_app(), xheaders=True).listen(options.port)
+    tornado.ioloop.IOLoop.instance().start()
+
+    
