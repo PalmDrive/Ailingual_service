@@ -13,6 +13,7 @@ import lean_cloud
 import convertor
 import shutil
 import preprocessor
+import uuid
 
 from urlparse import urlparse
 from os.path import splitext
@@ -32,8 +33,9 @@ def get_ext(url):
 class TranscribeHandler(tornado.web.RequestHandler):
     def get(self):
         addr = self.get_argument('addr')
-        course_name = self.get_argument('course_name').encode("utf8")
+        media_name = self.get_argument('media_name').encode("utf8")
         lc = lean_cloud.LeanCloud()
+        media_id = str(uuid.uuid4())
         try:
             ext = get_ext(addr)
             tmp_file = tempfile.NamedTemporaryFile().name + ext
@@ -51,7 +53,7 @@ class TranscribeHandler(tornado.web.RequestHandler):
                     duration, result = voice.vop(os.path.join(subdir, file))
                     end_at = starts[i] + duration
                     print('transcript result of %s : %s, duration %f, end_at %f' % (file, result, duration, end_at))
-                    lc.add(i, starts[i], end_at, result, course_name)
+                    lc.add(i, starts[i], end_at, result, media_name, media_id)
             lc.upload()
         except Exception as e:
             self.set_status(500)

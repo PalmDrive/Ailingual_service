@@ -79,7 +79,6 @@ def fixClipLength(audio_dir, starts):
         output.close()
         print('combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
         print('\nend_at: %f\n' % (new_starts[-1] + clip_duration))
-    print(str(len(new_starts)))
     return new_starts
 
 def outFilePath(dir,output_count):
