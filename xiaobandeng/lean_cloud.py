@@ -34,4 +34,5 @@ class LeanCloud(object):
     def get_list(self, media_id, order_by='fragment_order'):
         query = self.fragment_query.equal_to('media_id', media_id)
         query.add_ascending(order_by)
+        query.limit(1000)
         return query.find()
