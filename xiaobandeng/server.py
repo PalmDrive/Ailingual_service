@@ -16,11 +16,13 @@ import shutil
 import preprocessor
 import uuid
 import json
+import logging
+import datetime
 
 from urlparse import urlparse
 from os.path import splitext
 
-#import re, urlparse
+# import re, urlparse
 
 
 voice = baidu.BaiduNLP()
@@ -33,9 +35,11 @@ def get_ext(url):
     root, ext = splitext(parsed.path)
     return ext  # or ext[1:] if you don't want the leading '.'
 
+
 class TestHandler(tornado.web.RequestHandler):
     def get(self):
         self.write("test ok")
+
 
 class TranscribeHandler(tornado.web.RequestHandler):
     def get(self):
@@ -61,8 +65,11 @@ class TranscribeHandler(tornado.web.RequestHandler):
                     file = "pchunk-%d.wav" % i
                     duration, result = voice.vop(os.path.join(subdir, file))
                     end_at = starts[i] + duration
-                    print('transcript result of %s : %s, duration %f, end_at %f' % (file, result, duration, end_at))
-                    lc.add(i, starts[i], end_at, result, media_name, media_id, addr)
+                    print(
+                        'transcript result of %s : %s, duration %f, end_at %f' % (
+                            file, result, duration, end_at))
+                    lc.add(i, starts[i], end_at, result, media_name, media_id,
+                           addr)
             lc.upload()
         except Exception as e:
             self.set_status(500)
@@ -77,30 +84,75 @@ class TranscribeHandler(tornado.web.RequestHandler):
                 pass
 
         self.write(json.dumps({
-          "media_id": media_id
+            "media_id": media_id
         }))
+
+
+class MediumHandler(tornado.web.RequestHandler):
+    def get(self, media_id):
+        lc = lean_cloud.LeanCloud()
+        media_list = lc.get_list(media_id=media_id)
+
+        def convert_time(seconds):
+            seconds = round(seconds, 3)
+            t_start = datetime.datetime(1970, 1, 1)
+            t_delta = datetime.timedelta(seconds=seconds)
+            t_end = t_start + t_delta
+            time_tuple = (t_end.hour - t_start.hour,
+                          t_end.minute - t_start.minute,
+                          t_end.second - t_start.second,
+                          t_end.microsecond - t_start.microsecond)
+            return ":".join([str(i) for i in time_tuple[:-1]]) + "," + \
+                   "%3d" % (time_tuple[-1]/1000)
+
+        if media_list:
+            filename = media_list[0].get("media_name")
+            self.set_header("Content-Type", "application/octet-stream")
+            self.set_header("Content-Disposition",
+                            "attachment; filename=" + filename + ".srt")
+            for (index, media) in enumerate(media_list, 1):
+                self.write(str(media.get("fragment_order") + 1))
+                self.write("\n")
+                self.write(
+                    convert_time(media.get("start_at")) + "	-->	" +
+                    convert_time(media.get("end_at")))
+                self.write("\n")
+                self.write(media.get("content"))
+                self.write("\n")
+                self.write("\n")
+            self.finish()
+
+        else:
+            self.write("not exist")
 
 
 def make_app(use_autoreload):
     return tornado.web.Application([
-        (r"/test",TestHandler),
-        (r"/transcribe", TranscribeHandler),
-    ],autoreload=use_autoreload)
+                                       (r"/test", TestHandler),
+                                       (r"/transcribe", TranscribeHandler),
+                                       (r"/medium/(.*)/srt", MediumHandler)
+                                   ], autoreload=use_autoreload)
+
 
 if __name__ == "__main__":
-    #app = make_app()
-    #app.listen(8888)
+    # app = make_app()
+    # app.listen(8888)
     from tornado.options import define, options
     from tornado.netutil import bind_unix_socket
-    #define("port", default=8888, help="run on this port", type=int)
+
+    define("port", default=8888, help="run on this port", type=int)
     define("runmode", default="dev", help="dev gray prod")
     define("use_autoreload", default=True, help="set debug to use auto reload")
     define("unix_socket", default=None, help="unix socket path")
     tornado.options.parse_command_line()
-    	 
-    server=tornado.httpserver.HTTPServer(make_app(options.use_autoreload), xheaders=True)
-    server.add_socket(bind_unix_socket(options.unix_socket))
-    #server.listen(options.port)
+
+    server = tornado.httpserver.HTTPServer(make_app(options.use_autoreload),
+                                           xheaders=True)
+    if options.unix_socket:
+        server.add_socket(bind_unix_socket(options.unix_socket))
+    else:
+        server.listen(options.port)
+    logging.info("running on %s" % (options.unix_socket or options.port))
+
     tornado.ioloop.IOLoop.instance().start()
 
-    
