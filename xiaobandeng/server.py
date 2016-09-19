@@ -33,6 +33,9 @@ def get_ext(url):
     root, ext = splitext(parsed.path)
     return ext  # or ext[1:] if you don't want the leading '.'
 
+class TestHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write("test ok")
 
 class TranscribeHandler(tornado.web.RequestHandler):
     def get(self):
@@ -77,22 +80,27 @@ class TranscribeHandler(tornado.web.RequestHandler):
           "media_id": media_id
         }))
 
-def make_app():
+
+def make_app(use_autoreload):
     return tornado.web.Application([
+        (r"/test",TestHandler),
         (r"/transcribe", TranscribeHandler),
-    ])
+    ],autoreload=use_autoreload)
 
 if __name__ == "__main__":
     #app = make_app()
     #app.listen(8888)
     from tornado.options import define, options
-    define("port", default=8888, help="run on this port", type=int)
+    from tornado.netutil import bind_unix_socket
+    #define("port", default=8888, help="run on this port", type=int)
     define("runmode", default="dev", help="dev gray prod")
-    define("debug", default=True, help="is ddebug")
+    define("use_autoreload", default=True, help="set debug to use auto reload")
+    define("unix_socket", default=None, help="unix socket path")
     tornado.options.parse_command_line()
-    if options.debug:
-        import tornado.autoreload
-    tornado.httpserver.HTTPServer(make_app(), xheaders=True).listen(options.port)
+    	 
+    server=tornado.httpserver.HTTPServer(make_app(options.use_autoreload), xheaders=True)
+    server.add_socket(bind_unix_socket(options.unix_socket))
+    #server.listen(options.port)
     tornado.ioloop.IOLoop.instance().start()
 
     
