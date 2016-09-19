@@ -103,7 +103,7 @@ class MediumHandler(tornado.web.RequestHandler):
                           t_end.second - t_start.second,
                           t_end.microsecond - t_start.microsecond)
             return ":".join([str(i) for i in time_tuple[:-1]]) + "," + \
-                   "%3d" % (time_tuple[-1]/1000)
+                   "%d" % (time_tuple[-1]/1000)
 
         if media_list:
             filename = media_list[0].get("media_name")
