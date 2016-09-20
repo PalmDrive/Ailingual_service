@@ -53,7 +53,7 @@ def main(speech_file):
                 }
             })
     response = service_request.execute()
-    print response
+    print response['results'][0]['alternatives'][0]['transcript']
     print(json.dumps(response))
 
 if __name__ == '__main__':
