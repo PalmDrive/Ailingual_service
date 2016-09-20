@@ -7,7 +7,7 @@ def fixClipLength(audio_dir, starts):
     # length limit of audio for VOP api
     length_limit = 60
     # length we prefer using to avoid non-context transcription issue
-    preferred_length = 15
+    preferred_length = 10
 
     # initialization
     output_count = 0
