@@ -43,7 +43,7 @@ class BaiduNLP(object):
         st = os.stat(filename)
         return st.st_size
 
-    def vop(self, filename):
+    def vop(self, filename, lan='zh'):
         print 'start vop', filename
         if not self.inited:
             raise Exception('module has not been initialized')
@@ -58,22 +58,33 @@ class BaiduNLP(object):
                 'Content-Type': 'audio/wav; rate=%d' % rate,
                 'Content-Length': str(len(body)),
             }
-            resp, content = h.request(
-                uri=self.vop_url + '?cuid=' + str(
-                    get_mac()) + '&token=' + str(self.access_token),
-                method='POST',
-                headers=http_header,
-                body=body,
-            )
 
-            if resp.status == 200:
-                data = json.loads(content)
-                if int(data['err_no']) == 0:
-                    result = data['result'][0]
-                else:
-                    result = 'Baidu API error: ' + data['err_msg']
+            result = ''
+            lans = []
+            if lan == 'zh':
+                lans = ['zh', 'zh', 'zh', 'en', 'en', 'en']
             else:
-                result = u'这句话翻译失败: ' + str(content)
+                lans = ['en', 'en', 'en', 'zh', 'zh', 'zh']
+            for retryCount in range(0, 6):
+                resp, content = h.request(
+                    uri=self.vop_url + '?cuid=' + str(
+                        get_mac()) + '&token=' + str(self.access_token) + '&lan=' + lans[retryCount],
+                    method='POST',
+                    headers=http_header,
+                    body=body,
+                )
+                if resp.status == 200:
+                    data = json.loads(content)
+                    if int(data['err_no']) == 0:
+                        result = data['result'][0]
+                        break
+                    elif int(data['err_no']) != 3301 and int(data['err_no']) != 3302:
+                        result = 'Baidu API error: %d %s' % (int(data['err_no']), data['err_msg'])
+                        break
+                    else:
+                        print('Baidu API error: %d %s ... retry ...' % (int(data['err_no']), data['err_msg']))
+                else:
+                    result = u'这句话翻译失败: ' + str(content)
 
             return duration, result
 
@@ -85,6 +96,9 @@ if __name__ == "__main__":
     path = "/Users/yonglin/playground/pipeline_service/test_file/pchunk-2.wav"
     if len(args) > 0:
         path = args[0]
-    duration, result = b.vop(path)
+    lan = 'zh'
+    if len(args) > 1:
+        lan = args[1]
+    duration, result = b.vop(path, lan)
     print(duration)
     print(result)

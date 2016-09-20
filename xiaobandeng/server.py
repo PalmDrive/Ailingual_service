@@ -47,6 +47,8 @@ class TranscribeHandler(tornado.web.RequestHandler):
         addr = urllib.quote(addr.encode('utf8'), ':/')
 
         media_name = self.get_argument('media_name').encode("utf8")
+        language = self.get_argument('lan')
+
         lc = lean_cloud.LeanCloud()
         media_id = str(uuid.uuid4())
         try:
@@ -63,7 +65,7 @@ class TranscribeHandler(tornado.web.RequestHandler):
             for subdir, dirs, files in os.walk(audio_dir):
                 for i in range(0, len(files)):
                     file = "pchunk-%d.wav" % i
-                    duration, result = voice.vop(os.path.join(subdir, file))
+                    duration, result = voice.vop(os.path.join(subdir, file), language)
                     end_at = starts[i] + duration
                     print(
                         'transcript result of %s : %s, duration %f, end_at %f' % (
