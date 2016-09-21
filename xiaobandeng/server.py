@@ -82,7 +82,7 @@ class TranscribeHandler(tornado.web.RequestHandler):
                 os.remove(target_file)
             except:
                 pass
-
+        self.set_header("Access-Control-Allow-Origin", "*")
         self.write(json.dumps({
             "media_id": media_id
         }))
@@ -104,6 +104,9 @@ class MediumHandler(tornado.web.RequestHandler):
                           t_end.microsecond - t_start.microsecond)
             return ":".join([str(i) for i in time_tuple[:-1]]) + "," + \
                    "%d" % (time_tuple[-1] / 1000)
+        #set access control allow_origin
+        self.set_header("Access-Control-Allow-Origin", "*")
+
 
         if media_list:
             filename = media_list[0].get("media_name")
