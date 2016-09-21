@@ -40,6 +40,8 @@ class BaseHandler(tornado.web.RequestHandler):
     def prepare(self):
         #set access control allow_origin
         self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "*")
+        self.set_header("Access-Control-Allow-Methods", "*")
 
 
 
