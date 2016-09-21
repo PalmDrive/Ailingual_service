@@ -39,14 +39,15 @@ def get_ext(url):
 class BaseHandler(tornado.web.RequestHandler):
     def prepare(self):
         #set access control allow_origin
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "*")
-        self.set_header("Access-Control-Allow-Methods", "*")
-
+        pass
 
 
 class TestHandler(BaseHandler):
     def get(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "*")
+        self.set_header("Access-Control-Allow-Methods", "*")
+
         self.write("test ok")
 
 
