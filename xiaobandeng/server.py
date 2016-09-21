@@ -41,8 +41,7 @@ class BaseHandler(tornado.web.RequestHandler):
         # set access control allow_origin
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers",
-                        "X-Requested-With, Content-Type",
-                        "x-smartchat-key,client-source")
+                        "X-Requested-With, Content-Type,x-smartchat-key,client-source")
         self.set_header("Access-Control-Allow-Methods",
                         "PUT,POST,GET,DELETE,OPTIONS")
         self.set_header("Access-Control-Allow-Credentials", "true")
