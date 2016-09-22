@@ -18,6 +18,7 @@ import uuid
 import json
 import logging
 import datetime
+import env_config
 
 from urlparse import urlparse
 from os.path import splitext
@@ -157,14 +158,29 @@ def make_app(use_autoreload):
 if __name__ == "__main__":
     # app = make_app()
     # app.listen(8888)
+    import env_config
     from tornado.options import define, options
     from tornado.netutil import bind_unix_socket
 
     define("port", default=8888, help="run on this port", type=int)
-    define("runmode", default="dev", help="dev gray prod")
+    define("env", default="develop", help="develop product staging")
     define("use_autoreload", default=True, help="set debug to use auto reload")
     define("unix_socket", default=None, help="unix socket path")
     tornado.options.parse_command_line()
+
+    env = os.environ.get("PIPE_LINE_SERVICE_ENV")
+    if not env:
+        env = options.env
+
+    pwd = os.path.dirname(__file__)
+
+    config_file = os.path.join(pwd, "config", env + ".json")
+    config_dict = json.load(open(config_file))
+    env_config.init_config(config_dict)
+
+    logging.info("using config file :%s" % config_file)
+
+    # logging.info(env_config.CONFIG.__dict__)
 
     server = tornado.httpserver.HTTPServer(make_app(options.use_autoreload),
                                            xheaders=True)
