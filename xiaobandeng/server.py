@@ -3,6 +3,8 @@
 from __future__ import absolute_import
 
 import os
+import tornado.gen
+import tornado.httpclient
 import tornado.ioloop
 import tornado.web
 import tornado.httpserver
@@ -44,10 +46,16 @@ class BaseHandler(tornado.web.RequestHandler):
                         "X-Requested-With, Content-Type,x-smartchat-key,client-source")
         self.set_header("Access-Control-Allow-Methods",
                         "PUT,POST,GET,DELETE,OPTIONS")
-        self.set_header("Access-Control-Allow-Credentials", "true")
+        # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求发送。
+        # 如果服务器端的响应中,没有返回Access-Control-Allow-Credentials: true的响应头，
+        # 那么浏览器将不会把响应结果传递给发出请求的脚本程序.
+
+        # 给一个带有withCredentials的请求发送响应的时候,
+        # 服务器端必须指定允许请求的域名,不能使用'*'.否则无效
+        # self.set_header("Access-Control-Allow-Credentials", "true")
 
     def options(self):
-        self.set_header("Allow", "GET,HEAD,POST,OPTIONS")
+        self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
 
 
 class TestHandler(BaseHandler):
@@ -56,6 +64,13 @@ class TestHandler(BaseHandler):
 
 
 class TranscribeHandler(BaseHandler):
+    def write_file(self, response, file_name):
+        f = open(file_name, 'wb')
+        f.write(response.body)
+        f.close()
+        logging.info('write file:%s' % file_name)
+
+    @tornado.gen.coroutine
     def get(self):
         addr = self.get_argument('addr')
         addr = urllib.quote(addr.encode('utf8'), ':/')
@@ -68,7 +83,10 @@ class TranscribeHandler(BaseHandler):
         try:
             ext = get_ext(addr)
             tmp_file = tempfile.NamedTemporaryFile().name + ext
-            urllib.urlretrieve(addr, tmp_file)
+            # urllib.urlretrieve(addr, tmp_file)
+            client = tornado.httpclient.AsyncHTTPClient()
+            response = yield client.fetch(addr)
+            self.write_file(response, tmp_file)
 
             target_file = convertor.convert_to_wav(ext, tmp_file)
 
