@@ -156,8 +156,12 @@ def make_app(use_autoreload):
 
 
 if __name__ == "__main__":
-    # app = make_app()
-    # app.listen(8888)
+    '''
+    set system environ "PIPE_LINE_SERVICE_ENV"  to use different environment,
+    choices are 'develop product staging'.
+    or use command line option  %process_name  --env == [envname].
+    '''
+
     import env_config
     from tornado.options import define, options
     from tornado.netutil import bind_unix_socket
