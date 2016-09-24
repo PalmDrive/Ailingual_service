@@ -5,7 +5,7 @@ import subprocess
 
 
 def convert_to_wav(ext, filename):
-    supported_formats = ['mp4','mp3']
+    supported_formats = ['mp4','mp3', 'm4a']
     supported = False
     for format in supported_formats:
         if ext.endswith(format):
