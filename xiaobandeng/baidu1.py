@@ -101,7 +101,7 @@ class Task(object):
             print 'retry %s...%s' % (self.id, datetime.datetime.now())
             self.fetch()
         else:
-            self.done = True
+            self.set_done()
             self.result = ''
 
 
