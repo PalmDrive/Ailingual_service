@@ -44,7 +44,7 @@ class BaiduNLP(object):
         return st.st_size
 
     def vop(self, filename, lan='zh'):
-        print 'start vop', filename
+        print 'start baidu vop', filename
         if not self.inited:
             raise Exception('module has not been initialized')
 

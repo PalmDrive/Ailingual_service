@@ -18,6 +18,7 @@ import uuid
 import json
 import logging
 import datetime
+import google
 
 from urlparse import urlparse
 from os.path import splitext
@@ -25,8 +26,11 @@ from os.path import splitext
 # import re, urlparse
 
 
-voice = baidu.BaiduNLP()
-voice.init_access_token()
+baiduASR = baidu.BaiduNLP()
+baiduASR.init_access_token()
+
+googleASR = google.GooleASR()
+googleASR.init_speech_service()
 
 
 def get_ext(url):
@@ -79,7 +83,7 @@ class TranscribeHandler(BaseHandler):
             for subdir, dirs, files in os.walk(audio_dir):
                 for i in range(0, len(files)):
                     file = "pchunk-%d.wav" % i
-                    duration, result = voice.vop(os.path.join(subdir, file),
+                    duration, result = baiduASR.vop(os.path.join(subdir, file),
                                                  language)
                     end_at = starts[i] + duration
                     print(
