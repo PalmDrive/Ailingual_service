@@ -1,3 +1,5 @@
 env
 *.pyc
 xiaobandeng/nohup.out
+xiaobandeng/config/staging.json
+xiaobandeng/config/production.json

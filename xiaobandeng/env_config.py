@@ -2,14 +2,14 @@
 
 
 class Config(object):
-    pass
+  pass
 
 
 CONFIG = Config()
 
 
 def init_config(json_dict):
-    CONFIG.__dict__ = json_dict
+  CONFIG.__dict__ = json_dict
 
 
 

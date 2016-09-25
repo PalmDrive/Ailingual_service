@@ -1,13 +1,15 @@
 import leancloud
 from datetime import datetime
+from env_config import CONFIG
 
-APP_ID = 'hwB46P8KvcGH258ka0JfnMww-gzGzoHsz'
-MASTER_KEY = 'ywhqmYxpFKTyemJrFl8YYT2j'
 CLASS_NAME_TRANSCRIPT = 'Transcript'
 CLASS_NAME_MEDIA = 'Media'
 
 class LeanCloud(object):
     def __init__(self):
+        APP_ID = CONFIG.LEANCLOUD_APP_ID
+        MASTER_KEY = CONFIG.LEANCLOUD_MASTER_KEY
+
         leancloud.init(APP_ID, MASTER_KEY)
         self.Fragment = leancloud.Object.extend(CLASS_NAME_TRANSCRIPT)
         self.fragments = []

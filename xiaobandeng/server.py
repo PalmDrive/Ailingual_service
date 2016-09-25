@@ -11,7 +11,6 @@ import tornado.httpserver
 import urllib
 import tempfile
 import vad
-import lean_cloud
 import convertor
 import preprocessor
 import uuid
@@ -185,7 +184,7 @@ def make_app(use_autoreload):
 
 if __name__ == "__main__":
     '''
-    set system environ "PIPE_LINE_SERVICE_ENV"  to use different environment,
+    set system environ "PIPELINE_SERVICE_ENV"  to use different environment,
     choices are 'develop product staging'.
     or use command line option  %process_name  --env == [envname].
     '''
@@ -195,12 +194,12 @@ if __name__ == "__main__":
     from tornado.netutil import bind_unix_socket
 
     define("port", default=8888, help="run on this port", type=int)
-    define("env", default="develop", help="develop product staging")
+    define("env", default="develop", help="develop production staging")
     define("use_autoreload", default=True, help="set debug to use auto reload")
     define("unix_socket", default=None, help="unix socket path")
     tornado.options.parse_command_line()
 
-    env = os.environ.get("PIPE_LINE_SERVICE_ENV")
+    env = os.environ.get("PIPELINE_SERVICE_ENV")
     if not env:
         env = options.env
 
@@ -210,7 +209,7 @@ if __name__ == "__main__":
     config_dict = json.load(open(config_file))
     env_config.init_config(config_dict)
 
-    logging.info("using config file :%s" % config_file)
+    logging.info("Using config file %s" % config_file)
 
     # logging.info(env_config.CONFIG.__dict__)
 
