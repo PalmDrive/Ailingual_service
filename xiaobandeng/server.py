@@ -12,7 +12,6 @@ import urllib
 import tempfile
 import vad
 import baidu
-import baidu1
 import lean_cloud
 import convertor
 import shutil
@@ -28,9 +27,7 @@ from os.path import splitext
 
 # import re, urlparse
 
-# voice = baidu.BaiduNLP()
-# voice.init_access_token()
-baidu_voice = baidu1.BaiduNLP()
+baidu_voice = baidu.BaiduNLP()
 
 def get_ext(url):
     """Return the filename extension from url, or ''."""
