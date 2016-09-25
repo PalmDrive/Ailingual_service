@@ -1,18 +1,21 @@
 import leancloud
+import datetime
 
 APP_ID = 'hwB46P8KvcGH258ka0JfnMww-gzGzoHsz'
 MASTER_KEY = 'ywhqmYxpFKTyemJrFl8YYT2j'
-CLASS_NAME = 'Transcript'
-
+CLASS_NAME_TRANSCRIPT = 'Transcript'
 
 class LeanCloud(object):
     def __init__(self):
         leancloud.init(APP_ID, MASTER_KEY)
-        self.Fragment = leancloud.Object.extend(CLASS_NAME)
+        self.Fragment = leancloud.Object.extend(CLASS_NAME_TRANSCRIPT)
         self.fragments = []
         self.fragment_query = self.Fragment.query
 
-    def add(self, fragment_order, start_at, end_at, content, media_name,
+        self.Media = leancloud.Object.extend(CLASS_NAME_MEDIA)
+        self.media = []
+
+    def add_fragment(self, fragment_order, start_at, end_at, content, media_name,
             media_id, media_src):
         fragment = self.Fragment()
         fragment.set('media_id', media_id)

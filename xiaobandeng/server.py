@@ -86,7 +86,7 @@ class TranscribeHandler(BaseHandler):
                 'transcript result of %s : %s, duration %f, end_at %f' % (
                     task.file_name, result, duration, end_at))
 
-            lc.add(i, starts[i], end_at, result, media_name, media_id,
+            lc.add_fragment(i, starts[i], end_at, result, media_name, media_id,
                    addr)
 
         lc.upload()
@@ -106,7 +106,7 @@ class TranscribeHandler(BaseHandler):
 
         audio_dir, starts = vad.slice(0, target_file)
 
-        starts = preprocessor.fixClipLength(audio_dir, starts)
+        starts = preprocessor.preprocess_clip_length(audio_dir, starts)
 
         basedir, subdir, files = next(os.walk(audio_dir))
         file_list = [os.path.join(basedir, file) for file in files]
