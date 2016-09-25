@@ -132,44 +132,6 @@ class TranscribeHandler(BaseHandler):
                      connect_timeout=120,
                      request_timeout=600)
 
-        # target_file = convertor.convert_to_wav(ext, tmp_file)
-        #
-        # audio_dir, starts = vad.slice(0, target_file)
-        #
-        # starts = preprocessor.fixClipLength(audio_dir, starts)
-
-        # for subdir, dirs, files in os.walk(audio_dir):
-        # for i in range(0, len(files)):
-        # file = "pchunk-%d.wav" % i
-        # duration, result = voice.vop(os.path.join(subdir, file),
-        # language)
-        # end_at = starts[i] + duration
-        # print(
-        # 'transcript result of %s : %s, duration %f, end_at %f' % (
-        # file, result, duration, end_at))
-        #
-        # lc.add(i, starts[i], end_at, result, media_name, media_id,
-        # addr)
-        # lc.upload()
-
-        # basedir, subdir, files = next(os.walk(audio_dir))
-        # file_list = [os.path.join(basedir, file) for file in files]
-        #
-        # baidu_voice = baidu1.BaiduNLP()
-        # baidu_voice.vop(file_list, self.uploaded_cb, starts, language)
-
-        # except Exception as e:
-        # self.set_status(500)
-        # self.finish({'error_msg': e.message})
-        # return
-        # finally:
-        # try:
-        # shutil.rmtree(audio_dir, ignore_errors=True)
-        # os.remove(tmp_file)
-        # os.remove(target_file)
-        # except:
-        # pass
-
 
 class MediumHandler(BaseHandler):
     def get(self, media_id):
