@@ -11,6 +11,7 @@ import tornado.httpserver
 import urllib
 import tempfile
 import vad
+import lean_cloud
 import convertor
 import preprocessor
 import uuid
