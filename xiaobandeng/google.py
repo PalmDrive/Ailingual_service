@@ -61,6 +61,7 @@ def main(speech_file):
     g.init_speech_service()
     response = g.vop(speech_file, lan='zh')
     print(json.dumps(response))
+    print(response['results'][0]['alternatives'][0]['transcript'])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
