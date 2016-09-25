@@ -3,6 +3,8 @@
 from __future__ import absolute_import
 
 import os
+import tornado.gen
+import tornado.httpclient
 import tornado.ioloop
 import tornado.web
 import tornado.httpserver
@@ -19,16 +21,14 @@ import json
 import logging
 import datetime
 import env_config
+import functools
 
 from urlparse import urlparse
 from os.path import splitext
 
 # import re, urlparse
 
-
-voice = baidu.BaiduNLP()
-voice.init_access_token()
-
+baidu_voice = baidu.BaiduNLP()
 
 def get_ext(url):
     """Return the filename extension from url, or ''."""
@@ -45,10 +45,16 @@ class BaseHandler(tornado.web.RequestHandler):
                         "X-Requested-With, Content-Type,x-smartchat-key,client-source")
         self.set_header("Access-Control-Allow-Methods",
                         "PUT,POST,GET,DELETE,OPTIONS")
-        self.set_header("Access-Control-Allow-Credentials", "true")
+        # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求发送。
+        # 如果服务器端的响应中,没有返回Access-Control-Allow-Credentials: true的响应头，
+        # 那么浏览器将不会把响应结果传递给发出请求的脚本程序.
+
+        # 给一个带有withCredentials的请求发送响应的时候,
+        # 服务器端必须指定允许请求的域名,不能使用'*'.否则无效
+        # self.set_header("Access-Control-Allow-Credentials", "true")
 
     def options(self):
-        self.set_header("Allow", "GET,HEAD,POST,OPTIONS")
+        self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
 
 
 class TestHandler(BaseHandler):
@@ -57,52 +63,72 @@ class TestHandler(BaseHandler):
 
 
 class TranscribeHandler(BaseHandler):
+    def write_file(self, response, file_name):
+        f = open(file_name, 'wb')
+        f.write(response.body)
+        f.close()
+        logging.info('write file:%s' % file_name)
+
+    def uploaded_cb(self, task_list, starts):
+        lc = lean_cloud.LeanCloud()
+        media_id = str(uuid.uuid4())
+
+        end_at = 0
+        for i, task in task_list.task_dict.iteritems():
+            end_at = starts[i] + task.duration
+            result = task.result
+            duration = task.duration
+            print(
+                'transcript result of %s : %s, duration %f, end_at %f' % (task.file_name, result, duration, end_at))
+            # lc.add_fragment(i, starts[i], end_at, result, media_id)
+        lc.add_media(self.media_name, media_id, self.addr, end_at, self.company_name)
+        lc.upload()
+        self.write(json.dumps({
+            "media_id": media_id
+        }))
+        self.finish()
+
+    def on_donwload(self, tmp_file, ext, language, response):
+        if response.error:
+            self.write(str(response.code))
+            self.finish()
+
+        self.write_file(response, tmp_file)
+
+        target_file = convertor.convert_to_wav(ext, tmp_file)
+
+        audio_dir, starts = vad.slice(0, target_file)
+
+        starts = preprocessor.preprocess_clip_length(audio_dir, starts)
+
+        basedir, subdir, files = next(os.walk(audio_dir))
+        file_list = [os.path.join(basedir, file) for file in files]
+
+        baidu_voice.vop(file_list, self.uploaded_cb, starts, language)
+
+    @tornado.web.asynchronous
     def get(self):
         addr = self.get_argument('addr')
         addr = urllib.quote(addr.encode('utf8'), ':/')
 
         media_name = self.get_argument('media_name').encode("utf8")
         language = self.get_argument('lan')
+        company_name = self.get_argument('company').encode("utf8")
 
-        lc = lean_cloud.LeanCloud()
-        media_id = str(uuid.uuid4())
-        try:
-            ext = get_ext(addr)
-            tmp_file = tempfile.NamedTemporaryFile().name + ext
-            urllib.urlretrieve(addr, tmp_file)
+        self.addr = addr
+        self.media_name = media_name
+        self.language = language
+        self.company_name = company_name
 
-            target_file = convertor.convert_to_wav(ext, tmp_file)
-
-            audio_dir, starts = vad.slice(0, target_file)
-
-            starts = preprocessor.fixClipLength(audio_dir, starts)
-
-            for subdir, dirs, files in os.walk(audio_dir):
-                for i in range(0, len(files)):
-                    file = "pchunk-%d.wav" % i
-                    duration, result = voice.vop(os.path.join(subdir, file),
-                                                 language)
-                    end_at = starts[i] + duration
-                    print(
-                        'transcript result of %s : %s, duration %f, end_at %f' % (
-                            file, result, duration, end_at))
-                    lc.add(i, starts[i], end_at, result, media_name, media_id,
-                           addr)
-            lc.upload()
-        except Exception as e:
-            self.set_status(500)
-            self.finish({'error_msg': e.message})
-            return
-        finally:
-            try:
-                shutil.rmtree(audio_dir, ignore_errors=True)
-                os.remove(tmp_file)
-                os.remove(target_file)
-            except:
-                pass
-        self.write(json.dumps({
-            "media_id": media_id
-        }))
+        # try:
+        ext = get_ext(addr)
+        tmp_file = tempfile.NamedTemporaryFile().name + ext
+        # urllib.urlretrieve(addr, tmp_file)
+        client = tornado.httpclient.AsyncHTTPClient()
+        client.fetch(addr,
+                     callback=functools.partial(self.on_donwload, tmp_file, ext, language),
+                     connect_timeout=120,
+                     request_timeout=600)
 
 
 class MediumHandler(BaseHandler):
