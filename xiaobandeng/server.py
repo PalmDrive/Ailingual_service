@@ -79,9 +79,9 @@ class TranscribeHandler(BaseHandler):
             end_at = starts[i] + task.duration
             result = task.result
             duration = task.duration
-            print(
-                u'transcript result of %s : %s, duration %f, end_at %f' %
-                (task.file_name, result, duration, end_at))
+            # print(
+            #     u'transcript result of %s : %s, duration %f, end_at %f' %
+            #     (task.file_name, result, duration, end_at))
             lc.add_fragment(i, starts[i], end_at, result, media_id)
             lc.add_media(self.media_name, media_id, self.addr, end_at,
                          self.company_name)
