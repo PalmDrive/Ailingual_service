@@ -1,5 +1,5 @@
 import leancloud
-import datetime
+from datetime import datetime
 
 APP_ID = 'hwB46P8KvcGH258ka0JfnMww-gzGzoHsz'
 MASTER_KEY = 'ywhqmYxpFKTyemJrFl8YYT2j'
@@ -16,27 +16,24 @@ class LeanCloud(object):
         self.Media = leancloud.Object.extend(CLASS_NAME_MEDIA)
         self.media = []
 
-    def add_fragment(self, fragment_order, start_at, end_at, content, media_name,
-            media_id, media_src):
+    def add_fragment(self, fragment_order, start_at, end_at, content,
+            media_id):
         fragment = self.Fragment()
         fragment.set('media_id', media_id)
-        fragment.set('media_name', media_name)
         fragment.set('fragment_order', fragment_order)
         fragment.set('start_at', start_at)
         fragment.set('end_at', end_at)
         fragment.set('content', content)
-        fragment.set('media_src', media_src)
         self.fragments.append(fragment)
 
-    def add_media(self, media_name, media_id, media_url, duration):
+    def add_media(self, media_name, media_id, media_url, duration, company_name):
         media = self.Media()
         media.set('media_id', media_id)
         media.set('media_name', media_name)
-        media.set('media_url', media_url)
+        media.set('media_src', media_url)
         media.set('duration', duration)
-        media.set('company_name', duration)
-        media.set('received_at', duration)
-        media.set('transcribed_at', datetime.datetime())
+        media.set('company_name', company_name)
+        media.set('transcribed_at', datetime.now())
         media.set('status', 'Auto Transcribed')
         self.media.append(media)
 

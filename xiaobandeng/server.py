@@ -75,20 +75,15 @@ class TranscribeHandler(BaseHandler):
         lc = lean_cloud.LeanCloud()
         media_id = str(uuid.uuid4())
 
+        end_at = 0
         for i, task in task_list.task_dict.iteritems():
             end_at = starts[i] + task.duration
             result = task.result
             duration = task.duration
-            media_name = self.media_name
-            addr = self.addr
-
             print(
-                'transcript result of %s : %s, duration %f, end_at %f' % (
-                    task.file_name, result, duration, end_at))
-
-            lc.add_fragment(i, starts[i], end_at, result, media_name, media_id,
-                   addr)
-
+                'transcript result of %s : %s, duration %f, end_at %f' % (task.file_name, result, duration, end_at))
+            # lc.add_fragment(i, starts[i], end_at, result, media_id)
+        lc.add_media(self.media_name, media_id, self.addr, end_at, self.company_name)
         lc.upload()
         self.write(json.dumps({
             "media_id": media_id
@@ -120,10 +115,12 @@ class TranscribeHandler(BaseHandler):
 
         media_name = self.get_argument('media_name').encode("utf8")
         language = self.get_argument('lan')
+        company_name = self.get_argument('company').encode("utf8")
 
         self.addr = addr
         self.media_name = media_name
         self.language = language
+        self.company_name = company_name
 
         # try:
         ext = get_ext(addr)
@@ -131,8 +128,8 @@ class TranscribeHandler(BaseHandler):
         # urllib.urlretrieve(addr, tmp_file)
         client = tornado.httpclient.AsyncHTTPClient()
         client.fetch(addr,
-                     callback=functools.partial(self.on_donwload, tmp_file, ext,
-                                                language), connect_timeout=120,
+                     callback=functools.partial(self.on_donwload, tmp_file, ext, language),
+                     connect_timeout=120,
                      request_timeout=600)
 
         # target_file = convertor.convert_to_wav(ext, tmp_file)
