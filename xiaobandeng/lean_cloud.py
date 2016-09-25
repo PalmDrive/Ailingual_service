@@ -16,7 +16,6 @@ class LeanCloud(object):
         self.fragment_query = self.Fragment.query
 
         self.Media = leancloud.Object.extend(CLASS_NAME_MEDIA)
-        self.media = []
 
     def add_fragment(self, fragment_order, start_at, end_at, content,
             media_id):
@@ -37,13 +36,18 @@ class LeanCloud(object):
         media.set('company_name', company_name)
         media.set('transcribed_at', datetime.now())
         media.set('status', 'Auto Transcribed')
-        self.media.append(media)
+        self.media = media
 
     def save(self):
         try:
             self.Fragment.save_all(self.fragments)
-            self.Media.save_all(self.media)
-            print 'fragment and media saved to lean cloud'
+
+            relation = self.media.relation('containedTranscripts')
+            for fragment in self.fragments:
+                relation.add(fragment)
+            self.media.save()
+
+            print 'transcript and media saved to lean cloud'
         except leancloud.LeanCloudError as e:
             print e
             raise
