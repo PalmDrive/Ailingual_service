@@ -11,16 +11,16 @@ import tornado.httpserver
 import urllib
 import tempfile
 import vad
-import baidu
 import lean_cloud
 import convertor
-import shutil
 import preprocessor
 import uuid
 import json
 import logging
 import datetime
 import functools
+
+from transcribe import baidu
 
 from urlparse import urlparse
 from os.path import splitext
@@ -41,7 +41,8 @@ class BaseHandler(tornado.web.RequestHandler):
         # set access control allow_origin
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers",
-                        "X-Requested-With, Content-Type,x-smartchat-key,client-source")
+                        "X-Requested-With, Content-Type,"
+                        "x-smartchat-key,client-source")
         self.set_header("Access-Control-Allow-Methods",
                         "PUT,POST,GET,DELETE,OPTIONS")
         # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求发送。
@@ -71,16 +72,18 @@ class TranscribeHandler(BaseHandler):
     def uploaded_cb(self, task_list, starts):
         lc = lean_cloud.LeanCloud()
         media_id = str(uuid.uuid4())
-
         end_at = 0
+
         for i, task in task_list.task_dict.iteritems():
             end_at = starts[i] + task.duration
             result = task.result
             duration = task.duration
             print(
-                'transcript result of %s : %s, duration %f, end_at %f' % (task.file_name, result, duration, end_at))
-            # lc.add_fragment(i, starts[i], end_at, result, media_id)
-        lc.add_media(self.media_name, media_id, self.addr, end_at, self.company_name)
+                'transcript result of %s : %s, duration %f, end_at %f' %
+                (task.file_name, result, duration, end_at))
+            lc.add_fragment(i, starts[i], end_at, result, media_id)
+            lc.add_media(self.media_name, media_id, self.addr, end_at,
+                         self.company_name)
         lc.upload()
         self.write(json.dumps({
             "media_id": media_id
@@ -97,7 +100,6 @@ class TranscribeHandler(BaseHandler):
         target_file = convertor.convert_to_wav(ext, tmp_file)
 
         audio_dir, starts = vad.slice(0, target_file)
-
         starts = preprocessor.preprocess_clip_length(audio_dir, starts)
 
         basedir, subdir, files = next(os.walk(audio_dir))
@@ -125,7 +127,8 @@ class TranscribeHandler(BaseHandler):
         # urllib.urlretrieve(addr, tmp_file)
         client = tornado.httpclient.AsyncHTTPClient()
         client.fetch(addr,
-                     callback=functools.partial(self.on_donwload, tmp_file, ext, language),
+                     callback=functools.partial(self.on_donwload,
+                                                tmp_file, ext, language),
                      connect_timeout=120,
                      request_timeout=600)
 
@@ -146,7 +149,6 @@ class MediumHandler(BaseHandler):
                           t_end.microsecond - t_start.microsecond)
             return ":".join([str(i) for i in time_tuple[:-1]]) + "," + \
                    "%d" % (time_tuple[-1] / 1000)
-
 
         if media_list:
             filename = media_list[0].get("media_name")
@@ -174,10 +176,10 @@ class MediumHandler(BaseHandler):
 
 def make_app(use_autoreload):
     return tornado.web.Application([
-                                       (r"/test", TestHandler),
-                                       (r"/transcribe", TranscribeHandler),
-                                       (r"/medium/(.*)/srt", MediumHandler)
-                                   ], autoreload=use_autoreload)
+        (r"/test", TestHandler),
+        (r"/transcribe", TranscribeHandler),
+        (r"/medium/(.*)/srt", MediumHandler)
+    ], autoreload=use_autoreload)
 
 
 if __name__ == "__main__":

@@ -41,6 +41,7 @@ class LeanCloud(object):
         try:
             self.Fragment.save_all(self.fragments)
             self.Media.save_all(self.media)
+            print 'fragment uploaded!'
         except leancloud.LeanCloudError as e:
             print e
             raise
