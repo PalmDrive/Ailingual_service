@@ -39,11 +39,11 @@ class LeanCloud(object):
         media.set('status', 'Auto Transcribed')
         self.media.append(media)
 
-    def upload(self):
+    def save(self):
         try:
             self.Fragment.save_all(self.fragments)
             self.Media.save_all(self.media)
-            print 'fragment uploaded!'
+            print 'fragment and media saved to lean cloud'
         except leancloud.LeanCloudError as e:
             print e
             raise

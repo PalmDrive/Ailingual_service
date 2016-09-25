@@ -83,9 +83,9 @@ class TranscribeHandler(BaseHandler):
             #     u'transcript result of %s : %s, duration %f, end_at %f' %
             #     (task.file_name, result, duration, end_at))
             lc.add_fragment(i, starts[i], end_at, result, media_id)
-            lc.add_media(self.media_name, media_id, self.addr, end_at,
-                         self.company_name)
-        lc.upload()
+        
+        lc.add_media(self.media_name, media_id, self.addr, end_at, self.company_name)
+        lc.save()
         self.write(json.dumps({
             "media_id": media_id
         }))
@@ -134,7 +134,7 @@ class TranscribeHandler(BaseHandler):
                      request_timeout=600)
 
 
-class MediumHandler(BaseHandler):
+class SrtHandler(BaseHandler):
     def get(self, media_id):
         lc = lean_cloud.LeanCloud()
         media_list = lc.get_list(media_id=media_id)
@@ -179,7 +179,7 @@ def make_app(use_autoreload):
     return tornado.web.Application([
         (r"/test", TestHandler),
         (r"/transcribe", TranscribeHandler),
-        (r"/medium/(.*)/srt", MediumHandler)
+        (r"/medium/(.*)/srt", SrtHandler)
     ], autoreload=use_autoreload)
 
 
