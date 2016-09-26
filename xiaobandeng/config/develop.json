@@ -1,4 +1,10 @@
 {
-  "LEANCLOUD_MASTER_KEY": "ywhqmYxpFKTyemJrFl8YYT2j",
-  "LEANCLOUD_APP_ID": "hwB46P8KvcGH258ka0JfnMww-gzGzoHsz"
+    "LEANCLOUD_MASTER_KEY": "ywhqmYxpFKTyemJrFl8YYT2j",
+    "LEANCLOUD_APP_ID": "hwB46P8KvcGH258ka0JfnMww-gzGzoHsz",
+    "OSS_Access_Key_ID": "ZblgTWN34znE5dOO",
+    "OSS_Access_Key_Secret": "S09puSorYwkbdyyAjWpqudXQ8mLvl9",
+    "OSS_EndpointHost": "oss-cn-hangzhou.aliyuncs.com",
+    "OSS_EndpointHead": "http://",
+    "OSS_BucketName": "xiaobandeng-staging"
 }
+
