@@ -104,7 +104,7 @@ class BaiduNLP(object):
         else:
             info = json.loads(res.body)
             self.access_token = info['access_token']
-            print 'token got!'
+            print 'baidu nlp token got!'
 
     def vop(self, file_list, callback, starts, lan):
         task_list = TaskGroup(file_list, lan, callback, starts)

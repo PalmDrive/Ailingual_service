@@ -7,6 +7,8 @@ Access_Key_Secret = 'S09puSorYwkbdyyAjWpqudXQ8mLvl9'
 EndpointHost = 'oss-cn-hangzhou.aliyuncs.com'
 EndpointHead = 'http://'
 BucketName = 'xiaobandeng-staging'
+import datetime
+
 
 # This method should be executed asynchronously
 def upload(media_id, file_list):
@@ -19,7 +21,9 @@ def upload(media_id, file_list):
     # upload clips
     for file in file_list:
         filename = os.path.basename(file)
+        # print "%s ----start@----%s"%(filename,datetime.datetime.now())
         bucket.put_object_from_file(key + filename, file)
+        # print "%s ----end@----%s"%(filename,datetime.datetime.now())
 
 def media_fragment_url(media_id, file_name):
     return "%s%s.%s/media_fragments/%s/%s" % (EndpointHead, BucketName, EndpointHost, media_id, os.path.basename(file_name))
