@@ -1,14 +1,6 @@
 import oss2
 import os
-from env_config import  CONFIG
-
-# OSS_Access_Key_ID = 'ZblgTWN34znE5dOO'
-# OSS_Access_Key_Secret = 'S09puSorYwkbdyyAjWpqudXQ8mLvl9'
-#
-# OSS_EndpointHost = 'oss-cn-hangzhou.aliyuncs.com'
-# OSS_EndpointHead = 'http://'
-# OSS_BucketName = 'xiaobandeng-staging'
-
+from env_config import CONFIG
 
 # This method should be executed asynchronously
 def upload(media_id, file_list):

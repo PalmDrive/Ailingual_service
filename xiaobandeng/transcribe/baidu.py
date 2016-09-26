@@ -5,11 +5,10 @@ import datetime
 import tornado.httpclient
 from task import Task, TaskGroup
 
-Api_Key = "Ki1wq6cYASyrFFgMNQtGAmz5"
-Secret_Key = "1226a59f3407d28d924012d76ee2f691"
+from env_config import CONFIG
 
 # #warn:
-# #baidu oauth api  access token  expires 30days
+# #baidu oauth api  access token expires 30 days
 # #
 
 
@@ -88,7 +87,7 @@ class BaiduNLP(object):
                         "grant_type=client_credentials&client_id=%s&" \
                         "client_secret=%s"
         self.vop_url = "http://vop.baidu.com/server_api"
-        self.auth_url = self.auth_url % (Api_Key, Secret_Key)
+        self.auth_url = self.auth_url % (CONFIG.BAIDU_Api_Key, CONFIG.Secret_Key)
         self.client = tornado.httpclient.AsyncHTTPClient()
         self.access_token = ""
         self.client.fetch(self.auth_url, self.cb_login)
