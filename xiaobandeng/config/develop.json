@@ -1,12 +1,12 @@
 {
     "LEANCLOUD_MASTER_KEY": "ywhqmYxpFKTyemJrFl8YYT2j",
     "LEANCLOUD_APP_ID": "hwB46P8KvcGH258ka0JfnMww-gzGzoHsz",
-    "OSS_Access_Key_ID": "ZblgTWN34znE5dOO",
-    "OSS_Access_Key_Secret": "S09puSorYwkbdyyAjWpqudXQ8mLvl9",
-    "OSS_EndpointHost": "oss-cn-hangzhou.aliyuncs.com",
-    "OSS_EndpointHead": "http://",
-    "OSS_BucketName": "xiaobandeng-staging",
-    "BAIDU_Api_Key": "Ki1wq6cYASyrFFgMNQtGAmz5",
-    "BAIDU_Secret_Key": "1226a59f3407d28d924012d76ee2f691"
+    "OSS_ACCESS_KEY_ID": "ZblgTWN34znE5dOO",
+    "OSS_ACCESS_KEY_SECRET": "S09puSorYwkbdyyAjWpqudXQ8mLvl9",
+    "OSS_ENDPOINT_HOST": "oss-cn-hangzhou.aliyuncs.com",
+    "OSS_ENDPOINT_HEAD": "http://",
+    "OSS_BUCKET_NAME": "xiaobandeng-staging",
+    "BAIDU_API_KEY": "Ki1wq6cYASyrFFgMNQtGAmz5",
+    "BAIDU_SECRET_KEY": "1226a59f3407d28d924012d76ee2f691"
 }
 
