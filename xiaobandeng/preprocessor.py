@@ -3,11 +3,10 @@ import contextlib
 import math
 import os
 
-def preprocess_clip_length(audio_dir, starts):
+def preprocess_clip_length(audio_dir, starts, preferred_length = 10):
     # length limit of audio for VOP api
     length_limit = 60
     # length we prefer using to avoid non-context transcription issue
-    preferred_length = 10
 
     # initialization
     output_count = 0
