@@ -18,13 +18,14 @@ class LeanCloud(object):
         self.Media = leancloud.Object.extend(CLASS_NAME_MEDIA)
 
     def add_fragment(self, fragment_order, start_at, end_at, content,
-            media_id):
+            media_id, fragment_src):
         fragment = self.Fragment()
         fragment.set('media_id', media_id)
         fragment.set('fragment_order', fragment_order)
         fragment.set('start_at', start_at)
         fragment.set('end_at', end_at)
         fragment.set('content', content)
+        fragment.set('fragment_src', fragment_src)
         self.fragments.append(fragment)
 
     def add_media(self, media_name, media_id, media_url, duration, company_name):

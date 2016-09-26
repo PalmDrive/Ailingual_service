@@ -5,11 +5,14 @@ import datetime
 import tornado.httpclient
 from task import Task, TaskGroup
 
-Api_Key = "Ki1wq6cYASyrFFgMNQtGAmz5"
-Secret_Key = "1226a59f3407d28d924012d76ee2f691"
+# from env_config import CONFIG
+
+BAIDU_API_KEY = "Ki1wq6cYASyrFFgMNQtGAmz5"
+BAIDU_SECRET_KEY = "1226a59f3407d28d924012d76ee2f691"
+
 
 # #warn:
-# #baidu oauth api  access token  expires 30days
+# #baidu oauth api  access token expires 30 days
 # #
 
 
@@ -29,6 +32,7 @@ class TaskBaidu(Task):
         self.url = self.get_url(lan)
 
     def start(self):
+        print 'start baidu vop on %s' % self.file_name
         self.fetch(self.url)
 
     def fetch(self, url):
@@ -88,7 +92,7 @@ class BaiduNLP(object):
                         "grant_type=client_credentials&client_id=%s&" \
                         "client_secret=%s"
         self.vop_url = "http://vop.baidu.com/server_api"
-        self.auth_url = self.auth_url % (Api_Key, Secret_Key)
+        self.auth_url = self.auth_url % (BAIDU_API_KEY, BAIDU_SECRET_KEY)
         self.client = tornado.httpclient.AsyncHTTPClient()
         self.access_token = ""
         self.client.fetch(self.auth_url, self.cb_login)
@@ -104,7 +108,7 @@ class BaiduNLP(object):
         else:
             info = json.loads(res.body)
             self.access_token = info['access_token']
-            print 'token got!'
+            print 'baidu nlp token got!'
 
     def vop(self, file_list, callback, starts, lan):
         task_list = TaskGroup(file_list, lan, callback, starts)

@@ -20,7 +20,9 @@ import logging
 import datetime
 import env_config
 import functools
-
+import oss
+from tornado.concurrent import run_on_executor
+from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu
 
 from urlparse import urlparse
@@ -64,6 +66,17 @@ class TestHandler(BaseHandler):
 
 
 class TranscribeHandler(BaseHandler):
+
+    executor = ThreadPoolExecutor(5)
+
+    @run_on_executor
+    def upload_oss_in_thread(self,media_id,file_list):
+        #since oss api uses requests lib,the socket can not be selected by epoll
+        #now use a thread to make it run concurrently.
+        #but
+        oss.upload(media_id, file_list)
+        print '-----upload oss over-------'
+
     def write_file(self, response, file_name):
         f = open(file_name, 'wb')
         f.write(response.body)
@@ -72,28 +85,28 @@ class TranscribeHandler(BaseHandler):
 
     def uploaded_cb(self, task_list, starts):
         lc = lean_cloud.LeanCloud()
-        media_id = str(uuid.uuid4())
         end_at = 0
 
         for i, task in task_list.task_dict.iteritems():
             end_at = starts[i] + task.duration
             result = task.result
-            duration = task.duration
+            #duration = task.duration
             # print(
             #     u'transcript result of %s : %s, duration %f, end_at %f' %
             #     (task.file_name, result, duration, end_at))
-            lc.add_fragment(i, starts[i], end_at, result, media_id)
+            fragment_src = oss.media_fragment_url(self.media_id, task.file_name)
+            lc.add_fragment(i, starts[i], end_at, result, self.media_id, fragment_src)
         
-        lc.add_media(self.media_name, media_id, self.addr, end_at, self.company_name)
+        lc.add_media(self.media_name, self.media_id, self.addr, end_at, self.company_name)
         lc.save()
         self.write(json.dumps({
-            "media_id": media_id
+            "media_id": self.media_id
         }))
         self.finish()
 
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
-            self.write(str(response.code))
+            self.write('download error:%s'%str(response.code))
             self.finish()
 
         self.write_file(response, tmp_file)
@@ -101,12 +114,25 @@ class TranscribeHandler(BaseHandler):
         target_file = convertor.convert_to_wav(ext, tmp_file)
 
         audio_dir, starts = vad.slice(0, target_file)
-        starts = preprocessor.preprocess_clip_length(audio_dir, starts)
+        if self.fragment_length_limit:
+            starts = preprocessor.preprocess_clip_length(audio_dir, starts,
+                                                         self.fragment_length_limit)
+        else:
+            starts = preprocessor.preprocess_clip_length(audio_dir, starts)
 
         basedir, subdir, files = next(os.walk(audio_dir))
         file_list = [os.path.join(basedir, file) for file in files]
 
+        if self.upload_oss:
+            #oss.upload(self.media_id, file_list)
+            tornado.ioloop.IOLoop.instance().add_callback(
+                                    functools.partial(self.upload_oss_in_thread,
+                                                      self.media_id, file_list
+                                                      )
+                                    )
+
         baidu_voice.vop(file_list, self.uploaded_cb, starts, language)
+
 
     @tornado.web.asynchronous
     def get(self):
@@ -114,13 +140,24 @@ class TranscribeHandler(BaseHandler):
         addr = urllib.quote(addr.encode('utf8'), ':/')
 
         media_name = self.get_argument('media_name').encode("utf8")
-        language = self.get_argument('lan')
+        language = self.get_argument('lan', None)
         company_name = self.get_argument('company').encode("utf8")
+        fragment_length_limit = self.get_argument('max_fragment_length', None)
+        if fragment_length_limit:
+            fragment_length_limit = int(fragment_length_limit)
+        upload_oss = self.get_argument('upload_oss', False)
+        if upload_oss == 'true' or upload_oss == 'True':
+            upload_oss = True
+        else:
+            upload_oss = False
 
         self.addr = addr
         self.media_name = media_name
+        self.media_id = str(uuid.uuid4())
         self.language = language
         self.company_name = company_name
+        self.fragment_length_limit = fragment_length_limit
+        self.upload_oss = upload_oss
 
         # try:
         ext = get_ext(addr)
