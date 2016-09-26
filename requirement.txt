@@ -39,4 +39,5 @@ wcwidth==0.1.7
 webrtcvad==2.0.8
 wheel==0.24.0
 wsgiref==0.1.2
-oss2=2.2.0
+oss2==2.2.0
+futures==3.0.5
