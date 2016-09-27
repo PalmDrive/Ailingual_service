@@ -3,35 +3,34 @@
 from __future__ import absolute_import
 
 import os
+import tornado.gen
+import tornado.httpclient
 import tornado.ioloop
 import tornado.web
 import tornado.httpserver
 import urllib
 import tempfile
 import vad
-import baidu
 import lean_cloud
 import convertor
-import shutil
 import preprocessor
 import uuid
 import json
 import logging
 import datetime
-import google
+import env_config
+import functools
+import oss
+from tornado.concurrent import run_on_executor
+from concurrent.futures import ThreadPoolExecutor
+from transcribe import baidu
 
 from urlparse import urlparse
 from os.path import splitext
 
 # import re, urlparse
 
-
-baiduASR = baidu.BaiduNLP()
-baiduASR.init_access_token()
-
-googleASR = google.GooleASR()
-googleASR.init_speech_service()
-
+baidu_voice = baidu.BaiduNLP()
 
 def get_ext(url):
     """Return the filename extension from url, or ''."""
@@ -45,13 +44,20 @@ class BaseHandler(tornado.web.RequestHandler):
         # set access control allow_origin
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers",
-                        "X-Requested-With, Content-Type,x-smartchat-key,client-source")
+                        "X-Requested-With, Content-Type,"
+                        "x-smartchat-key,client-source")
         self.set_header("Access-Control-Allow-Methods",
                         "PUT,POST,GET,DELETE,OPTIONS")
-        self.set_header("Access-Control-Allow-Credentials", "true")
+        # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求发送。
+        # 如果服务器端的响应中,没有返回Access-Control-Allow-Credentials: true的响应头，
+        # 那么浏览器将不会把响应结果传递给发出请求的脚本程序.
+
+        # 给一个带有withCredentials的请求发送响应的时候,
+        # 服务器端必须指定允许请求的域名,不能使用'*'.否则无效
+        # self.set_header("Access-Control-Allow-Credentials", "true")
 
     def options(self):
-        self.set_header("Allow", "GET,HEAD,POST,OPTIONS")
+        self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
 
 
 class TestHandler(BaseHandler):
@@ -60,55 +66,112 @@ class TestHandler(BaseHandler):
 
 
 class TranscribeHandler(BaseHandler):
+
+    executor = ThreadPoolExecutor(5)
+
+    @run_on_executor
+    def upload_oss_in_thread(self,media_id,file_list):
+        #since oss api uses requests lib,the socket can not be selected by epoll
+        #now use a thread to make it run concurrently.
+        #but
+        oss.upload(media_id, file_list)
+        print '-----upload oss over-------'
+
+    def write_file(self, response, file_name):
+        f = open(file_name, 'wb')
+        f.write(response.body)
+        f.close()
+        logging.info('write file:%s' % file_name)
+
+    def uploaded_cb(self, task_list, starts):
+        lc = lean_cloud.LeanCloud()
+        end_at = 0
+
+        for i, task in task_list.task_dict.iteritems():
+            end_at = starts[i] + task.duration
+            result = task.result
+            #duration = task.duration
+            # print(
+            #     u'transcript result of %s : %s, duration %f, end_at %f' %
+            #     (task.file_name, result, duration, end_at))
+            fragment_src = oss.media_fragment_url(self.media_id, task.file_name)
+            lc.add_fragment(i, starts[i], end_at, result, self.media_id, fragment_src)
+        
+        lc.add_media(self.media_name, self.media_id, self.addr, end_at, self.company_name)
+        lc.save()
+        self.write(json.dumps({
+            "media_id": self.media_id
+        }))
+        self.finish()
+
+    def on_donwload(self, tmp_file, ext, language, response):
+        if response.error:
+            self.write('download error:%s'%str(response.code))
+            self.finish()
+
+        self.write_file(response, tmp_file)
+
+        target_file = convertor.convert_to_wav(ext, tmp_file)
+
+        audio_dir, starts = vad.slice(0, target_file)
+        if self.fragment_length_limit:
+            starts = preprocessor.preprocess_clip_length(audio_dir, starts,
+                                                         self.fragment_length_limit)
+        else:
+            starts = preprocessor.preprocess_clip_length(audio_dir, starts)
+
+        basedir, subdir, files = next(os.walk(audio_dir))
+        file_list = [os.path.join(basedir, file) for file in files]
+
+        if self.upload_oss:
+            #oss.upload(self.media_id, file_list)
+            tornado.ioloop.IOLoop.instance().add_callback(
+                                    functools.partial(self.upload_oss_in_thread,
+                                                      self.media_id, file_list
+                                                      )
+                                    )
+
+        baidu_voice.vop(file_list, self.uploaded_cb, starts, language)
+
+
+    @tornado.web.asynchronous
     def get(self):
         addr = self.get_argument('addr')
         addr = urllib.quote(addr.encode('utf8'), ':/')
 
         media_name = self.get_argument('media_name').encode("utf8")
-        language = self.get_argument('lan')
+        language = self.get_argument('lan', None)
+        company_name = self.get_argument('company').encode("utf8")
+        fragment_length_limit = self.get_argument('max_fragment_length', None)
+        if fragment_length_limit:
+            fragment_length_limit = int(fragment_length_limit)
+        upload_oss = self.get_argument('upload_oss', False)
+        if upload_oss == 'true' or upload_oss == 'True':
+            upload_oss = True
+        else:
+            upload_oss = False
 
-        lc = lean_cloud.LeanCloud()
-        media_id = str(uuid.uuid4())
-        try:
-            ext = get_ext(addr)
-            tmp_file = tempfile.NamedTemporaryFile().name + ext
-            urllib.urlretrieve(addr, tmp_file)
+        self.addr = addr
+        self.media_name = media_name
+        self.media_id = str(uuid.uuid4())
+        self.language = language
+        self.company_name = company_name
+        self.fragment_length_limit = fragment_length_limit
+        self.upload_oss = upload_oss
 
-            target_file = convertor.convert_to_wav(ext, tmp_file)
-
-            audio_dir, starts = vad.slice(0, target_file)
-
-            starts = preprocessor.fixClipLength(audio_dir, starts)
-
-            for subdir, dirs, files in os.walk(audio_dir):
-                for i in range(0, len(files)):
-                    file = "pchunk-%d.wav" % i
-                    duration, result = baiduASR.vop(os.path.join(subdir, file),
-                                                 language)
-                    end_at = starts[i] + duration
-                    print(
-                        'transcript result of %s : %s, duration %f, end_at %f' % (
-                            file, result, duration, end_at))
-                    lc.add(i, starts[i], end_at, result, media_name, media_id,
-                           addr)
-            lc.upload()
-        except Exception as e:
-            self.set_status(500)
-            self.finish({'error_msg': e.message})
-            return
-        finally:
-            try:
-                shutil.rmtree(audio_dir, ignore_errors=True)
-                os.remove(tmp_file)
-                os.remove(target_file)
-            except:
-                pass
-        self.write(json.dumps({
-            "media_id": media_id
-        }))
+        # try:
+        ext = get_ext(addr)
+        tmp_file = tempfile.NamedTemporaryFile().name + ext
+        # urllib.urlretrieve(addr, tmp_file)
+        client = tornado.httpclient.AsyncHTTPClient()
+        client.fetch(addr,
+                     callback=functools.partial(self.on_donwload,
+                                                tmp_file, ext, language),
+                     connect_timeout=120,
+                     request_timeout=600)
 
 
-class MediumHandler(BaseHandler):
+class SrtHandler(BaseHandler):
     def get(self, media_id):
         lc = lean_cloud.LeanCloud()
         media_list = lc.get_list(media_id=media_id)
@@ -124,7 +187,6 @@ class MediumHandler(BaseHandler):
                           t_end.microsecond - t_start.microsecond)
             return ":".join([str(i) for i in time_tuple[:-1]]) + "," + \
                    "%d" % (time_tuple[-1] / 1000)
-
 
         if media_list:
             filename = media_list[0].get("media_name")
@@ -152,23 +214,42 @@ class MediumHandler(BaseHandler):
 
 def make_app(use_autoreload):
     return tornado.web.Application([
-                                       (r"/test", TestHandler),
-                                       (r"/transcribe", TranscribeHandler),
-                                       (r"/medium/(.*)/srt", MediumHandler)
-                                   ], autoreload=use_autoreload)
+        (r"/test", TestHandler),
+        (r"/transcribe", TranscribeHandler),
+        (r"/medium/(.*)/srt", SrtHandler)
+    ], autoreload=use_autoreload)
 
 
 if __name__ == "__main__":
-    # app = make_app()
-    # app.listen(8888)
+    '''
+    set system environ "PIPELINE_SERVICE_ENV"  to use different environment,
+    choices are 'develop product staging'.
+    or use command line option  %process_name  --env == [envname].
+    '''
+
+    import env_config
     from tornado.options import define, options
     from tornado.netutil import bind_unix_socket
 
     define("port", default=8888, help="run on this port", type=int)
-    define("runmode", default="dev", help="dev gray prod")
+    define("env", default="develop", help="develop production staging")
     define("use_autoreload", default=True, help="set debug to use auto reload")
     define("unix_socket", default=None, help="unix socket path")
     tornado.options.parse_command_line()
+
+    env = os.environ.get("PIPELINE_SERVICE_ENV")
+    if not env:
+        env = options.env
+
+    pwd = os.path.dirname(__file__)
+
+    config_file = os.path.join(pwd, "config", env + ".json")
+    config_dict = json.load(open(config_file))
+    env_config.init_config(config_dict)
+
+    logging.info("Using config file %s" % config_file)
+
+    # logging.info(env_config.CONFIG.__dict__)
 
     server = tornado.httpserver.HTTPServer(make_app(options.use_autoreload),
                                            xheaders=True)

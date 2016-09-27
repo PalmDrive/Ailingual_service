@@ -3,11 +3,10 @@ import contextlib
 import math
 import os
 
-def fixClipLength(audio_dir, starts):
+def preprocess_clip_length(audio_dir, starts, preferred_length = 10):
     # length limit of audio for VOP api
     length_limit = 60
     # length we prefer using to avoid non-context transcription issue
-    preferred_length = 10
 
     # initialization
     output_count = 0
@@ -82,8 +81,7 @@ def fixClipLength(audio_dir, starts):
     return new_starts
 
 def outFilePath(dir,output_count):
-    # return "pchunk-%d.wav" % output_count
-    return os.path.join(dir, "pchunk-%d.wav" % output_count)
+    return os.path.join(dir, "pchunk-%08d.wav" % output_count)
 
 def slice(infile, outfilename, start_ms, end_ms):
     width = infile.getsampwidth()
