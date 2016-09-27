@@ -4,11 +4,12 @@ from __future__ import absolute_import
 import argparse
 import base64
 import json
+from multiprocessing import Pool
 
 from googleapiclient import discovery
 import httplib2
 from oauth2client.client import GoogleCredentials
-
+from task import Task, TaskGroup
 
 DISCOVERY_URL = ('https://{api}.googleapis.com/$discovery/rest?'
                  'version={apiVersion}')
@@ -17,14 +18,16 @@ DISCOVERY_URL = ('https://{api}.googleapis.com/$discovery/rest?'
 class GoogleASR(object):
 # Application default credentials provided by env variable
 # GOOGLE_APPLICATION_CREDENTIALS
-    def init_speech_service(self):
+    def __init__(self):
+        self.auth_ur = 'https://www.googleapis.com/auth/cloud-platform'
         credentials = GoogleCredentials.get_application_default().create_scoped(
-            ['https://www.googleapis.com/auth/cloud-platform'])
+            [self.auth_url])
         http = httplib2.Http()
         credentials.authorize(http)
 
         self.service = discovery.build(
             'speech', 'v1beta1', http=http, discoveryServiceUrl=DISCOVERY_URL)
+
 
     def vop(self, filename, lan='zh'):
         print 'start google vop - ', filename
@@ -51,6 +54,74 @@ class GoogleASR(object):
         response = service_request.execute()
         return response
 
+class TaskGoogle(Task):
+
+    lans = {"zh": ['zh', 'zh', 'zh', 'en', 'en', 'en'],
+            "en": ['en', 'en', 'en', 'zh', 'zh', 'zh']
+            }
+
+    def __init__(self, tid, file_name, lan='zh', service):
+        super(TaskGoogle, self).__init__(tid, file_name)
+        self.service = service
+        self.max_try = 6
+        self._try = 0
+        self.lan = lan
+        self.url = self.get_url(lan)
+
+    def start(self):
+        print 'start google vop on %s' % self.file_name
+        self.fetch(self.url)
+
+    def fetch(self, url):
+        self.client.fetch(self.get_request(url), self.callback)
+
+    def get_request(self, url):
+        http_header = {'Content-Type': 'audio/wav; rate=%d' % self.rate,
+                       'Content-Length': str(len(self.body)),
+                       }
+
+        return tornado.httpclient.HTTPRequest(url=url, method='POST',
+                                              connect_timeout=120,
+                                              request_timeout=600,
+                                              headers=http_header,
+                                              body=self.body
+                                              )
+
+    def get_url(self, lan):
+        return self.vop_url + '?cuid=' + '123442123233213' + '&token=' + \
+               self.token + '&lan=' + lan
+
+    def retry(self):
+        self._try += 1
+        if self._try < self.max_try:
+            self.fetch(self.get_url(self.lans[self.lan][self._try]))
+            print 'retry %s...%s' % (self.id, datetime.datetime.now())
+        else:
+            self.complete()
+            self.result = ''
+
+    def callback(self, res):
+        if res.error:
+            print '%s error:%s' % (self.id, res.error)
+            self.retry()
+            return
+
+        res = json.loads(res.body)
+
+        if int(res['err_no']) in (3301, 3302):
+            # print '%s baidu api error :%s'%(self.id,res['err_no'])
+            self.retry()
+            return
+
+        if int(res['err_no']) == 0:
+            self.result = res["result"][0]
+            self.complete()
+            # print '%s====>%s'%(self.id,self.result)
+            return
+
+        self.result = 'Baidu API error: %d %s' % (res['err_no'], res['err_msg'])
+        self.complete()
+
 def main(speech_file):
     """Transcribe the given audio file.
 
@@ -58,7 +129,6 @@ def main(speech_file):
         speech_file: the name of the audio file.
     """
     g = GoogleASR()
-    g.init_speech_service()
     response = g.vop(speech_file, lan='zh')
     print(json.dumps(response))
     print(response['results'][0]['alternatives'][0]['transcript'])
