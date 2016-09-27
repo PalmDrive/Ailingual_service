@@ -30,7 +30,6 @@ from os.path import splitext
 
 # import re, urlparse
 
-baidu_voice = baidu.BaiduNLP()
 
 def get_ext(url):
     """Return the filename extension from url, or ''."""
@@ -130,7 +129,7 @@ class TranscribeHandler(BaseHandler):
                                                       self.media_id, file_list
                                                       )
                                     )
-
+        baidu_voice = baidu.BaiduNLP()
         baidu_voice.vop(file_list, self.uploaded_cb, starts, language)
 
 
