@@ -121,7 +121,7 @@ class TranscribeHandler(BaseHandler):
             starts = preprocessor.preprocess_clip_length(audio_dir, starts)
 
         basedir, subdir, files = next(os.walk(audio_dir))
-        file_list = [os.path.join(basedir, file) for file in files]
+        file_list = [os.path.join(basedir, file) for file in sorted(files)]
 
         if self.upload_oss:
             #oss.upload(self.media_id, file_list)
