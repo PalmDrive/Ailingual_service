@@ -5,7 +5,8 @@ import datetime
 import tornado.httpclient
 from env_config import CONFIG
 from task import Task, TaskGroup
-
+import urllib2
+import logging
 
 # #warn:
 # #baidu oauth api  access token expires 30 days
@@ -28,7 +29,7 @@ class TaskBaidu(Task):
         self.url = self.get_url(lan)
 
     def start(self):
-        print 'start baidu vop on %s' % self.file_name
+        logging.info('start baidu vop on %s' % self.file_name)
         self.fetch(self.url)
 
     def fetch(self, url):
@@ -54,28 +55,28 @@ class TaskBaidu(Task):
         self._try += 1
         if self._try < self.max_try:
             self.fetch(self.get_url(self.lans[self.lan][self._try]))
-            print 'retry %s...%s' % (self.id, datetime.datetime.now())
+            logging.info('retry %s...%s' % (self.id, datetime.datetime.now()))
         else:
             self.complete()
             self.result = ''
 
     def callback(self, res):
         if res.error:
-            print '%s error:%s' % (self.id, res.error)
+            logging.info('%s error:%s' % (self.id, res.error))
             self.retry()
             return
 
         res = json.loads(res.body)
 
         if int(res['err_no']) in (3301, 3302):
-            # print '%s baidu api error :%s'%(self.id,res['err_no'])
+            # logging.info('%s baidu api error :%s'%(self.id,res['err_no']))
             self.retry()
             return
 
         if int(res['err_no']) == 0:
             self.result = res["result"][0]
             self.complete()
-            # print '%s====>%s'%(self.id,self.result)
+            # logging.info('%s====>%s'%(self.id,self.result))
             return
 
         self.result = 'Baidu API error: %d %s' % (res['err_no'], res['err_msg'])
@@ -92,24 +93,26 @@ class BaiduNLP(object):
         self.auth_url = self.auth_url % (CONFIG.BAIDU_API_KEY, CONFIG.BAIDU_SECRET_KEY)
         self.client = tornado.httpclient.AsyncHTTPClient()
         self.access_token = ""
-        self.client.fetch(self.auth_url, self.cb_login)
+        # self.client.fetch(self.auth_url, self.cb_login)
+        self.init_token()
 
     def task_list_done(task_list, num):
-        print 'all_done..'
+        logging.info('all_done..')
         for i in xrange(num):
-            print '%s-->%s' % (i, task_list.get(i).result)
+            logging.info('%s-->%s' % (i, task_list.get(i).result))
 
-    def cb_login(self, res):
-        if res.error:
-            print 'error auth!!'
-        else:
-            info = json.loads(res.body)
+    def init_token(self):
+        res=urllib2.urlopen(self.auth_url)
+        try:
+            info = json.loads(res.read())
             self.access_token = info['access_token']
-            print 'baidu nlp token got!'
+            logging.info('baidu nlp token got!')
+        except (ValueError,  KeyError):
+            logging.error('error when get baidu api token!')
 
     def vop(self, file_list, callback, starts, lan):
         task_list = TaskGroup(file_list, lan, callback, starts)
         task_list.set_task_type(TaskBaidu, self.access_token)
         task_list.start()
-        print datetime.datetime.now()
+        logging.info(datetime.datetime.now())
 

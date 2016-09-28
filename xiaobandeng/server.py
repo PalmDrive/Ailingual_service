@@ -246,6 +246,7 @@ if __name__ == "__main__":
     config_dict = json.load(open(config_file))
     env_config.init_config(config_dict)
 
+    logging.info("current env is %s" % env)
     logging.info("Using config file %s" % config_file)
 
     # logging.info(env_config.CONFIG.__dict__)
