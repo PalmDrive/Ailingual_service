@@ -24,6 +24,7 @@ import oss
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu
+import wave
 
 from urlparse import urlparse
 from os.path import splitext
@@ -82,22 +83,18 @@ class TranscribeHandler(BaseHandler):
         f.close()
         logging.info('write file:%s' % file_name)
 
-    def uploaded_cb(self, task_list, starts):
-        lc = lean_cloud.LeanCloud()
-        end_at = 0
-
-        for i, task in task_list.task_dict.iteritems():
-            end_at = starts[i] + task.duration
+    def transcription_callback(self, task_list):
+        for task in task_list.tasks:
+            end_at = task.start_time + task.duration
             result = task.result
-            #duration = task.duration
             # print(
             #     u'transcript result of %s : %s, duration %f, end_at %f' %
             #     (task.file_name, result, duration, end_at))
             fragment_src = oss.media_fragment_url(self.media_id, task.file_name)
-            lc.add_fragment(i, starts[i], end_at, result, self.media_id, fragment_src)
-        
-        lc.add_media(self.media_name, self.media_id, self.addr, end_at, self.company_name)
-        lc.save()
+            self.cloud_db.set_fragment(task.order, task.start_time, end_at, self.media_id, fragment_src)
+            self.cloud_db.add_transcription_to_fragment(task.order, result, 'baidu')
+
+        self.cloud_db.save()
         self.write(json.dumps({
             "media_id": self.media_id
         }))
@@ -112,6 +109,13 @@ class TranscribeHandler(BaseHandler):
 
         target_file = convertor.convert_to_wav(ext, tmp_file)
 
+        wav = wave.open(target_file)
+        duration = wav.getnframes() / float(wav.getframerate())
+        wav.close()
+
+        self.cloud_db = lean_cloud.LeanCloud()
+        self.cloud_db.add_media(self.media_name, self.media_id, self.addr, duration, self.company_name)
+
         audio_dir, starts = vad.slice(0, target_file)
         if self.fragment_length_limit:
             starts = preprocessor.preprocess_clip_length(audio_dir, starts,
@@ -123,14 +127,13 @@ class TranscribeHandler(BaseHandler):
         file_list = [os.path.join(basedir, file) for file in sorted(files)]
 
         if self.upload_oss:
-            #oss.upload(self.media_id, file_list)
             tornado.ioloop.IOLoop.instance().add_callback(
                                     functools.partial(self.upload_oss_in_thread,
                                                       self.media_id, file_list
                                                       )
                                     )
         baidu_voice = baidu.BaiduNLP()
-        baidu_voice.vop(file_list, self.uploaded_cb, starts, language)
+        baidu_voice.batch_vop(file_list, self.transcription_callback, starts, language)
 
 
     @tornado.web.asynchronous
