@@ -153,9 +153,9 @@ class TranscribeHandler(BaseHandler):
         addr = urllib.quote(addr.encode('utf8'), ':/')
 
         media_name = self.get_argument('media_name').encode("utf8")
-        language = self.get_argument('lan', None)
+        language = self.get_argument('lan', 'zh')
         company_name = self.get_argument('company').encode("utf8")
-        fragment_length_limit = self.get_argument('max_fragment_length', None)
+        fragment_length_limit = self.get_argument('max_fragment_length', 10)
         if fragment_length_limit:
             fragment_length_limit = int(fragment_length_limit)
         upload_oss = self.get_argument('upload_oss', False)
