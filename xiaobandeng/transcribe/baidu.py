@@ -45,14 +45,14 @@ class TaskBaidu(TranscriptionTask):
     def get_request(self, url):
         http_header = {'Content-Type': 'audio/wav; rate=%d' % self.rate,
                        'Content-Length': str(len(self.body)),
-        }
+                       }
 
         return tornado.httpclient.HTTPRequest(url=url, method='POST',
                                               connect_timeout=120,
                                               request_timeout=600,
                                               headers=http_header,
                                               body=self.body
-        )
+                                              )
 
     def get_url(self, lan):
         return self.vop_url + '?cuid=' + '123442123233213' + '&token=' + \
@@ -93,6 +93,7 @@ class TaskBaidu(TranscriptionTask):
 class BaiduNLP(object):
     token_tuple = ()
     TOKEN_EXPIRE = 28
+
     def __init__(self):
         self.auth_url = "https://openapi.baidu.com/oauth/2.0/token?" \
                         "grant_type=client_credentials&client_id=%s&" \
