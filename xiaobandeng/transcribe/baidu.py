@@ -16,8 +16,10 @@ import logging
 class TaskBaidu(TranscriptionTask):
 
     vop_url = "http://vop.baidu.com/server_api"
-    lans = {"zh": ['zh', 'zh', 'zh', 'en', 'en', 'en'],
-            "en": ['en', 'en', 'en', 'zh', 'zh', 'zh']
+    lans = {"zh": ['zh', 'zh', 'zh', 'zh', 'zh', 'zh'],
+            "en": ['en', 'en', 'en', 'en', 'en', 'en'],
+            "zh,en": ['zh', 'zh', 'zh', 'en', 'en', 'en'],
+            "en,zh": ['en', 'en', 'en', 'zh', 'zh', 'zh'],
             }
 
     def __init__(self, token, file_name, start_time, order=None, lan='zh', completion_callback=None):
@@ -27,6 +29,9 @@ class TaskBaidu(TranscriptionTask):
         self._try = 0
         self.url = self.get_url(lan)
         self.client = self.get_client()
+
+    def source_name(self):
+        return 'baidu'
 
     def get_client(self):
         return tornado.httpclient.AsyncHTTPClient()
@@ -120,6 +125,10 @@ class BaiduNLP(object):
             task_list.add(task)
         task_list.start()
         logging.info(datetime.datetime.now())
+
+    def batch_vop_tasks(self, file_list, starts, lan):
+        for task_id, file_name in enumerate(file_list):
+            yield TaskBaidu(self.access_token, file_name, starts[task_id], task_id, lan)
 
     def vop(self, file_name, lan):
         def callback(task):

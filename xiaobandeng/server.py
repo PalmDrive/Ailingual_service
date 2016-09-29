@@ -24,6 +24,7 @@ import oss
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu
+from transcribe.task import TaskGroup, TranscriptionTask
 import wave
 
 from urlparse import urlparse
@@ -92,7 +93,7 @@ class TranscribeHandler(BaseHandler):
             #     (task.file_name, result, duration, end_at))
             fragment_src = oss.media_fragment_url(self.media_id, task.file_name)
             self.cloud_db.set_fragment(task.order, task.start_time, end_at, self.media_id, fragment_src)
-            self.cloud_db.add_transcription_to_fragment(task.order, result, 'baidu')
+            self.cloud_db.add_transcription_to_fragment(task.order, result, task.source_name())
 
         self.cloud_db.save()
         self.write(json.dumps({
@@ -126,14 +127,24 @@ class TranscribeHandler(BaseHandler):
         basedir, subdir, files = next(os.walk(audio_dir))
         file_list = [os.path.join(basedir, file) for file in sorted(files)]
 
+        # Upload media clips to Aliyun OSS
         if self.upload_oss:
             tornado.ioloop.IOLoop.instance().add_callback(
                                     functools.partial(self.upload_oss_in_thread,
                                                       self.media_id, file_list
                                                       )
                                     )
-        baidu_voice = baidu.BaiduNLP()
-        baidu_voice.batch_vop(file_list, self.transcription_callback, starts, language)
+
+        # create a task group to organize transcription tasks
+        task_group = TaskGroup(self.transcription_callback)
+
+        baidu_speech_service = baidu.BaiduNLP()
+        baidu_tasks = baidu_speech_service.batch_vop_tasks(file_list, starts, language)
+
+        for task in baidu_tasks:
+            task_group.add(task)
+
+        task_group.start()
 
 
     @tornado.web.asynchronous

@@ -79,3 +79,6 @@ class TranscriptionTask(Task):
         self.body = wav.readframes(wav.getnframes())
         self.duration = self.frames / float(self.rate)
         wav.close()
+
+    def source_name(self):
+        pass
