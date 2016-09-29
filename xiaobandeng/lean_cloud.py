@@ -12,21 +12,31 @@ class LeanCloud(object):
 
         leancloud.init(APP_ID, MASTER_KEY)
         self.Fragment = leancloud.Object.extend(CLASS_NAME_TRANSCRIPT)
-        self.fragments = []
+        self.fragments = {}
         self.fragment_query = self.Fragment.query
 
         self.Media = leancloud.Object.extend(CLASS_NAME_MEDIA)
 
-    def add_fragment(self, fragment_order, start_at, end_at, content,
+    def set_fragment(self, fragment_order, start_at, end_at,
             media_id, fragment_src):
+        if fragment_order in self.fragments:
+            return
         fragment = self.Fragment()
         fragment.set('media_id', media_id)
         fragment.set('fragment_order', fragment_order)
         fragment.set('start_at', start_at)
         fragment.set('end_at', end_at)
-        fragment.set('content', content)
         fragment.set('fragment_src', fragment_src)
-        self.fragments.append(fragment)
+        self.fragments[fragment_order] = fragment
+
+    def add_transcription_to_fragment(self, fragment_order, content, source_name):
+        fragment = self.fragments[fragment_order]
+        if fragment:
+            content_array = fragment.get(source_name)
+            if content_array is None:
+                content_array = []
+            content_array.append(content)
+            fragment.set(source_name, content_array)
 
     def add_media(self, media_name, media_id, media_url, duration, company_name):
         media = self.Media()
@@ -41,10 +51,10 @@ class LeanCloud(object):
 
     def save(self):
         try:
-            self.Fragment.save_all(self.fragments)
+            self.Fragment.save_all(self.fragments.values())
 
             relation = self.media.relation('containedTranscripts')
-            for fragment in self.fragments:
+            for fragment in self.fragments.values():
                 relation.add(fragment)
             self.media.save()
 

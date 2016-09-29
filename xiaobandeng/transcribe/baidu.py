@@ -4,7 +4,7 @@ import json
 import datetime
 import tornado.httpclient
 from env_config import CONFIG
-from task import Task, TaskGroup
+from task import TaskGroup, TranscriptionTask
 import urllib2
 import logging
 
@@ -13,20 +13,28 @@ import logging
 # #
 
 
-class TaskBaidu(Task):
+class TaskBaidu(TranscriptionTask):
 
     vop_url = "http://vop.baidu.com/server_api"
-    lans = {"zh": ['zh', 'zh', 'zh', 'en', 'en', 'en'],
-            "en": ['en', 'en', 'en', 'zh', 'zh', 'zh']
+    lans = {"zh": ['zh', 'zh', 'zh', 'zh', 'zh', 'zh'],
+            "en": ['en', 'en', 'en', 'en', 'en', 'en'],
+            "zh,en": ['zh', 'zh', 'zh', 'en', 'en', 'en'],
+            "en,zh": ['en', 'en', 'en', 'zh', 'zh', 'zh'],
             }
 
-    def __init__(self, token_list, tid, file_name, lan='zh'):
-        super(TaskBaidu, self).__init__(tid, file_name)
-        self.token = token_list[0]
+    def __init__(self, token, file_name, start_time, order=None, lan='zh', completion_callback=None):
+        super(TaskBaidu, self).__init__(file_name, start_time, order, lan, completion_callback)
+        self.token = token
         self.max_try = 6
         self._try = 0
-        self.lan = lan
         self.url = self.get_url(lan)
+        self.client = self.get_client()
+
+    def source_name(self):
+        return 'baidu'
+
+    def get_client(self):
+        return tornado.httpclient.AsyncHTTPClient()
 
     def start(self):
         logging.info('start baidu vop on %s' % self.file_name)
@@ -55,28 +63,28 @@ class TaskBaidu(Task):
         self._try += 1
         if self._try < self.max_try:
             self.fetch(self.get_url(self.lans[self.lan][self._try]))
-            logging.info('retry %s...%s' % (self.id, datetime.datetime.now()))
+            logging.info('retry %s %s...%s' % (self.__class__, self.order, datetime.datetime.now()))
         else:
             self.complete()
             self.result = ''
 
     def callback(self, res):
         if res.error:
-            logging.info('%s error:%s' % (self.id, res.error))
+            logging.info('%s %s error:%s' % (self.__class__, self.order, res.error))
             self.retry()
             return
 
         res = json.loads(res.body)
 
         if int(res['err_no']) in (3301, 3302):
-            # logging.info('%s baidu api error :%s'%(self.id,res['err_no']))
+            # logging.info('%s baidu api error :%s'%(self.order ,res['err_no']))
             self.retry()
             return
 
         if int(res['err_no']) == 0:
             self.result = res["result"][0]
             self.complete()
-            # logging.info('%s====>%s'%(self.id,self.result))
+            # logging.info('%s====>%s'%(self.order, self.result))
             return
 
         self.result = 'Baidu API error: %d %s' % (res['err_no'], res['err_msg'])
@@ -110,9 +118,21 @@ class BaiduNLP(object):
         except (ValueError,  KeyError):
             logging.error('error when get baidu api token!')
 
-    def vop(self, file_list, callback, starts, lan):
-        task_list = TaskGroup(file_list, lan, callback, starts)
-        task_list.set_task_type(TaskBaidu, self.access_token)
+    def batch_vop(self, file_list, callback, starts, lan):
+        task_list = TaskGroup(callback)
+        for task_id, file_name in enumerate(file_list):
+            task = TaskBaidu(self.access_token, file_name, starts[task_id], task_id, lan)
+            task_list.add(task)
         task_list.start()
         logging.info(datetime.datetime.now())
 
+    def batch_vop_tasks(self, file_list, starts, lan):
+        for task_id, file_name in enumerate(file_list):
+            yield TaskBaidu(self.access_token, file_name, starts[task_id], task_id, lan)
+
+    def vop(self, file_name, lan):
+        def callback(task):
+            print task.result
+
+        task = TaskBaidu(self.access_token, file_name, 0, None, lan, callback)
+        task.start()
