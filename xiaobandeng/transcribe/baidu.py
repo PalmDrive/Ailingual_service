@@ -21,6 +21,7 @@ class TaskBaidu(Task):
 
     def __init__(self, token_list, tid, file_name, lan='zh'):
         super(TaskBaidu, self).__init__(tid, file_name)
+        logging.info('task id:%s,file name:%s'%(tid, file_name))
         self.token = token_list[0]
         self.max_try = 6
         self._try = 0

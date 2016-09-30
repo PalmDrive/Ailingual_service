@@ -21,9 +21,11 @@ import datetime
 import env_config
 import functools
 import oss
+
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu
+from transcribe.punctuation import punc
 
 from urlparse import urlparse
 from os.path import splitext
@@ -86,16 +88,21 @@ class TranscribeHandler(BaseHandler):
         lc = lean_cloud.LeanCloud()
         end_at = 0
 
+        contents =[]
         for i, task in task_list.task_dict.iteritems():
             end_at = starts[i] + task.duration
             result = task.result
-            #duration = task.duration
-            # print(
-            #     u'transcript result of %s : %s, duration %f, end_at %f' %
-            #     (task.file_name, result, duration, end_at))
+#            duration = task.duration
+            contents.append(result)
+
+        #remove unnecessary punctuation
+        contents = map(lambda c, p: c+p, punc(contents))
+
+        for i in contents:
             fragment_src = oss.media_fragment_url(self.media_id, task.file_name)
             lc.add_fragment(i, starts[i], end_at, result, self.media_id, fragment_src)
-        
+
+
         lc.add_media(self.media_name, self.media_id, self.addr, end_at, self.company_name)
         lc.save()
         self.write(json.dumps({
@@ -123,7 +130,6 @@ class TranscribeHandler(BaseHandler):
         file_list = [os.path.join(basedir, file) for file in sorted(files)]
 
         if self.upload_oss:
-            #oss.upload(self.media_id, file_list)
             tornado.ioloop.IOLoop.instance().add_callback(
                                     functools.partial(self.upload_oss_in_thread,
                                                       self.media_id, file_list
@@ -158,11 +164,10 @@ class TranscribeHandler(BaseHandler):
         self.fragment_length_limit = fragment_length_limit
         self.upload_oss = upload_oss
 
-        # try:
         ext = get_ext(addr)
         tmp_file = tempfile.NamedTemporaryFile().name + ext
-        # urllib.urlretrieve(addr, tmp_file)
         client = tornado.httpclient.AsyncHTTPClient()
+        # call self.ondownload after get the request file
         client.fetch(addr,
                      callback=functools.partial(self.on_donwload,
                                                 tmp_file, ext, language),
