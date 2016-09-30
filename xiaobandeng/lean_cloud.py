@@ -32,11 +32,12 @@ class LeanCloud(object):
     def add_transcription_to_fragment(self, fragment_order, content, source_name):
         fragment = self.fragments[fragment_order]
         if fragment:
-            content_array = fragment.get(source_name)
+            key = 'content_' + source_name
+            content_array = fragment.get(key)
             if content_array is None:
                 content_array = []
             content_array.append(content)
-            fragment.set(source_name, content_array)
+            fragment.set(key, content_array)
 
     def add_media(self, media_name, media_id, media_url, duration, company_name):
         media = self.Media()
