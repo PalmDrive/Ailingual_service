@@ -20,7 +20,6 @@ class TaskBaidu(TranscriptionTask):
             "zh,en": ['zh', 'zh', 'zh', 'en', 'en', 'en'],
             "en,zh": ['en', 'en', 'en', 'zh', 'zh', 'zh'],
             }
-
     def __init__(self, token, file_name, start_time, order=None, lan='zh', completion_callback=None):
         super(TaskBaidu, self).__init__(file_name, start_time, order, lan, completion_callback)
         self.token = token
