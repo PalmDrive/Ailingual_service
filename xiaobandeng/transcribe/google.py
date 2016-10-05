@@ -3,14 +3,27 @@ from __future__ import absolute_import
 
 import argparse
 import base64
-import json
+
+import requests
 from concurrent.futures import ThreadPoolExecutor
 
 from googleapiclient import discovery
-import httplib2
 from oauth2client.client import GoogleCredentials
-from task import TranscriptionTask
+from .task import TranscriptionTask
 from tornado import concurrent, ioloop
+
+class CustomHttp(object):
+  def __init__(self, timeout=None):
+    self.timeout = timeout
+
+  def request(self, uri, method='GET', body=None, headers=None,
+              redirections=None, connection_type=None):
+    if connection_type is not None:
+      uri = '%s://%s' % (connection_type, uri)
+    resp = requests.request(method=method, url=uri, data=body, headers=headers,
+                            timeout=self.timeout)
+    resp.status = resp.status_code
+    return resp, resp.content
 
 DISCOVERY_URL = ('https://{api}.googleapis.com/$discovery/rest?'
                  'version={apiVersion}')
@@ -72,7 +85,7 @@ class GoogleASR(object):
         self.auth_url = 'https://www.googleapis.com/auth/cloud-platform'
         credentials = GoogleCredentials.get_application_default().create_scoped(
             [self.auth_url])
-        http = httplib2.Http()
+        http = CustomHttp()
         credentials.authorize(http)
         self.service = discovery.build(
             'speech', 'v1beta1', http=http, discoveryServiceUrl=DISCOVERY_URL)
