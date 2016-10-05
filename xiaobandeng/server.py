@@ -214,7 +214,7 @@ class SrtHandler(BaseHandler):
                    "%d" % (time_tuple[-1] / 1000)
 
         if media_list:
-            filename = media_list[0].get("media_name")
+            filename = lc.get_media(media_id).get("media_name")
             self.set_header("Content-Type", "application/octet-stream")
             self.set_header("Content-Disposition",
                             "attachment; filename=" + filename + ".srt")

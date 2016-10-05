@@ -16,6 +16,7 @@ class LeanCloud(object):
         self.fragment_query = self.Fragment.query
 
         self.Media = leancloud.Object.extend(CLASS_NAME_MEDIA)
+        self.media_query = self.Media.query
 
     def set_fragment(self, fragment_order, start_at, end_at,
             media_id, fragment_src):
@@ -69,3 +70,7 @@ class LeanCloud(object):
         query.add_ascending(order_by)
         query.limit(1000)
         return query.find()
+
+    def get_media(self,media_id):
+        query = self.media_query.equal_to('media_id',media_id)
+        return query.find()[0]
