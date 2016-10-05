@@ -82,7 +82,7 @@ class TaskBaidu(TranscriptionTask):
             return
 
         if int(res['err_no']) == 0:
-            self.result = res["result"][0]
+            self.result = res["result"]
             self.complete()
             # logging.info('%s====>%s'%(self.order, self.result))
             return

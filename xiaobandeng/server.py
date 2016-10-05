@@ -88,13 +88,14 @@ class TranscribeHandler(BaseHandler):
     def transcription_callback(self, task_list):
         for task in task_list.tasks:
             end_at = task.start_time + task.duration
-            result = task.result
+            results = task.result
             # print(
             #     u'transcript result of %s : %s, duration %f, end_at %f' %
             #     (task.file_name, result, duration, end_at))
             fragment_src = oss.media_fragment_url(self.media_id, task.file_name)
             self.cloud_db.set_fragment(task.order, task.start_time, end_at, self.media_id, fragment_src)
-            self.cloud_db.add_transcription_to_fragment(task.order, result, task.source_name())
+            for result in results:
+                self.cloud_db.add_transcription_to_fragment(task.order, result, task.source_name())
 
         self.cloud_db.save()
         self.write(json.dumps({

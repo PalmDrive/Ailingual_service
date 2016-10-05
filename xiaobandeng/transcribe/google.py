@@ -74,8 +74,14 @@ class TaskGoogle(TranscriptionTask):
             self.result = 'Google API error: %s' % f.exception()
 
         res = f.result()
-        print "dddddddddddddddd", res
-        # TODO response parsing
+        print "google speech API result - ", res
+        results = []
+        if 'results' in res:
+            result_arr = res['results']
+            for dict in result_arr:
+                al = dict['alternatives'][0]
+                results.append(al['transcript'])
+        self.result = results
         self.complete()
 
 class GoogleASR(object):
