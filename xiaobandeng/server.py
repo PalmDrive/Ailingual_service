@@ -23,9 +23,10 @@ import functools
 import oss
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
-from transcribe import baidu
+from transcribe import baidu, google
 from transcribe.task import TaskGroup, TranscriptionTask
 import wave
+import multiprocessing
 
 from urlparse import urlparse
 from os.path import splitext
@@ -87,13 +88,14 @@ class TranscribeHandler(BaseHandler):
     def transcription_callback(self, task_list):
         for task in task_list.tasks:
             end_at = task.start_time + task.duration
-            result = task.result
+            results = task.result
             # print(
             #     u'transcript result of %s : %s, duration %f, end_at %f' %
             #     (task.file_name, result, duration, end_at))
             fragment_src = oss.media_fragment_url(self.media_id, task.file_name)
             self.cloud_db.set_fragment(task.order, task.start_time, end_at, self.media_id, fragment_src)
-            self.cloud_db.add_transcription_to_fragment(task.order, result, task.source_name())
+            for result in results:
+                self.cloud_db.add_transcription_to_fragment(task.order, result, task.source_name())
 
         self.cloud_db.save()
         self.write(json.dumps({
@@ -138,11 +140,19 @@ class TranscribeHandler(BaseHandler):
         # create a task group to organize transcription tasks
         task_group = TaskGroup(self.transcription_callback)
 
-        baidu_speech_service = baidu.BaiduNLP()
-        baidu_tasks = baidu_speech_service.batch_vop_tasks(file_list, starts, language)
+        if 'baidu' in self.service_providers:
+            baidu_speech_service = baidu.BaiduNLP()
+            baidu_tasks = baidu_speech_service.batch_vop_tasks(file_list, starts, language)
+            for task in baidu_tasks:
+                task_group.add(task)
 
-        for task in baidu_tasks:
-            task_group.add(task)
+        num_workers = multiprocessing.cpu_count()
+        pool = multiprocessing.Pool(num_workers)
+        if 'google' in self.service_providers:
+            google_speech_servce = google.GoogleASR(pool)
+            google_tasks = google_speech_servce.batch_vop_tasks(file_list, starts, language)
+            for task in google_tasks:
+                task_group.add(task)
 
         task_group.start()
 
@@ -163,6 +173,7 @@ class TranscribeHandler(BaseHandler):
             upload_oss = True
         else:
             upload_oss = False
+        service_providers = self.get_argument('service_providers', 'baidu').split(',')
 
         self.addr = addr
         self.media_name = media_name
@@ -171,6 +182,7 @@ class TranscribeHandler(BaseHandler):
         self.company_name = company_name
         self.fragment_length_limit = fragment_length_limit
         self.upload_oss = upload_oss
+        self.service_providers = service_providers
 
         # try:
         ext = get_ext(addr)

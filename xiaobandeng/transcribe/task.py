@@ -27,9 +27,12 @@ class TaskGroup(object):
         print 'task group completed @ %s' % datetime.datetime.now()
 
     def start(self):
-        for t in self.tasks:
-            t.start()
-        print 'task group started @ %s' % datetime.datetime.now()
+        if len(self.tasks) == 0:
+            self.complete()
+        else:
+            for t in self.tasks:
+                t.start()
+            print 'task group started @ %s' % datetime.datetime.now()
 
 
 class Task(object):

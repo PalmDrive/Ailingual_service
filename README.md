@@ -14,6 +14,10 @@ pip install -r requirement.txt
 
 1)python xiaobandeng/server.py
 2)curl 'localhost:8888/transcribe?media_name=name&addr=audio_file_path&lan=zh&company=company_name&upload_oss=true&max_fragment_length=10'
+
+Google api setup:
+
+export GOOGLE_APPLICATION_CREDENTIALS="path/to/google_credential.json"
 ```
 
 # API Documentation
