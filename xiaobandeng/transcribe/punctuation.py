@@ -1,50 +1,57 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Sep 21 14:34:06 2016
-@author: Administrator
-"""
-
 import re
 import os
 
 # content should be iterable
 def punc(content):
     f = []
-    phraseone = re.compile('(嗯|啊|哈|哦对|噢对|唉|哎|哦|噢|诶|喂)')
-    phrasetwo = re.compile('^(好的|好|对)+$')
 
-    start = re.compile(r'^(所以|因此|然后|但是|当|那|如果|同时|与此同时|'
-                       '目前来说|接下来|也就是说|其实)')
-    endone = re.compile('(吗|对不对|是不是|行不行)$')
-    endtwo = re.compile('^.*(怎么|什么|多少|哪|谁).*呢$')
+    phraseone = re.compile(u'(嗯|啊|哈|哦对|噢对|唉|哎|哦|噢|诶|喂)')
+    phrasetwo = re.compile(u'^(好的|好|对)+$')
 
-    for sen in content:
-        s = re.sub(phraseone, '', sen)
-        s = re.sub(phrasetwo, '', s)
+    start = re.compile(ur'^(所以|因此|然后|但是|当|那|如果|同时|与此同时|'
+                       ur'目前来说|接下来|也就是说|其实)')
+    endone = re.compile(u'(吗|对不对|是不是|行不行)$')
+    endtwo = re.compile(u'^.*(怎么|什么|多少|哪|谁).*呢$')
+
+    for index, sen in enumerate(content):
+
+        s = re.sub(phraseone, u'', sen)
+        s = re.sub(phrasetwo, u'', s)
+        f.append([s, u'，'])
+
         if s:
-            f.append([s, '，'])
-
-            now_pos = len(f) - 1 if (len(f) - 1) > 0  else 0
-            last_pos = now_pos - 1
+            cur_index = len(f) - 1 if (len(f) - 1) > 0  else 0
+            prev_index = cur_index - 1
 
             if re.search(start, s):
-                if last_pos + 1:
-                    if f[last_pos][1] != '？':
-                        f[last_pos][1] = '。'
+                if prev_index + 1:
+                    if f[prev_index][1] != u'？':
+                        f[prev_index][1] = u'。'
 
-            if last_pos + 1 and f[last_pos][1] in '，。':
-                f[last_pos][0] = f[last_pos][0].replace('呢', '')
+            if f[cur_index][1] in u'，。':
+                f[cur_index][0] = f[cur_index][0].replace(u'呢', '')
+
+            # if cur_index and f[prev_index][1] in '，。':
+            # f[prev_index][0] = f[prev_index][0].replace('呢', '')
 
             if re.search(endone, s) or re.search(endtwo, s):
-                f[now_pos][1] = '？'
+                f[cur_index][1] = u'？'
 
-    if f[-1][1] in '，':
-        f[-1][1] = '。'
+    if f[index][1] in u'，':
+        f[index][1] = u'。'
 
     return f
 
-# def delword(content):
-# word=re.compile()
+
+def punc_task_group(task_group):
+    punctuations = u',，?？.。'
+    content_list = [task.result[0].strip(punctuations) for task in task_group.tasks]
+    punc_dict = punc(content_list)
+    for index, result in enumerate(punc_dict):
+        task_group.tasks[index].result = [u''.join(result)]
+
+
 if __name__ == '__main__':
     import sys
 
@@ -69,16 +76,14 @@ if __name__ == '__main__':
     else:
         import codecs
 
-        fr = codecs.open(raw_file, 'r',encoding='utf-8')
-        fw = codecs.open(dst_file, 'w+',encoding='utf-8')
-        text=fr.read()
+        fr = codecs.open(raw_file, 'r', encoding='utf-8')
+        fw = codecs.open(dst_file, 'w+', encoding='utf-8')
+        text = fr.read()
         content = text.split('，')
 
     for k, v in punc(content):
         fw.write(k + v)
-        os.write(1,'%s ---->%s\n' % (k, v))
+        os.write(1, '%s ---->%s\n' % (k, v))
 
     fr.close()
     fw.close()
-
-
