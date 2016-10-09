@@ -24,6 +24,8 @@ import oss
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu, google
+from transcribe.punctuation import punc_task_group
+
 from transcribe.task import TaskGroup, TranscriptionTask
 import wave
 import multiprocessing
@@ -42,6 +44,7 @@ def get_ext(url):
 
 
 class BaseHandler(tornado.web.RequestHandler):
+
     def prepare(self):
         # set access control allow_origin
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -63,6 +66,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class TestHandler(BaseHandler):
+
     def get(self):
         self.write("test ok")
 
@@ -85,8 +89,9 @@ class TranscribeHandler(BaseHandler):
         f.close()
         logging.info('write file:%s' % file_name)
 
-    def transcription_callback(self, task_list):
-        for task in task_list.tasks:
+    def transcription_callback(self, task_group):
+        punc_task_group(task_group)
+        for task in task_group.tasks:
             end_at = task.start_time + task.duration
             results = task.result
             # print(
@@ -197,6 +202,7 @@ class TranscribeHandler(BaseHandler):
 
 
 class SrtHandler(BaseHandler):
+
     def get(self, media_id):
         lc = lean_cloud.LeanCloud()
         media_list = lc.get_list(media_id=media_id)
