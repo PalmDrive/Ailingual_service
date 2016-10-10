@@ -27,7 +27,7 @@ Transcribe API:
 
     transcribe
     
-    Example: http://localhost:8888/transcribe?media_name=name&addr=audio_file_path&lan=zh&company=company_name&upload_oss=true&max_fragment_length=10
+    Example: http://localhost:8888/transcribe?media_name=name&addr=audio_file_path&lan=zh&company=company_name&upload_oss=true&max_fragment_length=10&requirement=requirement_string
 
 @param (required) String: media_name 
  
@@ -53,6 +53,10 @@ Transcribe API:
 @param (optional) Integer: max_fragment_length
     The maximum length in seconds of each fragment sent to transcription service 
     Default is 10.
+    
+@param (optional) String: requirement
+    The requirement for the service to meet on this media.
+    Default is '字幕/纯文本/关键词/摘要'.
 
 ```
 

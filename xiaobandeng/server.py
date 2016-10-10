@@ -119,7 +119,7 @@ class TranscribeHandler(BaseHandler):
         wav.close()
 
         self.cloud_db = lean_cloud.LeanCloud()
-        self.cloud_db.add_media(self.media_name, self.media_id, self.addr, duration, self.company_name)
+        self.cloud_db.add_media(self.media_name, self.media_id, self.addr, duration, self.company_name, self.requirement)
 
         audio_dir, starts = vad.slice(0, target_file)
         if self.fragment_length_limit:
@@ -171,6 +171,7 @@ class TranscribeHandler(BaseHandler):
         if fragment_length_limit:
             fragment_length_limit = int(fragment_length_limit)
         upload_oss = self.get_argument('upload_oss', False)
+        requirement = self.get_argument('requirement', u'字幕/纯文本/关键词/摘要')
         if upload_oss == 'true' or upload_oss == 'True':
             upload_oss = True
         else:
@@ -185,6 +186,7 @@ class TranscribeHandler(BaseHandler):
         self.fragment_length_limit = fragment_length_limit
         self.upload_oss = upload_oss
         self.service_providers = service_providers
+        self.requirement = requirement
 
         ext = get_ext(addr)
         tmp_file = tempfile.NamedTemporaryFile().name + ext
