@@ -53,7 +53,7 @@ class Task(object):
         self._task_group = task_group
 
     def complete(self):
-        logging.info('task completed: %s' % self.result)
+        logging.info('task %s completed,result: %s' % (self.order, self.result))
         self.done = True
         if self.completion_callback:
             self.completion_callback(self)

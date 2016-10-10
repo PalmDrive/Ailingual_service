@@ -27,12 +27,13 @@ import multiprocessing
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu, google
+from transcribe.punctuation import punc_task_group
+
 from transcribe.task import TaskGroup, TranscriptionTask
 
 from urlparse import urlparse
 from os.path import splitext
 
-# import re, urlparse
 
 
 def get_ext(url):
@@ -43,6 +44,7 @@ def get_ext(url):
 
 
 class BaseHandler(tornado.web.RequestHandler):
+
     def prepare(self):
         # set access control allow_origin
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -64,6 +66,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class TestHandler(BaseHandler):
+
     def get(self):
         self.write("test ok")
 
@@ -86,17 +89,21 @@ class TranscribeHandler(BaseHandler):
         f.close()
         logging.info('write file:%s' % file_name)
 
-    def transcription_callback(self, task_list):
-        for task in task_list.tasks:
+    def transcription_callback(self, task_group):
+        #warn: this method will change task.result
+        punc_task_group(task_group)
+
+        for task in task_group.tasks:
             end_at = task.start_time + task.duration
-            results = task.result
+            # results = task.result
             # print(
             #     u'transcript result of %s : %s, duration %f, end_at %f' %
             #     (task.file_name, result, duration, end_at))
             fragment_src = oss.media_fragment_url(self.media_id, task.file_name)
             self.cloud_db.set_fragment(task.order, task.start_time, end_at, self.media_id, fragment_src)
-            for result in results:
-                self.cloud_db.add_transcription_to_fragment(task.order, result, task.source_name())
+            # for result in results:
+            print 'task.result:%s'%task.result
+            self.cloud_db.add_transcription_to_fragment(task.order, task.result, task.source_name())
 
         self.cloud_db.save()
 
@@ -109,7 +116,7 @@ class TranscribeHandler(BaseHandler):
         if response.error:
             self.write('download error:%s'%str(response.code))
             self.finish()
-
+        logging.info('downloaded,saved to: %s'% tmp_file)
         self.write_file(response, tmp_file)
 
         target_file = convertor.convert_to_wav(ext, tmp_file)
@@ -192,6 +199,7 @@ class TranscribeHandler(BaseHandler):
         tmp_file = tempfile.NamedTemporaryFile().name + ext
         client = tornado.httpclient.AsyncHTTPClient()
         # call self.ondownload after get the request file
+        logging.info("downloading: %s"%addr)
         client.fetch(addr,
                      callback=functools.partial(self.on_donwload,
                                                 tmp_file, ext, language),
@@ -199,7 +207,9 @@ class TranscribeHandler(BaseHandler):
                      request_timeout=600)
 
 
+
 class SrtHandler(BaseHandler):
+
     def get(self, media_id):
         lc = lean_cloud.LeanCloud()
         media_list = lc.get_list(media_id=media_id)
