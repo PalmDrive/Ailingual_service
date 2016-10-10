@@ -2,7 +2,6 @@
 import re
 import os
 
-# content should be iterable
 def punc(content):
     f = []
 
