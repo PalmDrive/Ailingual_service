@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 import os
-import tornado.gen
 import tornado.httpclient
 import tornado.ioloop
 import tornado.web
@@ -95,14 +94,12 @@ class TranscribeHandler(BaseHandler):
 
         for task in task_group.tasks:
             end_at = task.start_time + task.duration
-            # results = task.result
-            # print(
-            #     u'transcript result of %s : %s, duration %f, end_at %f' %
-            #     (task.file_name, result, duration, end_at))
+            logging.info(
+                u'transcript result of %s : %s, duration %f, end_at %f' %
+                (task.file_name, task.result, task.duration, end_at))
             fragment_src = oss.media_fragment_url(self.media_id, task.file_name)
             self.cloud_db.set_fragment(task.order, task.start_time, end_at, self.media_id, fragment_src)
             # for result in results:
-            print 'task.result:%s'%task.result
             self.cloud_db.add_transcription_to_fragment(task.order, task.result, task.source_name())
 
         self.cloud_db.save()
@@ -268,6 +265,17 @@ if __name__ == "__main__":
     import env_config
     from tornado.options import define, options
     from tornado.netutil import bind_unix_socket
+
+    # when python writes unicode to stdout,it will encode unicode string
+    # using  sys.getdefaultencoding()
+    # on a linux ,it defaults to ascii,so got an error like this
+    # "UnicodeEncodeError: 'ascii' codec can't encode character  u'\uxxxx'
+    # in position 183: ordinal not in range(128)"
+    #use sys.getdefaultencoding() to get current val
+
+    import sys
+    reload(sys)
+    sys.setdefaultencoding('utf-8')
 
     define("port", default=8888, help="run on this port", type=int)
     define("env", default="develop", help="develop production staging")
