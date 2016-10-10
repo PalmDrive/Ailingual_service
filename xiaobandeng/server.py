@@ -21,12 +21,13 @@ import datetime
 import env_config
 import functools
 import oss
+import wave
+import multiprocessing
+
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu, google
 from transcribe.task import TaskGroup, TranscriptionTask
-import wave
-import multiprocessing
 
 from urlparse import urlparse
 from os.path import splitext
@@ -98,6 +99,7 @@ class TranscribeHandler(BaseHandler):
                 self.cloud_db.add_transcription_to_fragment(task.order, result, task.source_name())
 
         self.cloud_db.save()
+
         self.write(json.dumps({
             "media_id": self.media_id
         }))
@@ -184,11 +186,10 @@ class TranscribeHandler(BaseHandler):
         self.upload_oss = upload_oss
         self.service_providers = service_providers
 
-        # try:
         ext = get_ext(addr)
         tmp_file = tempfile.NamedTemporaryFile().name + ext
-        # urllib.urlretrieve(addr, tmp_file)
         client = tornado.httpclient.AsyncHTTPClient()
+        # call self.ondownload after get the request file
         client.fetch(addr,
                      callback=functools.partial(self.on_donwload,
                                                 tmp_file, ext, language),
@@ -272,8 +273,8 @@ if __name__ == "__main__":
     config_dict = json.load(open(config_file))
     env_config.init_config(config_dict)
 
-    logging.info("current env is %s" % env)
-    logging.info("Using config file %s" % config_file)
+    logging.info("------current environment is \"%s\","
+                 "using config file: \"%s\"" % (env, config_file))
 
     # logging.info(env_config.CONFIG.__dict__)
 
