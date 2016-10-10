@@ -4,7 +4,6 @@ import os
 
 def punc(content):
     f = []
-
     phraseone = re.compile(u'(嗯|啊|哈|哦对|噢对|唉|哎|哦|噢|诶|喂)')
     phrasetwo = re.compile(u'^(好的|好|对)+$')
 
