@@ -38,9 +38,6 @@ class LeanCloud(object):
             if content_array is None:
                 content_array = []
             content_array.append(content)
-            print '-----'
-            print content_array
-            print '-----'
             fragment.set(key, content_array)
 
     def add_media(self, media_name, media_id, media_url, duration, company_name, requirement):
