@@ -40,7 +40,7 @@ class LeanCloud(object):
             content_array.append(content)
             fragment.set(key, content_array)
 
-    def add_media(self, media_name, media_id, media_url, duration, company_name):
+    def add_media(self, media_name, media_id, media_url, duration, company_name, requirement):
         media = self.Media()
         media.set('media_id', media_id)
         media.set('media_name', media_name)
@@ -49,6 +49,7 @@ class LeanCloud(object):
         media.set('company_name', company_name)
         media.set('transcribed_at', datetime.now())
         media.set('status', 'Auto Transcribed')
+        media.set('requirement', requirement)
         self.media = media
 
     def save(self):
