@@ -3,7 +3,7 @@ import re
 import os
 
 def punc(content):
-    f = []
+    result = []
     phraseone = re.compile(u'(嗯|啊|哈|哦对|噢对|唉|哎|哦|噢|诶|喂)')
     phrasetwo = re.compile(u'^(好的|好|对)+$')
 
@@ -16,30 +16,30 @@ def punc(content):
 
         s = re.sub(phraseone, u'', sen)
         s = re.sub(phrasetwo, u'', s)
-        f.append([s, u'，'])
+        result.append([s, u'，'])
 
         if s:
-            cur_index = len(f) - 1 if (len(f) - 1) > 0  else 0
+            cur_index = len(result) - 1 if (len(result) - 1) > 0  else 0
             prev_index = cur_index - 1
 
             if re.search(start, s):
                 if prev_index + 1:
-                    if f[prev_index][1] != u'？':
-                        f[prev_index][1] = u'。'
+                    if result[prev_index][1] != u'？':
+                        result[prev_index][1] = u'。'
 
-            if f[cur_index][1] in u'，。':
-                f[cur_index][0] = f[cur_index][0].replace(u'呢', '')
+            if result[cur_index][1] in u'，。':
+                result[cur_index][0] = result[cur_index][0].replace(u'呢', '')
 
             # if cur_index and f[prev_index][1] in '，。':
             # f[prev_index][0] = f[prev_index][0].replace('呢', '')
 
             if re.search(endone, s) or re.search(endtwo, s):
-                f[cur_index][1] = u'？'
+                result[cur_index][1] = u'？'
 
-    if f[index][1] in u'，':
-        f[index][1] = u'。'
+    if result[index][1] in u'，':
+        result[index][1] = u'。'
 
-    return f
+    return result
 
 
 def punc_task_group(task_group):
