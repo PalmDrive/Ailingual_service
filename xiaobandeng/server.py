@@ -28,6 +28,7 @@ from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu, google
 from transcribe.task import TaskGroup, TranscriptionTask
+
 from urlparse import urlparse
 from os.path import splitext
 
@@ -98,6 +99,7 @@ class TranscribeHandler(BaseHandler):
                 self.cloud_db.add_transcription_to_fragment(task.order, result, task.source_name())
 
         self.cloud_db.save()
+
         self.write(json.dumps({
             "media_id": self.media_id
         }))
