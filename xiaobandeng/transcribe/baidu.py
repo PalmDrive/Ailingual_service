@@ -16,16 +16,14 @@ import logging
 class TaskBaidu(TranscriptionTask):
     vop_url = "http://vop.baidu.com/server_api"
     lans = {"zh": ['zh', 'zh', 'zh', 'zh', 'zh', 'zh'],
-            "en": ['en', 'en', 'en', 'en', 'en', 'en'],
-            "zh,en": ['zh', 'zh', 'zh', 'en', 'en', 'en'],
-            "en,zh": ['en', 'en', 'en', 'zh', 'zh', 'zh'],
+            "en": ['en', 'en', 'en', 'en', 'en', 'en']
             }
     def __init__(self, token, file_name, start_time, order=None, lan='zh', completion_callback=None):
         super(TaskBaidu, self).__init__(file_name, start_time, order, lan, completion_callback)
         self.token = token
         self.max_try = 6
         self._try = 0
-        self.url = self.get_url(lan)
+        self.url = self.get_url(self.lans[self.lan][self._try])
         self.client = self.get_client()
 
     def source_name(self):
@@ -133,7 +131,8 @@ class BaiduNLP(object):
 
     def batch_vop_tasks(self, file_list, starts, lan):
         for task_id, file_name in enumerate(file_list):
-            yield TaskBaidu(self.access_token, file_name, starts[task_id], task_id, lan)
+            for l in lan.split(','):
+                yield TaskBaidu(self.access_token, file_name, starts[task_id], task_id, l)
     #
     # def vop(self, file_name, lan):
     #     def callback(task):

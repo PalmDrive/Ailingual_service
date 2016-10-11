@@ -38,12 +38,11 @@ Transcribe API:
     The url to the media
 
 @param (optional) String: lan
-    The language used to transcribe this media
+    The languages used to transcribe this media
     Options: 
         zh  -  Only use Chinese for transcription. Recommended for pure audio in Chinese. 
         en  -  Only use English for transcription. Recommended for pure audio in English.
-        zh,en  -  Use Chinese for transcription first. If not recognized, then use English. Recommended for audio in most Chinese and little English.  
-        en,zh  -  Use English for transcription first. If not recognized, then use Chinese. Recommended for audio in most English and little Chinese.
+        zh,en  -  Use Chinese and English for transcription.  
     Default is zh.
 
 @param (optional) Boolean: upload_oss
