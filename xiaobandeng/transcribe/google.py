@@ -30,7 +30,7 @@ DISCOVERY_URL = ('https://{api}.googleapis.com/$discovery/rest?'
 
 class TaskGoogle(TranscriptionTask):
 
-    def __init__(self, service, executor, file_name, start_time, order=None, lan='zh', completion_callback=None):
+    def __init__(self, service, executor, file_name, start_time, order=None, lan='cmn-Hans-CN', completion_callback=None):
         super(TaskGoogle, self).__init__(file_name, start_time, order, lan, completion_callback)
         self.service = service
         self.executor = executor
@@ -45,7 +45,7 @@ class TaskGoogle(TranscriptionTask):
             # Base64 encode the binary audio file for inclusion in the JSON
             # request.
             speech_content = base64.b64encode(speech.read())
-        f = self.get_request(speech_content)
+        f = self.get_request(speech_content, self.lan)
         f.add_done_callback(self.callback)
         return f
 
@@ -97,13 +97,17 @@ class GoogleASR(object):
             'speech', 'v1beta1', http=http, discoveryServiceUrl=DISCOVERY_URL)
 
         self.executor = ThreadPoolExecutor(max_workers=4)
+        self.lanCodes = {'zh' : 'cmn-Hans-CN',
+                         'en' : 'en-US'}
+
 
     def vop(self, file_name, lan):
         TaskGoogle(self.service, self.executor, file_name, 0, 0, lan).start()
 
     def batch_vop_tasks(self, file_list, starts, lan):
         for task_id, file_name in enumerate(file_list):
-            yield TaskGoogle(self.service, self.executor, file_name, starts[task_id], task_id, lan)
+            for l in lan.split(','):
+                yield TaskGoogle(self.service, self.executor, file_name, starts[task_id], task_id, self.lanCodes[l])
 
 def main(speech_file):
     """Transcribe the given audio file.
