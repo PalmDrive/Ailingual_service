@@ -27,7 +27,7 @@ Transcribe API:
 
     transcribe
     
-    Example: http://localhost:8888/transcribe?media_name=name&addr=audio_file_path&lan=zh&company=company_name&upload_oss=true&max_fragment_length=10&requirement=requirement_string
+    Example: http://localhost:8888/transcribe?media_name=name&addr=audio_file_path&lan=zh&company=company_name&upload_oss=true&max_fragment_length=10&requirement=requirement_string&service_providers=providers
 
 @param (required) String: media_name 
  
@@ -56,6 +56,12 @@ Transcribe API:
 @param (optional) String: requirement
     The requirement for the service to meet on this media.
     Default is '字幕/纯文本/关键词/摘要'.
+    
+@param (optional) String: service_providers
+    The comma(',') separated names of service providers for this transcription task.
+    Supported:
+        baidu,google
+    Default is 'baidu'.
 
 ```
 
