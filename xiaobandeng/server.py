@@ -27,13 +27,9 @@ import re
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu, google
-from transcribe.punctuation import punc_task_group
-
-from transcribe.task import TaskGroup, TranscriptionTask
-
+from transcribe.task import TaskGroup
 from urlparse import urlparse
 from os.path import splitext
-
 
 
 def get_ext(url):
@@ -76,10 +72,11 @@ class TranscribeHandler(BaseHandler):
     executor = ThreadPoolExecutor(5)
 
     @run_on_executor
-    def upload_oss_in_thread(self,media_id,file_list):
-        #since oss api uses requests lib,the socket can not be selected by epoll
-        #now use a thread to make it run concurrently.
-        #but
+    def upload_oss_in_thread(self, media_id, file_list):
+        # since oss api uses requests lib,the socket can not be
+        # selected by epoll
+        # now use a thread to make it run concurrently.
+        # but
         oss.upload(media_id, file_list)
         print '-----upload oss over-------'
 
@@ -102,23 +99,35 @@ class TranscribeHandler(BaseHandler):
             logging.info(
                 u'transcript result of %s : %s, duration %f, end_at %f' %
                 (task.file_name, task.result, task.duration, end_at))
-            fragment_src = oss.media_fragment_url(self.media_id, task.file_name)
-            self.cloud_db.set_fragment(task.order, task.start_time, end_at, self.media_id, fragment_src)
+            fragment_src = oss.media_fragment_url(
+                    self.media_id, task.file_name
+            )
+            self.cloud_db.set_fragment(
+                task.order,
+                task.start_time,
+                end_at,
+                self.media_id,
+                fragment_src)
             for result in results:
-                self.cloud_db.add_transcription_to_fragment(task.order, result, task.source_name())
+                self.cloud_db.add_transcription_to_fragment(
+                        task.order, result, task.source_name())
 
         self.cloud_db.save()
 
-        self.write(json.dumps({
-            "media_id": self.media_id
-        }))
-        self.finish()
+        if not self.async:
+            self.write(json.dumps({
+                "media_id": self.media_id
+            }))
+            self.finish()
+        elif self.client_callback_url:
+            # TODO send client http request here
+            pass
 
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
-            self.write('download error:%s'%str(response.code))
+            self.write('download error:%s' % str(response.code))
             self.finish()
-        logging.info('downloaded,saved to: %s'% tmp_file)
+        logging.info('downloaded,saved to: %s' % tmp_file)
         self.write_file(response, tmp_file)
 
         target_file = convertor.convert_to_wav(ext, tmp_file)
@@ -128,12 +137,18 @@ class TranscribeHandler(BaseHandler):
         wav.close()
 
         self.cloud_db = lean_cloud.LeanCloud()
-        self.cloud_db.add_media(self.media_name, self.media_id, self.addr, duration, self.company_name, self.requirement)
+        self.cloud_db.add_media(
+                self.media_name,
+                self.media_id,
+                self.addr,
+                duration,
+                self.company_name,
+                self.requirement)
 
         audio_dir, starts = vad.slice(0, target_file)
         if self.fragment_length_limit:
-            starts = preprocessor.preprocess_clip_length(audio_dir, starts,
-                                                         self.fragment_length_limit)
+            starts = preprocessor.preprocess_clip_length(
+                    audio_dir, starts, self.fragment_length_limit)
         else:
             starts = preprocessor.preprocess_clip_length(audio_dir, starts)
 
@@ -143,17 +158,17 @@ class TranscribeHandler(BaseHandler):
         # Upload media clips to Aliyun OSS
         if self.upload_oss:
             tornado.ioloop.IOLoop.instance().add_callback(
-                                    functools.partial(self.upload_oss_in_thread,
-                                                      self.media_id, file_list
-                                                      )
-                                    )
+                functools.partial(
+                    self.upload_oss_in_thread, self.media_id, file_list
+                                 ))
 
         # create a task group to organize transcription tasks
         task_group = TaskGroup(self.transcription_callback)
 
         if 'baidu' in self.service_providers:
             baidu_speech_service = baidu.BaiduNLP()
-            baidu_tasks = baidu_speech_service.batch_vop_tasks(file_list, starts, language)
+            baidu_tasks = baidu_speech_service.batch_vop_tasks(
+                    file_list, starts, language)
             for task in baidu_tasks:
                 task_group.add(task)
 
@@ -161,12 +176,12 @@ class TranscribeHandler(BaseHandler):
         pool = multiprocessing.Pool(num_workers)
         if 'google' in self.service_providers:
             google_speech_servce = google.GoogleASR(pool)
-            google_tasks = google_speech_servce.batch_vop_tasks(file_list, starts, language)
+            google_tasks = google_speech_servce.batch_vop_tasks(
+                    file_list, starts, language)
             for task in google_tasks:
                 task_group.add(task)
 
         task_group.start()
-
 
     @tornado.web.asynchronous
     def get(self):
@@ -185,7 +200,8 @@ class TranscribeHandler(BaseHandler):
             upload_oss = True
         else:
             upload_oss = False
-        service_providers = self.get_argument('service_providers', 'baidu').split(',')
+        service_providers = self.get_argument(
+                'service_providers', 'baidu').split(',')
 
         self.addr = addr
         self.media_name = media_name
@@ -196,18 +212,29 @@ class TranscribeHandler(BaseHandler):
         self.upload_oss = upload_oss
         self.service_providers = service_providers
         self.requirement = requirement.split(',')
+        self.client_callback_url = self.get_argument('callback', None)
 
+        is_async = self.get_argument('async', False)
+        if is_async:
+            tornado.ioloop.IOLoop.current().add_callback(
+                self._handle, addr, language
+            )
+            self.write("success")
+            self.finish()
+        else:
+            self._handle(addr, language)
+
+    def _handle(self, addr, language):
         ext = get_ext(addr)
         tmp_file = tempfile.NamedTemporaryFile().name + ext
         client = tornado.httpclient.AsyncHTTPClient(max_body_size = 1024*1024*1024*0.8)
         # call self.ondownload after get the request file
-        logging.info("downloading: %s"%addr)
+        logging.info("downloading: %s" % addr)
         client.fetch(addr,
                      callback=functools.partial(self.on_donwload,
                                                 tmp_file, ext, language),
                      connect_timeout=120,
                      request_timeout=600,)
-
 
 
 class SrtHandler(BaseHandler):
@@ -266,7 +293,6 @@ if __name__ == "__main__":
     or use command line option  %process_name  --env == [envname].
     '''
 
-    import env_config
     from tornado.options import define, options
     from tornado.netutil import bind_unix_socket
 
@@ -275,7 +301,7 @@ if __name__ == "__main__":
     # on a linux ,it defaults to ascii,so got an error like this
     # "UnicodeEncodeError: 'ascii' codec can't encode character  u'\uxxxx'
     # in position 183: ordinal not in range(128)"
-    #use sys.getdefaultencoding() to get current val
+    # use sys.getdefaultencoding() to get current val
 
     import sys
     reload(sys)
@@ -311,4 +337,3 @@ if __name__ == "__main__":
     logging.info("running on %s" % (options.unix_socket or options.port))
 
     tornado.ioloop.IOLoop.instance().start()
-
