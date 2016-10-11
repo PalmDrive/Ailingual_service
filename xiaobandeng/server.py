@@ -90,11 +90,14 @@ class TranscribeHandler(BaseHandler):
         logging.info('write file:%s' % file_name)
 
     def transcription_callback(self, task_group):
-        #warn: this method will change task.result
+        # warn: this method will change task.result
         # punc_task_group(task_group)
 
         for task in task_group.tasks:
-            end_at = task.start_time + task.duration
+            # for play
+            end_at = task.start_time + task.duration - 0.01
+            task.start_time += 0.01
+
             results = task.result
             logging.info(
                 u'transcript result of %s : %s, duration %f, end_at %f' %
