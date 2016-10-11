@@ -22,6 +22,7 @@ import functools
 import oss
 import wave
 import multiprocessing
+import re
 
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
@@ -237,8 +238,7 @@ class SrtHandler(BaseHandler):
                     convert_time(media.get("end_at")))
                 self.write("\n")
                 content = media.get("content_baidu")[0]
-                content = content.replace(",", " ")
-                content = content.replace(u"，", " ")
+                content = re.sub(u"[,，。\.?？!！]",'',content)
                 self.write(content)
                 self.write("\n")
                 self.write("\n")
