@@ -199,14 +199,14 @@ class TranscribeHandler(BaseHandler):
 
         ext = get_ext(addr)
         tmp_file = tempfile.NamedTemporaryFile().name + ext
-        client = tornado.httpclient.AsyncHTTPClient()
+        client = tornado.httpclient.AsyncHTTPClient(max_body_size = 1024*1024*1024*0.8)
         # call self.ondownload after get the request file
         logging.info("downloading: %s"%addr)
         client.fetch(addr,
                      callback=functools.partial(self.on_donwload,
                                                 tmp_file, ext, language),
                      connect_timeout=120,
-                     request_timeout=600)
+                     request_timeout=600,)
 
 
 
