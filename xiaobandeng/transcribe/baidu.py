@@ -61,7 +61,7 @@ class TaskBaidu(TranscriptionTask):
             self.fetch(self.get_url(self.lans[self.lan][self._try]))
             logging.info('retry %s %s...%s' % (self.__class__, self.order, datetime.datetime.now()))
         else:
-            self.result = ''
+            self.result = []
             self.complete()
 
     def callback(self, res):
@@ -78,7 +78,7 @@ class TaskBaidu(TranscriptionTask):
             return
 
         if int(res['err_no']) == 0:
-            self.result = res["result"][0]
+            self.result = res["result"]
             self.complete()
             # logging.info('%s====>%s'%(self.order, self.result))
             return

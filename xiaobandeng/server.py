@@ -90,17 +90,18 @@ class TranscribeHandler(BaseHandler):
 
     def transcription_callback(self, task_group):
         #warn: this method will change task.result
-        punc_task_group(task_group)
+        # punc_task_group(task_group)
 
         for task in task_group.tasks:
             end_at = task.start_time + task.duration
+            results = task.result
             logging.info(
                 u'transcript result of %s : %s, duration %f, end_at %f' %
                 (task.file_name, task.result, task.duration, end_at))
             fragment_src = oss.media_fragment_url(self.media_id, task.file_name)
             self.cloud_db.set_fragment(task.order, task.start_time, end_at, self.media_id, fragment_src)
-            # for result in results:
-            self.cloud_db.add_transcription_to_fragment(task.order, task.result, task.source_name())
+            for result in results:
+                self.cloud_db.add_transcription_to_fragment(task.order, result, task.source_name())
 
         self.cloud_db.save()
 
