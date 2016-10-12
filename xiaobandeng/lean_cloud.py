@@ -1,6 +1,7 @@
 import leancloud
 from datetime import datetime
 from env_config import CONFIG
+import logging
 
 CLASS_NAME_TRANSCRIPT = 'Transcript'
 CLASS_NAME_MEDIA = 'Media'
@@ -68,9 +69,33 @@ class LeanCloud(object):
 
     def get_list(self, media_id, order_by='fragment_order'):
         query = self.fragment_query.equal_to('media_id', media_id)
-        query.add_ascending(order_by)
-        query.limit(1000)
-        return query.find()
+        query.add_ascending('start_at')
+        total_data = []
+
+        def batch_fetch(start):
+            query = self.fragment_query.equal_to('media_id', media_id)
+            query.add_ascending('start_at')
+
+            if  start:
+                start_at = start.get('start_at')
+            else:
+                start_at = 0
+
+            query.greater_than('start_at',start_at)
+            query.limit(800)
+            result = query.find()
+            total_data.extend(result)
+
+            if len(result) == 800 :
+                start = result[-1]
+                batch_fetch(start)
+            else:
+                return
+
+        batch_fetch(0)
+
+        logging.info('fetched :%s' % len(total_data))
+        return total_data
 
     def get_media(self,media_id):
         query = self.media_query.equal_to('media_id',media_id)
