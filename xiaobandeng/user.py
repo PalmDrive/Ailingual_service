@@ -42,6 +42,8 @@ class UserMgr(object):
         c_uuid = str(uuid.uuid1())
 
         user.set('company_name', company_name)
+        user.set('username', company_name)
+        user.set('password', company_name)
         user.set('app_id', c_uuid[:23])
         user.set('app_key', c_uuid[24:])
         try:
@@ -83,7 +85,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     user_mgr = UserMgr()
 
-    if args.create_company and args.company_name:
+    if  args.company_name:
         print  user_mgr.create_company(args.company_name)
         print  'created a company user'
 
