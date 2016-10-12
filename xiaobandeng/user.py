@@ -48,7 +48,10 @@ class UserMgr(object):
 
 
 if __name__ == "__main__":
-    import os, json, env_config
+    import os
+    import json
+    import env_config
+    import argparse
 
     pwd = os.path.dirname(__file__)
     env = 'develop'
@@ -56,10 +59,22 @@ if __name__ == "__main__":
     config_dict = json.load(open(config_file))
     env_config.init_config(config_dict)
 
-    user_mgr = UserMgr()
-#    print user_mgr.create_user('hello1', 'world')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('create_company',
+                        help='create a company with random appid and appkey',
+                        type=bool,
+                        default=False
+                        )
 
-    print user_mgr.login('hello','world')
-    print user_mgr.User.get_current()
+    args = parser.parse_args()
+    user_mgr = UserMgr()
+
+    if args.create_company:
+
+
+    # print user_mgr.create_user('hello1', 'world')
+
+#    print user_mgr.login('hello', 'world')
+ #   print user_mgr.User.get_current()
 
     print 'over.'
