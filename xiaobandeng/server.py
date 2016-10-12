@@ -33,10 +33,10 @@ from os.path import splitext
 
 
 def get_ext(url):
-    """Return the filename extension from url, or ''."""
+    """Return the filename extension from url, or ""."""
     parsed = urlparse(url)
     root, ext = splitext(parsed.path)
-    return ext  # or ext[1:] if you don't want the leading '.'
+    return ext  # or ext[1:] if you don"t want the leading "."
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -54,7 +54,7 @@ class BaseHandler(tornado.web.RequestHandler):
         # 那么浏览器将不会把响应结果传递给发出请求的脚本程序.
 
         # 给一个带有withCredentials的请求发送响应的时候,
-        # 服务器端必须指定允许请求的域名,不能使用'*'.否则无效
+        # 服务器端必须指定允许请求的域名,不能使用"*".否则无效
         # self.set_header("Access-Control-Allow-Credentials", "true")
 
     def options(self):
@@ -78,13 +78,13 @@ class TranscribeHandler(BaseHandler):
         # now use a thread to make it run concurrently.
         # but
         oss.upload(media_id, file_list)
-        logging.info('-----upload oss over-------')
+        logging.info("-----upload oss over-------")
 
     def write_file(self, response, file_name):
-        f = open(file_name, 'wb')
+        f = open(file_name, "wb")
         f.write(response.body)
         f.close()
-        logging.info('write file:%s' % file_name)
+        logging.info("write file:%s" % file_name)
 
     def transcription_callback(self, task_group):
         # warn: this method will change task.result
@@ -97,7 +97,7 @@ class TranscribeHandler(BaseHandler):
 
             results = task.result
             logging.info(
-                u'transcript result of %s : %s, duration %f, end_at %f' %
+                u"transcript result of %s : %s, duration %f, end_at %f" %
                 (task.file_name, task.result, task.duration, end_at))
             fragment_src = oss.media_fragment_url(
                     self.media_id, task.file_name
@@ -149,9 +149,9 @@ class TranscribeHandler(BaseHandler):
 
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
-            self.write('download error:%s' % str(response.code))
+            self.write("download error:%s" % str(response.code))
             self.finish()
-        logging.info('downloaded,saved to: %s' % tmp_file)
+        logging.info("downloaded,saved to: %s" % tmp_file)
         self.write_file(response, tmp_file)
 
         target_file = convertor.convert_to_wav(ext, tmp_file)
@@ -189,7 +189,7 @@ class TranscribeHandler(BaseHandler):
         # create a task group to organize transcription tasks
         task_group = TaskGroup(self.transcription_callback)
 
-        if 'baidu' in self.service_providers:
+        if "baidu" in self.service_providers:
             baidu_speech_service = baidu.BaiduNLP()
             baidu_tasks = baidu_speech_service.batch_vop_tasks(
                     file_list, starts, language)
@@ -198,7 +198,7 @@ class TranscribeHandler(BaseHandler):
 
         num_workers = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(num_workers)
-        if 'google' in self.service_providers:
+        if "google" in self.service_providers:
             google_speech_servce = google.GoogleASR(pool)
             google_tasks = google_speech_servce.batch_vop_tasks(
                     file_list, starts, language)
@@ -209,23 +209,23 @@ class TranscribeHandler(BaseHandler):
 
     @tornado.web.asynchronous
     def get(self):
-        addr = self.get_argument('addr')
-        addr = urllib.quote(addr.encode('utf8'), ':/')
+        addr = self.get_argument("addr")
+        addr = urllib.quote(addr.encode("utf8"), ":/")
 
-        media_name = self.get_argument('media_name').encode("utf8")
-        language = self.get_argument('lan', 'zh')
-        company_name = self.get_argument('company').encode("utf8")
-        fragment_length_limit = self.get_argument('max_fragment_length', 10)
+        media_name = self.get_argument("media_name").encode("utf8")
+        language = self.get_argument("lan", "zh")
+        company_name = self.get_argument("company").encode("utf8")
+        fragment_length_limit = self.get_argument("max_fragment_length", 10)
         if fragment_length_limit:
             fragment_length_limit = int(fragment_length_limit)
-        upload_oss = self.get_argument('upload_oss', False)
-        requirement = self.get_argument('requirement', u'字幕/纯文本/关键词/摘要')
-        if upload_oss == 'true' or upload_oss == 'True':
+        upload_oss = self.get_argument("upload_oss", False)
+        requirement = self.get_argument("requirement", u"字幕/纯文本/关键词/摘要")
+        if upload_oss == "true" or upload_oss == "True":
             upload_oss = True
         else:
             upload_oss = False
         service_providers = self.get_argument(
-                'service_providers', 'baidu').split(',')
+                "service_providers", "baidu").split(",")
 
         self.addr = addr
         self.media_name = media_name
@@ -235,10 +235,10 @@ class TranscribeHandler(BaseHandler):
         self.fragment_length_limit = fragment_length_limit
         self.upload_oss = upload_oss
         self.service_providers = service_providers
-        self.requirement = requirement.split(',')
-        self.client_callback_url = self.get_argument('callback', None)
+        self.requirement = requirement.split(",")
+        self.client_callback_url = self.get_argument("callback", None)
 
-        is_async = self.get_argument('async', False)
+        is_async = self.get_argument("async", False)
         if is_async:
             tornado.ioloop.IOLoop.current().add_callback(
                 self._handle, addr, language
@@ -264,7 +264,7 @@ class TranscribeHandler(BaseHandler):
 class SrtHandler(BaseHandler):
 
     def get(self, media_id):
-        source = self.get_argument('source',0)
+        source = self.get_argument("service_source", 0)
 
         lc_content_keys = ["content_baidu", "content_google"]
         content_key = lc_content_keys[int(source)]
@@ -299,8 +299,8 @@ class SrtHandler(BaseHandler):
 
                 content_list =media.get(content_key)
 
-                content = content_list[0] if content_list else ''
-                content = re.sub(u"[,，。\.?？!！]",' ',content)
+                content = content_list[0] if content_list else ""
+                content = re.sub(u"[,，。\.?？!！]"," ",content)
                 self.write(content)
                 self.write("\n")
                 self.write("\n")
@@ -319,11 +319,11 @@ def make_app(use_autoreload):
 
 
 if __name__ == "__main__":
-    '''
+    """
     set system environ "PIPELINE_SERVICE_ENV"  to use different environment,
-    choices are 'develop product staging'.
+    choices are "develop product staging".
     or use command line option  %process_name  --env == [envname].
-    '''
+    """
 
     from tornado.options import define, options
     from tornado.netutil import bind_unix_socket
@@ -331,13 +331,13 @@ if __name__ == "__main__":
     # when python writes unicode to stdout,it will encode unicode string
     # using  sys.getdefaultencoding()
     # on a linux ,it defaults to ascii,so got an error like this
-    # "UnicodeEncodeError: 'ascii' codec can't encode character  u'\uxxxx'
+    # "UnicodeEncodeError: "ascii" codec can"t encode character  u"\uxxxx"
     # in position 183: ordinal not in range(128)"
     # use sys.getdefaultencoding() to get current val
 
     import sys
     reload(sys)
-    sys.setdefaultencoding('utf-8')
+    sys.setdefaultencoding("utf-8")
 
     define("port", default=8888, help="run on this port", type=int)
     define("env", default="develop", help="develop production staging")
