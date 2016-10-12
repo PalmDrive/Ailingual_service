@@ -297,7 +297,9 @@ class SrtHandler(BaseHandler):
                     convert_time(media.get("end_at")))
                 self.write("\n")
 
-                content = media.get(content_key)[0]
+                content_list =media.get(content_key)
+
+                content = content_list[0] if content_list else ''
                 content = re.sub(u"[,，。\.?？!！]",' ',content)
                 self.write(content)
                 self.write("\n")
