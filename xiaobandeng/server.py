@@ -27,7 +27,9 @@ import re
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu, google
-from transcribe.task import TaskGroup
+from transcribe.punctuation import punc_task_group
+from transcribe.task import TaskGroup, TranscriptionTask
+
 from urlparse import urlparse
 from os.path import splitext
 
@@ -78,7 +80,7 @@ class TranscribeHandler(BaseHandler):
         # now use a thread to make it run concurrently.
         # but
         oss.upload(media_id, file_list)
-        print '-----upload oss over-------'
+        logging.info('-----upload oss over-------')
 
     def write_file(self, response, file_name):
         f = open(file_name, 'wb')
@@ -264,6 +266,11 @@ class TranscribeHandler(BaseHandler):
 class SrtHandler(BaseHandler):
 
     def get(self, media_id):
+        source = self.get_argument('source',0)
+
+        lc_content_keys = ["content_baidu", "content_google"]
+        content_key = lc_content_keys[int(source)]
+
         lc = lean_cloud.LeanCloud()
         media_list = lc.get_list(media_id=media_id)
 
@@ -291,7 +298,8 @@ class SrtHandler(BaseHandler):
                     convert_time(media.get("start_at")) + "	-->	" +
                     convert_time(media.get("end_at")))
                 self.write("\n")
-                content = media.get("content_baidu")[0]
+
+                content = media.get(content_key)[0]
                 content = re.sub(u"[,，。\.?？!！]",' ',content)
                 self.write(content)
                 self.write("\n")
