@@ -42,10 +42,12 @@ class UserMgr(object):
         c_uuid = str(uuid.uuid1())
 
         user.set('company_name', company_name)
-        user.set('username', company_name)
-        user.set('password', company_name)
         user.set('app_id', c_uuid[:23])
         user.set('app_key', c_uuid[24:])
+
+        user.set('username', c_uuid[:23])
+        user.set('password', c_uuid[24:])
+
         try:
             user.sign_up()
             res = (True, user)
