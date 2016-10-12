@@ -1,6 +1,7 @@
 import leancloud
 from datetime import datetime
 from env_config import CONFIG
+import logging
 
 CLASS_NAME_TRANSCRIPT = 'Transcript'
 CLASS_NAME_MEDIA = 'Media'
@@ -93,7 +94,7 @@ class LeanCloud(object):
 
         batch_fetch(0)
 
-        print 'fetched :%s' % len(total_data)
+        logging.info('fetched :%s' % len(total_data))
         return total_data
 
     def get_media(self,media_id):
