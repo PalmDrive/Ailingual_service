@@ -114,7 +114,7 @@ class TranscribeHandler(BaseHandler):
 
         self.cloud_db.save()
 
-        if not self.async:
+        if not self.is_async:
             self.write(json.dumps({
                 "media_id": self.media_id
             }))
@@ -238,8 +238,8 @@ class TranscribeHandler(BaseHandler):
         self.requirement = requirement.split(",")
         self.client_callback_url = self.get_argument("callback", None)
 
-        is_async = self.get_argument("async", False)
-        if is_async:
+        self.is_async = self.get_argument("async", False)
+        if self.is_async:
             tornado.ioloop.IOLoop.current().add_callback(
                 self._handle, addr, language
             )
