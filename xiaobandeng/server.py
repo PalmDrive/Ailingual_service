@@ -195,7 +195,7 @@ class TranscribeHandler(BaseHandler):
         self.fragment_length_limit = fragment_length_limit
         self.upload_oss = upload_oss
         self.service_providers = service_providers
-        self.requirement = requirement
+        self.requirement = requirement.split(',')
 
         ext = get_ext(addr)
         tmp_file = tempfile.NamedTemporaryFile().name + ext
