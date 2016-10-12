@@ -63,11 +63,12 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
 
     def check_user(self):
+
         user_mgr = UserMgr()
         appid = self.request.headers.get('app_id','')
         app_key = self.request.headers.get('app_key','')
-
-        return user_mgr.login(appid,app_key)[0]
+        #return (true_or_false,user)
+        return user_mgr.login(appid,app_key)
 
 
 
