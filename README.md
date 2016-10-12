@@ -18,6 +18,9 @@ pip install -r requirement.txt
 Google api setup:
 
 export GOOGLE_APPLICATION_CREDENTIALS="path/to/google_credential.json"
+(staging server: 
+export GOOGLE_APPLICATION_CREDENTIALS="/root/dev/pipeline_service/google_credential.json"
+)
 ```
 
 # API Documentation
