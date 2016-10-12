@@ -33,7 +33,6 @@ from transcribe import baidu, google
 from transcribe.task import TaskGroup, TranscriptionTask
 
 
-
 def get_ext(url):
     """Return the filename extension from url, or ""."""
     parsed = urlparse(url)
