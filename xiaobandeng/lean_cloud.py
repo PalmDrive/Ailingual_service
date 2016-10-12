@@ -67,7 +67,7 @@ class LeanCloud(object):
             print e
             raise
 
-    def get_list(self, media_id, order_by='fragment_order'):
+    def get_list(self, media_id):
         query = self.fragment_query.equal_to('media_id', media_id)
         query.add_ascending('start_at')
         total_data = []

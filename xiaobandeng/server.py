@@ -27,7 +27,9 @@ import re
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu, google
-from transcribe.task import TaskGroup
+from transcribe.punctuation import punc_task_group
+from transcribe.task import TaskGroup, TranscriptionTask
+
 from urlparse import urlparse
 from os.path import splitext
 
