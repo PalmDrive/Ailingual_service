@@ -241,7 +241,7 @@ class SrtHandler(BaseHandler):
                     convert_time(media.get("end_at")))
                 self.write("\n")
                 content = media.get("content_baidu")[0]
-                content = re.sub(u"[,，。\.?？!！]",'',content)
+                content = re.sub(u"[,，。\.?？!！]",' ',content)
                 self.write(content)
                 self.write("\n")
                 self.write("\n")
