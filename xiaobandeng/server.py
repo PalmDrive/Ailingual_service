@@ -120,16 +120,20 @@ class TranscribeHandler(BaseHandler):
             }))
             self.finish()
         elif self.client_callback_url:
-            client = tornado.httpclient.AsyncHTTPClient()
-            client.fetch(self.client_callback_url,
-                        callback=self.notified_client,
-                     )
-    def notified_client(self, response):
-        logging.info("called origin client server...")
-        if not response.error:
-            logging.info("origin client server returned success")
-        else:
-            logging.info("origin client server returned error.")
+            self.notified_client()
+
+    def notified_client(self):
+        def notified_callback(response):
+            logging.info("called origin client server...")
+            if not response.error:
+                logging.info("origin client server returned success")
+            else:
+                logging.info("origin client server returned error.")
+
+        client = tornado.httpclient.AsyncHTTPClient()
+        client.fetch(self.client_callback_url,
+                     callback=notified_callback,
+                    )
 
 
     def on_donwload(self, tmp_file, ext, language, response):
