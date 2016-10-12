@@ -130,9 +130,20 @@ class TranscribeHandler(BaseHandler):
             else:
                 logging.info("origin client server returned error.")
 
+        self.download_link = "/medium/(%s)/srt" % self.media_id
+
+        post_data = {
+             "data": {
+                 "media_id": "%s" % self.media_id,
+                 "transcript_srt_download_link": "%s" % self.download_link
+            }
+        }
+
         client = tornado.httpclient.AsyncHTTPClient()
         client.fetch(self.client_callback_url,
                      callback=notified_callback,
+                     method="POST",
+                     body=urllib.urlencode(post_data)
                     )
 
 
