@@ -28,12 +28,10 @@ from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu, google
 from transcribe.punctuation import punc_task_group
-
 from transcribe.task import TaskGroup, TranscriptionTask
 
 from urlparse import urlparse
 from os.path import splitext
-
 
 
 def get_ext(url):
@@ -207,7 +205,6 @@ class TranscribeHandler(BaseHandler):
                                                 tmp_file, ext, language),
                      connect_timeout=120,
                      request_timeout=600,)
-
 
 
 class SrtHandler(BaseHandler):
