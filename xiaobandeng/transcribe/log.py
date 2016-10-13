@@ -14,10 +14,13 @@ class TranscriptionLog(object):
         self.log = self.Log()
 
     def add(self, log_content):
-        self.log.set("start_time", log_content["start_time"])
-        self.log.set("end_time", log_content["end_time"])
+        self.log.set("request_start_timestamp", log_content["request_start_timestamp"])
+        self.log.set("request_end_time", log_content["request_end_time"])
+        self.log.set("transcribe_end_timestamp", log_content["transcribe_end_timestamp"])
+
         self.log.set("result", log_content["result"])
         self.log.set("status", log_content["status"])
+
 
         self.log.set("media_duration", log_content["media_duration"] or 0)
         self.log.set("notified_client", "yes" if log_content["notified_client"] else "no" )
