@@ -130,7 +130,7 @@ class TranscribeHandler(BaseHandler):
         self.cloud_db = lean_cloud.LeanCloud()
         self.cloud_db.add_media(self.media_name, self.media_id, self.addr, duration, self.company_name, self.requirement)
 
-        audio_dir, starts = vad.slice(0, target_file)
+        audio_dir, starts = vad.slice(2, target_file)
         if self.fragment_length_limit:
             starts = preprocessor.preprocess_clip_length(audio_dir, starts,
                                                          self.fragment_length_limit)
