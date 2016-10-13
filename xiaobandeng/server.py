@@ -177,12 +177,12 @@ class TranscribeHandler(BaseHandler):
             self.company_name,
             self.requirement)
 
-        audio_dir, starts = vad.slice(2, target_file)
-        if self.fragment_length_limit:
-            starts = preprocessor.preprocess_clip_length(
-                audio_dir, starts, self.fragment_length_limit)
-        else:
-            starts = preprocessor.preprocess_clip_length(audio_dir, starts)
+        audio_dir, starts = vad.slice(3, target_file)
+        starts = preprocessor.preprocess_clip_length(
+                audio_dir,
+                starts,
+                self.fragment_length_limit,
+                self.force_fragment_length)
 
         basedir, subdir, files = next(os.walk(audio_dir))
         file_list = [os.path.join(basedir, file) for file in sorted(files)]
@@ -220,42 +220,52 @@ class TranscribeHandler(BaseHandler):
     def get(self):
         addr = self.get_argument("addr")
         addr = urllib.quote(addr.encode("utf8"), ":/")
+        self.addr = addr
 
-        media_name = self.get_argument("media_name").encode("utf8")
-        language = self.get_argument("lan", "zh")
-        company_name = self.get_argument("company").encode("utf8")
+        self.media_name = self.get_argument("media_name").encode("utf8")
+
+        self.media_id = str(uuid.uuid4())
+
+        self.language = self.get_argument("lan", "zh")
+
+        self.company_name  = self.get_argument("company").encode("utf8")
+
         fragment_length_limit = self.get_argument("max_fragment_length", 10)
         if fragment_length_limit:
             fragment_length_limit = int(fragment_length_limit)
+        self.fragment_length_limit = fragment_length_limit
+
         upload_oss = self.get_argument("upload_oss", False)
-        requirement = self.get_argument("requirement", u"字幕/纯文本/关键词/摘要")
         if upload_oss == "true" or upload_oss == "True":
-            upload_oss = True
+            self.upload_oss = True
         else:
-            upload_oss = False
-        service_providers = self.get_argument(
+            self.upload_oss = False
+
+
+        self.requirement = self.get_argument("requirement", u"字幕,纯文本,关键词,摘要").split(',')
+
+        self.service_providers = self.get_argument(
             "service_providers", "baidu").split(",")
 
-        self.addr = addr
-        self.media_name = media_name
-        self.media_id = str(uuid.uuid4())
-        self.language = language
-        self.company_name = company_name
-        self.fragment_length_limit = fragment_length_limit
-        self.upload_oss = upload_oss
-        self.service_providers = service_providers
-        self.requirement = requirement.split(",")
         self.client_callback_url = self.get_argument("callback", None)
 
+        force_fragment_length = self.get_argument("force_fragment_length", False)
+        if force_fragment_length == "true" or force_fragment_length == "True":
+            force_fragment_length = True
+        else:
+            force_fragment_length = False
+        self.force_fragment_length = force_fragment_length
+
         self.is_async = self.get_argument("async", False)
+
         if self.is_async:
             tornado.ioloop.IOLoop.current().add_callback(
-                self._handle, addr, language
+                self._handle, self.addr, self.language
             )
             self.write("success")
             self.finish()
         else:
-            self._handle(addr, language)
+            self._handle(self.addr, self.language)
 
     def _handle(self, addr, language):
         ext = get_ext(addr)
