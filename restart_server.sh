@@ -1,4 +1,5 @@
 echo '---restarting---'
+export GOOGLE_APPLICATION_CREDENTIALS=/root/dev/pipeline_service/google_credential.json
 ps -ef|grep 'unix_socket=[1-5].socket' |awk '{print $2}' |xargs kill -9
 source ./env/bin/activate
 cd xiaobandeng 
