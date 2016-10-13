@@ -15,7 +15,7 @@ class TranscriptionLog(object):
 
     def add(self, log_content):
         self.log.set("request_start_timestamp", log_content["request_start_timestamp"])
-        self.log.set("request_end_time", log_content["request_end_time"])
+        self.log.set("request_end_timestamp", log_content["request_end_timestamp"])
         self.log.set("transcribe_end_timestamp", log_content["transcribe_end_timestamp"])
 
         self.log.set("result", log_content["result"])
