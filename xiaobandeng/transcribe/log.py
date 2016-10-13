@@ -1,9 +1,7 @@
 # coding:utf8
 
 import leancloud
-from datetime import datetime
 from env_config import CONFIG
-import logging
 
 
 class TranscriptionLog(object):
