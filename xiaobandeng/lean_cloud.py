@@ -6,6 +6,7 @@ import logging
 CLASS_NAME_TRANSCRIPT = "Transcript"
 CLASS_NAME_MEDIA = "Media"
 
+
 class LeanCloud(object):
     def __init__(self):
         APP_ID = CONFIG.LEANCLOUD_APP_ID
@@ -18,9 +19,11 @@ class LeanCloud(object):
 
         self.Media = leancloud.Object.extend(CLASS_NAME_MEDIA)
         self.media_query = self.Media.query
+        self.media = None
 
-    def set_fragment(self, fragment_order, start_at, end_at,
-            media_id, fragment_src):
+    def set_fragment(self, fragment_order,
+                     start_at, end_at,
+                     media_id, fragment_src):
         if fragment_order in self.fragments:
             return
         fragment = self.Fragment()
@@ -68,25 +71,23 @@ class LeanCloud(object):
             raise
 
     def get_list(self, media_id):
-        query = self.fragment_query.equal_to("media_id", media_id)
-        query.add_ascending("start_at")
         total_data = []
 
         def batch_fetch(start):
             query = self.fragment_query.equal_to("media_id", media_id)
             query.add_ascending("start_at")
 
-            if  start:
+            if start:
                 start_at = start.get("start_at")
             else:
                 start_at = 0
 
-            query.greater_than("start_at",start_at)
+            query.greater_than("start_at", start_at)
             query.limit(800)
             result = query.find()
             total_data.extend(result)
 
-            if len(result) == 800 :
+            if len(result) == 800:
                 start = result[-1]
                 batch_fetch(start)
             else:
@@ -97,6 +98,6 @@ class LeanCloud(object):
         logging.info("fetched :%s" % len(total_data))
         return total_data
 
-    def get_media(self,media_id):
-        query = self.media_query.equal_to("media_id",media_id)
+    def get_media(self, media_id):
+        query = self.media_query.equal_to("media_id", media_id)
         return query.find()[0]

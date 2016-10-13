@@ -5,10 +5,10 @@ import subprocess
 
 
 def convert_to_wav(ext, filename):
-    supported_formats = ['mp4','mp3','m4a']
+    supported_formats = ['mp4', 'mp3', 'm4a']
     supported = False
-    for format in supported_formats:
-        if ext.endswith(format):
+    for f in supported_formats:
+        if ext.endswith(f):
             supported = True
     if supported:
         tmp_file = tempfile.NamedTemporaryFile().name + ".wav"

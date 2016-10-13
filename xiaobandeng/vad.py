@@ -73,11 +73,10 @@ def vad_collector(sample_rate, frame_duration_ms,
                 ring_buffer.clear()
                 voiced_frames = []
                 clip_start = frame.timestamp + frame.duration
-    if triggered:
-        sys.stdout.write('-(%s)' % (frame.timestamp + frame.duration))
     sys.stdout.write('\n')
     if voiced_frames:
         yield b''.join([f.bytes for f in voiced_frames]), clip_start
+
 
 # aggressive is limited to 0..3. By experience, 3 is too aggressive. 0..2 is recommended.
 def slice(aggressive, filename):
@@ -90,7 +89,7 @@ def slice(aggressive, filename):
     dirpath = tempfile.mkdtemp()
     starts = []
     for i, (segment, start) in enumerate(segments):
-        path = dirpath + '/chunk-%d.wav' % (i)
+        path = dirpath + '/chunk-%d.wav' % i
         print(' Writing %s' % (path,))
         write_wave(path, segment, sample_rate)
         starts.append(start)
