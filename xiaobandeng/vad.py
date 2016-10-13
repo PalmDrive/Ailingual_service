@@ -66,7 +66,7 @@ def vad_collector(sample_rate, frame_duration_ms,
         else:
             num_unvoiced = len([f for f in ring_buffer
                                 if not vad.is_speech(f.bytes, sample_rate)])
-            if num_unvoiced > 0.9 * ring_buffer.maxlen:
+            if num_unvoiced > 0.65 * ring_buffer.maxlen:
                 sys.stdout.write('-(%s)' % (frame.timestamp + frame.duration))
                 triggered = False
                 yield b''.join([f.bytes for f in voiced_frames]), clip_start
@@ -79,7 +79,7 @@ def vad_collector(sample_rate, frame_duration_ms,
     if voiced_frames:
         yield b''.join([f.bytes for f in voiced_frames]), clip_start
 
-
+# aggressive is limited to 0..3. By experience, 3 is too aggressive. 0..2 is recommended.
 def slice(aggressive, filename):
     audio, sample_rate = read_wave(filename)
     vad = webrtcvad.Vad(int(aggressive))

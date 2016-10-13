@@ -3,10 +3,14 @@ import contextlib
 import math
 import os
 
-def preprocess_clip_length(audio_dir, starts, preferred_length = 10):
+def preprocess_clip_length(audio_dir, starts, preferred_length = 10, force_preferred_length = False):
     # length limit of audio for VOP api
     length_limit = 60
-    # length we prefer using to avoid non-context transcription issue
+    if length_limit < preferred_length:
+        preferred_length = length_limit
+    elif force_preferred_length:
+        length_limit = preferred_length
+    # length we prefer using to avoid context-less transcription issue
 
     # initialization
     output_count = 0
@@ -51,8 +55,8 @@ def preprocess_clip_length(audio_dir, starts, preferred_length = 10):
                     data = []
                     clip_count = 0
                     # if the current clip is too long, slice clip into smaller pieces with equal length
-                    if duration > preferred_length:
-                        n = int(math.ceil(duration/preferred_length))
+                    if duration > length_limit:
+                        n = int(math.ceil(duration/length_limit))
                         for j in range(0, n):
                             slice(f, outfile, long(j * duration / n * 1000), long((j+1) * duration / n * 1000))
                             print('slice audio %s into sub-audio %s' % (file, outfile))
@@ -85,7 +89,7 @@ def outFilePath(dir,output_count):
 
 # improve transcription accuracy of the edges of clips by extending the clips with adjacent partial fragment
 def smoothen_clips_edge(file_list):
-    smoothen_length = 0.2 # in seconds
+    smoothen_length = 0.1 # in seconds
     for i, file_name in enumerate(file_list):
         if i > 0:
             prepend_last_clip(file_list[i-1], file_name, smoothen_length, smoothen_length)
