@@ -61,13 +61,15 @@ class BaseHandler(tornado.web.RequestHandler):
     def options(self):
         self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
 
-    def check_user(self):
+    def check_company_user(self):
         user_mgr = UserMgr()
         app_id = self.request.headers.get('app_id', '')
         app_key = self.request.headers.get('app_key', '')
         # return (true_or_false,user)
-        return user_mgr.login(app_id, app_key)
-
+        if app_id and app_key:
+            return user_mgr.login(app_id, app_key)
+        else:
+            return (False, Exception("app_id or app_key not found in http headers"))
 
 class TestHandler(BaseHandler):
     def get(self):

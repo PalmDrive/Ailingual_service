@@ -59,10 +59,11 @@ class UserMgr(object):
     def login(self, username, passwd):
         try:
             self.User().login(username, passwd)
-            res = True, self.User.get_current()
+            #this api didn't return user.
+            res = True, ''
         except leancloud.LeanCloudError as e:
+            #use e.error,e.code to get error message
             res = False, e
-
         return res
 
 
