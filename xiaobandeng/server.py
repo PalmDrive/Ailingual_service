@@ -129,13 +129,14 @@ class TranscribeHandler(BaseHandler):
             self.write(json.dumps({
                 "media_id": self.media_id
             }))
+            self.log_content["request_end_time"] = time.time()
             self.save_log(True)
             self.finish()
         elif self.client_callback_url:
             self.notified_client()
 
     def save_log(self, status):
-        self.log_content["end_time"] = time.time()
+        self.log_content["transcribe_end_timestamp"] = time.time()
         self.log_content["result"] = self.media_id
         self.log_content["status"] = "success" if status else "fail"
         log = TranscriptionLog()
@@ -145,6 +146,7 @@ class TranscribeHandler(BaseHandler):
     def notified_client(self):
         def notified_callback(response):
             logging.info("called origin client server...")
+            self.log_content["request_end_time"] = time.time()
             self.log_content['notified_client'] = True
 
             if not response.error:
@@ -153,7 +155,6 @@ class TranscribeHandler(BaseHandler):
             else:
                 self.save_log(False)
                 logging.info("origin client server returned error.")
-
 
         self.download_link = "/medium/(%s)/srt" % self.media_id
 
@@ -174,7 +175,8 @@ class TranscribeHandler(BaseHandler):
 
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
-            self.write("download error:%s" % str(response.code))
+            self.write("media download error:%s" % str(response.code))
+            self.log_content["request_end_time"] = time.time()
             self.save_log(False)
             self.finish()
 
@@ -267,7 +269,7 @@ class TranscribeHandler(BaseHandler):
         self.is_async = self.get_argument("async", False)
 
         self.log_content = {}
-        self.log_content["start_time"] = time.time()
+        self.log_content["request_start_timestamp"] = time.time()
         self.log_content["arguments_get"] = self.request.arguments
         self.log_content["arguments_post"] = self.request.body_arguments
         self.log_content["ip"] = self.request.remote_ip
