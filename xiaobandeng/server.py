@@ -129,7 +129,7 @@ class TranscribeHandler(BaseHandler):
             self.write(json.dumps({
                 "media_id": self.media_id
             }))
-            self.log_content["request_end_time"] = time.time()
+            self.log_content["request_end_timestamp"] = time.time()
             self.save_log(True)
             self.finish()
         elif self.client_callback_url:
