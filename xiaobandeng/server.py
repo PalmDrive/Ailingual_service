@@ -148,6 +148,7 @@ class TranscribeHandler(BaseHandler):
                                                       )
                                     )
 
+        preprocessor.smoothen_clips_edge(file_list)
         # create a task group to organize transcription tasks
         task_group = TaskGroup(self.transcription_callback)
 

@@ -83,6 +83,56 @@ def preprocess_clip_length(audio_dir, starts, preferred_length = 10):
 def outFilePath(dir,output_count):
     return os.path.join(dir, "pchunk-%08d.wav" % output_count)
 
+# improve transcription accuracy of the edges of clips by extending the clips with adjacent partial fragment
+def smoothen_clips_edge(file_list):
+    smoothen_length = 0.2 # in seconds
+    for i, file_name in enumerate(file_list):
+        if i > 0:
+            prepend_last_clip(file_list[i-1], file_name, smoothen_length, smoothen_length)
+        if i < len(file_list) - 1:
+            append_first_clip(file_list[i+1], file_name, smoothen_length)
+
+def prepend_last_clip(from_file_name, to_file_name, length, offset = 0):
+    from_file = wave.open(from_file_name,'rb')
+    from_rate = from_file.getframerate()
+    from_frames = from_file.getnframes()
+    last_clip_frames = length * float(from_rate)
+    pos = from_frames - last_clip_frames - offset * from_rate
+    from_file.setpos(pos)
+    from_data = from_file.readframes(int(last_clip_frames))
+    params = from_file.getparams()
+    from_file.close()
+
+    to_file = wave.open(to_file_name,'rb')
+    to_data = to_file.readframes(to_file.getnframes())
+    to_file.close()
+
+    output = wave.open(to_file_name,'wb')
+    output.setparams(params)
+    output.writeframes(from_data)
+    output.writeframes(to_data)
+    output.close()
+
+def append_first_clip(from_file_name, to_file_name, length, offset = 0):
+    from_file = wave.open(from_file_name,'rb')
+    from_rate = from_file.getframerate()
+    first_clip_frames = length * float(from_rate)
+    pos = offset * from_rate
+    from_file.setpos(pos)
+    from_data = from_file.readframes(int(first_clip_frames))
+    params = from_file.getparams()
+    from_file.close()
+
+    to_file = wave.open(to_file_name,'rb')
+    to_data = to_file.readframes(to_file.getnframes())
+    to_file.close()
+
+    output = wave.open(to_file_name,'wb')
+    output.setparams(params)
+    output.writeframes(to_data)
+    output.writeframes(from_data)
+    output.close()
+
 def slice(infile, outfilename, start_ms, end_ms):
     width = infile.getsampwidth()
     rate = infile.getframerate()
