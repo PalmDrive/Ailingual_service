@@ -58,7 +58,7 @@ Transcribe API:
     
 @param (optional) String: requirement
     The requirement for the service to meet on this media.
-    Default is '字幕/纯文本/关键词/摘要'.
+    Default is '字幕,纯文本,关键词,摘要'.
     
 @param (optional) String: service_providers
     The comma(',') separated names of service providers for this transcription task.
