@@ -65,6 +65,13 @@ Transcribe API:
     Supported:
         baidu,google
     Default is 'baidu'.
+    
+@param (optional) String: client_callback_url
+    The callback url that will be called upon the completion of our transcription process.
+    
+@param (optional) Boolean: force_fragment_length
+    The switch to force fragment length. If it's not enforced, then it won't break up a clip longer than preferred length into smaller pieces. 
+    Default is False.
 
 ```
 
