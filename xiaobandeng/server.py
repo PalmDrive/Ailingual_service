@@ -18,7 +18,7 @@ import json
 import logging
 import datetime
 import env_config
-
+import time
 import functools
 import oss
 import wave
@@ -135,7 +135,7 @@ class TranscribeHandler(BaseHandler):
             self.notified_client()
 
     def save_log(self, status):
-        self.log_content["end_time"] = str(datetime.datetime.now())
+        self.log_content["end_time"] = time.time()
         self.log_content["result"] = self.media_id
         self.log_content["status"] = "success" if status else "fail"
         log = TranscriptionLog()
@@ -267,7 +267,7 @@ class TranscribeHandler(BaseHandler):
         self.is_async = self.get_argument("async", False)
 
         self.log_content = {}
-        self.log_content["start_time"] = str(datetime.datetime.now())
+        self.log_content["start_time"] = time.time()
         self.log_content["arguments_get"] = self.request.arguments
         self.log_content["arguments_post"] = self.request.body_arguments
         self.log_content["ip"] = self.request.remote_ip
