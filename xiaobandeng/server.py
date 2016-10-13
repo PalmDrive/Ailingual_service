@@ -18,7 +18,7 @@ import json
 import logging
 import datetime
 import env_config
-
+import time
 import functools
 import oss
 import wave
@@ -32,6 +32,7 @@ from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu, google
 from transcribe.task import TaskGroup
+from transcribe.log import TranscriptionLog
 
 
 def get_ext(url):
@@ -63,13 +64,15 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def check_company_user(self):
         user_mgr = UserMgr()
-        app_id = self.request.headers.get('app_id', '')
-        app_key = self.request.headers.get('app_key', '')
+        app_id = self.request.headers.get("app_id", "")
+        app_key = self.request.headers.get("app_key", "")
         # return (true_or_false,user)
         if app_id and app_key:
             return user_mgr.login(app_id, app_key)
         else:
-            return (False, Exception("app_id or app_key not found in http headers"))
+            return (
+                False, Exception("app_id or app_key not found in http headers"))
+
 
 class TestHandler(BaseHandler):
     def get(self):
@@ -126,16 +129,31 @@ class TranscribeHandler(BaseHandler):
             self.write(json.dumps({
                 "media_id": self.media_id
             }))
+            self.log_content["request_end_timestamp"] = time.time()
+            self.save_log(True)
             self.finish()
         elif self.client_callback_url:
             self.notified_client()
 
+    def save_log(self, status):
+        self.log_content["transcribe_end_timestamp"] = time.time()
+        self.log_content["result"] = self.media_id
+        self.log_content["status"] = "success" if status else "fail"
+        log = TranscriptionLog()
+        log.add(self.log_content)
+        log.save()
+
     def notified_client(self):
         def notified_callback(response):
             logging.info("called origin client server...")
+            self.log_content["request_end_time"] = time.time()
+            self.log_content['notified_client'] = True
+
             if not response.error:
+                self.save_log(True)
                 logging.info("origin client server returned success")
             else:
+                self.save_log(False)
                 logging.info("origin client server returned error.")
 
         self.download_link = "/medium/(%s)/srt" % self.media_id
@@ -157,8 +175,11 @@ class TranscribeHandler(BaseHandler):
 
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
-            self.write("download error:%s" % str(response.code))
+            self.write("media download error:%s" % str(response.code))
+            self.log_content["request_end_time"] = time.time()
+            self.save_log(False)
             self.finish()
+
         logging.info("downloaded,saved to: %s" % tmp_file)
         self.write_file(response, tmp_file)
 
@@ -167,6 +188,7 @@ class TranscribeHandler(BaseHandler):
         wav = wave.open(target_file)
         duration = wav.getnframes() / float(wav.getframerate())
         wav.close()
+        self.log_content["media_duration"] = duration
 
         self.cloud_db = lean_cloud.LeanCloud()
         self.cloud_db.add_media(
@@ -234,7 +256,6 @@ class TranscribeHandler(BaseHandler):
             upload_oss = False
         service_providers = self.get_argument(
             "service_providers", "baidu").split(",")
-
         self.addr = addr
         self.media_name = media_name
         self.media_id = str(uuid.uuid4())
@@ -245,8 +266,19 @@ class TranscribeHandler(BaseHandler):
         self.service_providers = service_providers
         self.requirement = requirement.split(",")
         self.client_callback_url = self.get_argument("callback", None)
-
         self.is_async = self.get_argument("async", False)
+
+        self.log_content = {}
+        self.log_content["request_start_timestamp"] = time.time()
+        self.log_content["arguments_get"] = self.request.arguments
+        self.log_content["arguments_post"] = self.request.body_arguments
+        self.log_content["ip"] = self.request.remote_ip
+        self.log_content["agent"] = self.request.headers.get("User-Agent", "")
+        self.log_content["path"] = self.request.path
+        self.log_content["uri"] = self.request.uri
+        self.log_content["method"] = self.request.method
+        self.log_content["headers"] = str(self.request.headers)
+
         if self.is_async:
             tornado.ioloop.IOLoop.current().add_callback(
                 self._handle, addr, language
@@ -407,7 +439,7 @@ if __name__ == "__main__":
         env = options.env
 
     pwd = os.path.dirname(__file__)
-
+    sys.path.append(pwd)
     config_file = os.path.join(pwd, "config", env + ".json")
     config_dict = json.load(open(config_file))
     env_config.init_config(config_dict)
