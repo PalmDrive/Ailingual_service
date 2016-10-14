@@ -14,11 +14,11 @@ class LeanCloud(object):
 
         self.Media = leancloud.Object.extend(CLASS_NAME_MEDIA)
         self.media_query = self.Media.query
+        self.media = None
 
     def set_fragment(
         self, fragment_order, start_at, end_at, media_id, fragment_src
     ):
-
         if fragment_order in self.fragments:
             return
         fragment = self.Fragment()
@@ -76,8 +76,6 @@ class LeanCloud(object):
             raise
 
     def get_list(self, media_id):
-        query = self.fragment_query.equal_to("media_id", media_id)
-        query.add_ascending("start_at")
         total_data = []
 
         def batch_fetch(start):
