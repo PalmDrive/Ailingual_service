@@ -18,7 +18,7 @@ import json
 import logging
 import datetime
 import env_config
-
+import time
 import functools
 import oss
 import wave
@@ -32,6 +32,7 @@ from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from transcribe import baidu, google
 from transcribe.task import TaskGroup
+from transcribe.log import TranscriptionLog
 
 
 def get_ext(url):
@@ -50,9 +51,8 @@ class BaseHandler(tornado.web.RequestHandler):
                         "x-smartchat-key,client-source")
         self.set_header("Access-Control-Allow-Methods",
                         "PUT,POST,GET,DELETE,OPTIONS")
-        # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求
-        # 发送。如果服务器端的响应中,没有返回
-        # Access-Control-Allow-Credentials: true的响应头，
+        # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求发送。
+        # 如果服务器端的响应中,没有返回Access-Control-Allow-Credentials: true的响应头，
         # 那么浏览器将不会把响应结果传递给发出请求的脚本程序.
 
         # 给一个带有withCredentials的请求发送响应的时候,
@@ -64,14 +64,14 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def check_company_user(self):
         user_mgr = UserMgr()
-        app_id = self.request.headers.get('app_id', '')
-        app_key = self.request.headers.get('app_key', '')
+        app_id = self.request.headers.get("app_id", "")
+        app_key = self.request.headers.get("app_key", "")
         # return (true_or_false,user)
         if app_id and app_key:
             return user_mgr.login(app_id, app_key)
         else:
-            return (False,
-                    Exception("app_id or app_key not found in http headers"))
+            return (
+                False, Exception("app_id or app_key not found in http headers"))
 
 
 class TestHandler(BaseHandler):
@@ -129,16 +129,31 @@ class TranscribeHandler(BaseHandler):
             self.write(json.dumps({
                 "media_id": self.media_id
             }))
+            self.log_content["request_end_timestamp"] = time.time()
+            self.save_log(True)
             self.finish()
         elif self.client_callback_url:
             self.notified_client()
 
+    def save_log(self, status):
+        self.log_content["transcribe_end_timestamp"] = time.time()
+        self.log_content["media_id"] = self.media_id
+        self.log_content["status"] = "success" if status else "fail"
+        log = TranscriptionLog()
+        log.add(self.log_content)
+        log.save()
+
     def notified_client(self):
         def notified_callback(response):
             logging.info("called origin client server...")
+            self.log_content["request_end_time"] = time.time()
+            self.log_content['notified_client'] = True
+
             if not response.error:
+                self.save_log(True)
                 logging.info("origin client server returned success")
             else:
+                self.save_log(False)
                 logging.info("origin client server returned error.")
 
         self.download_link = "/medium/(%s)/srt" % self.media_id
@@ -154,12 +169,18 @@ class TranscribeHandler(BaseHandler):
         client.fetch(self.client_callback_url,
                      callback=notified_callback,
                      method="POST",
-                     body=urllib.urlencode(post_data))
+                     body=urllib.urlencode(post_data)
+        )
+
 
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
-            self.write("download error:%s" % str(response.code))
+            self.write("media download error:%s" % str(response.code))
+            self.log_content["request_end_time"] = time.time()
+            self.log_content["error_type"] = 'download_addr'
+            self.save_log(False)
             self.finish()
+
         logging.info("downloaded,saved to: %s" % tmp_file)
         self.write_file(response, tmp_file)
 
@@ -168,6 +189,7 @@ class TranscribeHandler(BaseHandler):
         wav = wave.open(target_file)
         duration = wav.getnframes() / float(wav.getframerate())
         wav.close()
+        self.log_content["media_duration"] = duration
 
         self.cloud_db = lean_cloud.LeanCloud()
         self.cloud_db.add_media(
@@ -178,12 +200,12 @@ class TranscribeHandler(BaseHandler):
             self.company_name,
             self.requirement)
 
-        audio_dir, starts = vad.slice(3, target_file)
-        starts = preprocessor.preprocess_clip_length(
-                audio_dir,
-                starts,
-                self.fragment_length_limit,
-                self.force_fragment_length)
+        audio_dir, starts = vad.slice(0, target_file)
+        if self.fragment_length_limit:
+            starts = preprocessor.preprocess_clip_length(
+                audio_dir, starts, self.fragment_length_limit)
+        else:
+            starts = preprocessor.preprocess_clip_length(audio_dir, starts)
 
         basedir, subdir, files = next(os.walk(audio_dir))
         file_list = [os.path.join(basedir, file) for file in sorted(files)]
@@ -195,7 +217,6 @@ class TranscribeHandler(BaseHandler):
                     self.upload_oss_in_thread, self.media_id, file_list
                 ))
 
-        preprocessor.smoothen_clips_edge(file_list)
         # create a task group to organize transcription tasks
         task_group = TaskGroup(self.transcription_callback)
 
@@ -221,52 +242,52 @@ class TranscribeHandler(BaseHandler):
     def get(self):
         addr = self.get_argument("addr")
         addr = urllib.quote(addr.encode("utf8"), ":/")
-        self.addr = addr
 
-        self.media_name = self.get_argument("media_name").encode("utf8")
-
-        self.media_id = str(uuid.uuid4())
-
-        self.language = self.get_argument("lan", "zh")
-
-        self.company_name  = self.get_argument("company").encode("utf8")
-
+        media_name = self.get_argument("media_name").encode("utf8")
+        language = self.get_argument("lan", "zh")
+        company_name = self.get_argument("company").encode("utf8")
         fragment_length_limit = self.get_argument("max_fragment_length", 10)
         if fragment_length_limit:
             fragment_length_limit = int(fragment_length_limit)
-        self.fragment_length_limit = fragment_length_limit
-
         upload_oss = self.get_argument("upload_oss", False)
+        requirement = self.get_argument("requirement", u"字幕/纯文本/关键词/摘要")
         if upload_oss == "true" or upload_oss == "True":
-            self.upload_oss = True
+            upload_oss = True
         else:
-            self.upload_oss = False
-
-
-        self.requirement = self.get_argument("requirement", u"字幕,纯文本,关键词,摘要").split(',')
-
-        self.service_providers = self.get_argument(
+            upload_oss = False
+        service_providers = self.get_argument(
             "service_providers", "baidu").split(",")
-
+        self.addr = addr
+        self.media_name = media_name
+        self.media_id = str(uuid.uuid4())
+        self.language = language
+        self.company_name = company_name
+        self.fragment_length_limit = fragment_length_limit
+        self.upload_oss = upload_oss
+        self.service_providers = service_providers
+        self.requirement = requirement.split(",")
         self.client_callback_url = self.get_argument("callback", None)
-
-        force_fragment_length = self.get_argument("force_fragment_length", False)
-        if force_fragment_length == "true" or force_fragment_length == "True":
-            force_fragment_length = True
-        else:
-            force_fragment_length = False
-        self.force_fragment_length = force_fragment_length
-
         self.is_async = self.get_argument("async", False)
+
+        self.log_content = {}
+        self.log_content["request_start_timestamp"] = time.time()
+        self.log_content["arguments_get"] = self.request.arguments
+        self.log_content["arguments_post"] = self.request.body_arguments
+        self.log_content["ip"] = self.request.remote_ip
+        self.log_content["agent"] = self.request.headers.get("User-Agent", "")
+        self.log_content["path"] = self.request.path
+        self.log_content["uri"] = self.request.uri
+        self.log_content["method"] = self.request.method
+        self.log_content["headers"] = str(self.request.headers)
 
         if self.is_async:
             tornado.ioloop.IOLoop.current().add_callback(
-                self._handle, self.addr, self.language
+                self._handle, addr, language
             )
             self.write("success")
             self.finish()
         else:
-            self._handle(self.addr, self.language)
+            self._handle(addr, language)
 
     def _handle(self, addr, language):
         ext = get_ext(addr)
@@ -352,7 +373,7 @@ class LrcHandler(BaseHandler):
         else:
             self.write("not exist")
 
-    def fmt_time(self, seconds):
+    def fmt_time(self,seconds):
         seconds = round(seconds, 2)
         # t_start = datetime.datetime(1970, 1, 1)
         # t_delta = datetime.timedelta(seconds=seconds)
@@ -361,13 +382,13 @@ class LrcHandler(BaseHandler):
         #               t_end.minute - t_start.minute,
         #               t_end.second - t_start.second,
         #               t_end.microsecond - t_start.microsecond)
-        minute, second = divmod(seconds, 60)
+        minute, second = divmod(seconds,60)
         return "[%s:%s]" % (str(int(minute)), str(second))
 
     def fmt_content(self, media):
         content_list = media.get(self.content_key)
         content = content_list[0] if content_list else ""
-        content = re.sub(u"[,，。\.?？!！]", " ", content)
+        content = re.sub(u"[,，。\.?？!！]"," ",content)
         return content
 
     def write_content(self, media_list):
@@ -419,7 +440,7 @@ if __name__ == "__main__":
         env = options.env
 
     pwd = os.path.dirname(__file__)
-
+    sys.path.append(pwd)
     config_file = os.path.join(pwd, "config", env + ".json")
     config_dict = json.load(open(config_file))
     env_config.init_config(config_dict)
