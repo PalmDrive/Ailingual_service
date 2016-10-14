@@ -1,6 +1,10 @@
-import oss2
+from __future__ import absolute_import
+
 import os
-from env_config import CONFIG
+
+import oss2
+
+from .config import CONFIG
 
 
 # This method should be executed asynchronously

@@ -1,8 +1,9 @@
 # coding:utf-8
 from __future__ import absolute_import
 
-import leancloud
 import uuid
+
+import leancloud
 
 
 # singleton instance
@@ -61,39 +62,3 @@ class UserMgr(object):
             # use e.error,e.code to get error message
             res = False, e
         return res
-
-
-if __name__ == "__main__":
-    import os
-    import json
-    import env_config
-    import argparse
-    from os import sys, path
-    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-
-    pwd = os.path.dirname(__file__)
-    env = 'develop'
-    config_file = os.path.join(pwd, "config", env + ".json")
-    config_dict = json.load(open(config_file))
-    env_config.init_config(config_dict)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--create_company', dest='company_name',
-        help='create a company with random appid and appkey',
-        type=str,
-     )
-
-    args = parser.parse_args()
-    user_mgr = UserMgr()
-
-    if args.company_name:
-        print user_mgr.create_company(args.company_name)
-        print 'created a company user'
-
-    # print user_mgr.create_user('hello1', 'world')
-
-    # print user_mgr.login('hello', 'world')
-    #   print user_mgr.User.get_current()
-
-    print 'over.'

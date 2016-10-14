@@ -1,6 +1,9 @@
-import leancloud
-from datetime import datetime
+from __future__ import absolute_import
+
 import logging
+from datetime import datetime
+
+import leancloud
 
 CLASS_NAME_TRANSCRIPT = "Transcript"
 CLASS_NAME_MEDIA = "Media"

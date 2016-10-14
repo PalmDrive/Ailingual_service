@@ -1,8 +1,11 @@
+from __future__ import absolute_import
+
 import collections
 import contextlib
 import sys
-import wave
 import tempfile
+import wave
+
 import webrtcvad
 
 

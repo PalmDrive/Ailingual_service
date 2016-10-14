@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
-import tempfile
 import subprocess
+import tempfile
 
 
 def convert_to_wav(ext, filename):

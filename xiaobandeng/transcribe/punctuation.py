@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
-import re
+
+from __future__ import absolute_import
+
 import os
+import re
+
 
 def punc(content):
     result = []

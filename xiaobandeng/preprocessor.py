@@ -1,7 +1,7 @@
-import wave
 import contextlib
 import math
 import os
+import wave
 
 
 def preprocess_clip_length(audio_dir, starts, preferred_length=10, force_preferred_length=False):

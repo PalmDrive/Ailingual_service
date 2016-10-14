@@ -1,7 +1,11 @@
 #coding:utf8
-import wave
+
+from __future__ import absolute_import
+
 import datetime
 import logging
+import wave
+
 
 class TaskGroup(object):
     def __init__(self, callback, *cb_args):
