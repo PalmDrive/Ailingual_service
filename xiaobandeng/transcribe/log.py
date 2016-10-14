@@ -20,8 +20,6 @@ class TranscriptionLog(object):
         self.log.set("media_duration", log_content["media_duration"] or 0)
         self.log.set("notified_client", "yes" if log_content["notified_client"] else "no" )
 
-
-
     def save(self):
         try:
             self.log.save()
