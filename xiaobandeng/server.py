@@ -382,13 +382,6 @@ class LrcHandler(BaseHandler):
 
     def fmt_time(self, seconds):
         seconds = round(seconds, 2)
-        # t_start = datetime.datetime(1970, 1, 1)
-        # t_delta = datetime.timedelta(seconds=seconds)
-        # t_end = t_start + t_delta
-        # time_tuple = (t_end.hour - t_start.hour,
-        # t_end.minute - t_start.minute,
-        #               t_end.second - t_start.second,
-        #               t_end.microsecond - t_start.microsecond)
         minute, second = divmod(seconds, 60)
         return "[%s:%s]" % (str(int(minute)), str(second))
 
