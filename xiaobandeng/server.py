@@ -50,8 +50,9 @@ class BaseHandler(tornado.web.RequestHandler):
                         "x-smartchat-key,client-source")
         self.set_header("Access-Control-Allow-Methods",
                         "PUT,POST,GET,DELETE,OPTIONS")
-        # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求发送。
-        # 如果服务器端的响应中,没有返回Access-Control-Allow-Credentials: true的响应头，
+        # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求
+        # 发送。如果服务器端的响应中,没有返回
+        # Access-Control-Allow-Credentials: true的响应头，
         # 那么浏览器将不会把响应结果传递给发出请求的脚本程序.
 
         # 给一个带有withCredentials的请求发送响应的时候,
@@ -69,7 +70,9 @@ class BaseHandler(tornado.web.RequestHandler):
         if app_id and app_key:
             return user_mgr.login(app_id, app_key)
         else:
-            return (False, Exception("app_id or app_key not found in http headers"))
+            return (False,
+                    Exception("app_id or app_key not found in http headers"))
+
 
 class TestHandler(BaseHandler):
     def get(self):
@@ -151,9 +154,7 @@ class TranscribeHandler(BaseHandler):
         client.fetch(self.client_callback_url,
                      callback=notified_callback,
                      method="POST",
-                     body=urllib.urlencode(post_data)
-        )
-
+                     body=urllib.urlencode(post_data))
 
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
@@ -329,12 +330,60 @@ class SrtHandler(BaseHandler):
             self.write("not exist")
 
 
+class LrcHandler(BaseHandler):
+
+    def get(self, media_id):
+        source = self.get_argument("service_source", 0)
+
+        lc_content_keys = ["content_baidu", "content_google"]
+        self.content_key = lc_content_keys[int(source)]
+
+        lc = lean_cloud.LeanCloud()
+        media_list = lc.get_list(media_id=media_id)
+        if media_list:
+            filename = lc.get_media(media_id).get("media_name")
+            self.set_header("Content-Type", "application/octet-stream")
+            self.set_header("Content-Disposition",
+                            "attachment; filename=" + filename + ".lrc")
+
+            self.write_content(media_list)
+            self.finish()
+
+        else:
+            self.write("not exist")
+
+    def fmt_time(self, seconds):
+        seconds = round(seconds, 2)
+        # t_start = datetime.datetime(1970, 1, 1)
+        # t_delta = datetime.timedelta(seconds=seconds)
+        # t_end = t_start + t_delta
+        # time_tuple = (t_end.hour - t_start.hour,
+        #               t_end.minute - t_start.minute,
+        #               t_end.second - t_start.second,
+        #               t_end.microsecond - t_start.microsecond)
+        minute, second = divmod(seconds, 60)
+        return "[%s:%s]" % (str(int(minute)), str(second))
+
+    def fmt_content(self, media):
+        content_list = media.get(self.content_key)
+        content = content_list[0] if content_list else ""
+        content = re.sub(u"[,，。\.?？!！]", " ", content)
+        return content
+
+    def write_content(self, media_list):
+        for (index, media) in enumerate(media_list, 1):
+            self.write(self.fmt_time(media.get("start_at")))
+            self.write(self.fmt_content(media))
+            self.write("\n")
+
+
 def make_app(use_autoreload):
     return tornado.web.Application([
-                                       (r"/test", TestHandler),
-                                       (r"/transcribe", TranscribeHandler),
-                                       (r"/medium/(.*)/srt", SrtHandler)
-                                   ], autoreload=use_autoreload)
+        (r"/test", TestHandler),
+        (r"/transcribe", TranscribeHandler),
+        (r"/medium/(.*)/srt", SrtHandler),
+        (r"/medium/(.*)/lrc", LrcHandler),
+    ], autoreload=use_autoreload)
 
 
 if __name__ == "__main__":
