@@ -24,9 +24,11 @@ export GOOGLE_APPLICATION_CREDENTIALS="/root/dev/pipeline_service/google_credent
 ```
 
 ＃ Makefile
+```shell
 make install // download all the dependency
 make lint // format the imports, use flake8 to check code style
 make test // run test
+```
 
 # API Documentation
 ```
