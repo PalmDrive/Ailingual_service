@@ -137,7 +137,7 @@ class TranscribeHandler(BaseHandler):
 
     def save_log(self, status):
         self.log_content["transcribe_end_timestamp"] = time.time()
-        self.log_content["result"] = self.media_id
+        self.log_content["media_id"] = self.media_id
         self.log_content["status"] = "success" if status else "fail"
         log = TranscriptionLog()
         log.add(self.log_content)
@@ -177,6 +177,7 @@ class TranscribeHandler(BaseHandler):
         if response.error:
             self.write("media download error:%s" % str(response.code))
             self.log_content["request_end_time"] = time.time()
+            self.log_content["error_type"] = 'download_addr'
             self.save_log(False)
             self.finish()
 
