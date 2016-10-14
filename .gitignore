@@ -1,3 +1,5 @@
+.benchmarks
+.coverage
 xiaobandeng.iml
 env
 *.pyc
