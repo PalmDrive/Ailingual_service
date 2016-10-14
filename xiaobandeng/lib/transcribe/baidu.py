@@ -2,15 +2,11 @@
 
 import json
 import datetime
-import tornado.httpclient
-from env_config import CONFIG
-from task import TaskGroup, TranscriptionTask
 import urllib2
 import logging
-
-# #warn:
-# #baidu oauth api  access token expires 30 days
-# #
+import tornado.httpclient
+from env_config import CONFIG
+from lib.task.transcribe_task import TranscriptionTask
 
 
 class TaskBaidu(TranscriptionTask):

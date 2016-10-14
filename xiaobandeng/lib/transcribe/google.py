@@ -1,16 +1,16 @@
 # coding=utf8
-from __future__ import absolute_import
 
 import argparse
 import base64
 
 import requests
 from concurrent.futures import ThreadPoolExecutor
-
 from googleapiclient import discovery
 from oauth2client.client import GoogleCredentials
-from .task import TranscriptionTask
-from tornado import concurrent, ioloop
+from tornado import concurrent
+
+from lib.task.transcribe_task import TranscriptionTask
+
 
 class CustomHttp(object):
   def __init__(self, timeout=None):
