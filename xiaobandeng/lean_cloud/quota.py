@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 
-import leancloud
 import logging
+
+import leancloud
 
 
 def get_client_quota(app_id):
@@ -33,4 +34,3 @@ def update_access_count(app_id, count=1):
         quota.save()
     except Exception as e:
         logging.error(e)
-        pass

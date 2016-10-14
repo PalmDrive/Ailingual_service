@@ -17,25 +17,26 @@ import wave
 from os.path import splitext
 from urlparse import urlparse
 
+import psutil
 import tornado.httpclient
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 from concurrent.futures import ThreadPoolExecutor
 from tornado.concurrent import run_on_executor
-import psutil
+
 from . import convertor
 from . import oss
 from . import preprocessor
 from . import vad
 from .lean_cloud import lean_cloud
+from .lean_cloud.quota import get_quota
+from .lean_cloud.quota import update_access_count
 from .lean_cloud.user import UserMgr
 from .transcribe import baidu
 from .transcribe import google
 from .transcribe.log import TranscriptionLog
 from .transcribe.task import TaskGroup
-from .lean_cloud.quota import get_quota
-from .lean_cloud.quota import update_access_count
 
 
 def get_ext(url):
