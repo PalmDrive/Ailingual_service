@@ -1,7 +1,10 @@
 # coding:utf8
 
+from __future__ import absolute_import
+
 import leancloud
-from env_config import CONFIG
+
+from ..config import CONFIG
 
 
 class TranscriptionLog(object):
@@ -25,4 +28,3 @@ class TranscriptionLog(object):
             self.log.save()
         except leancloud.LeanCloudError as e:
             print e
-

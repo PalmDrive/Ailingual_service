@@ -6,11 +6,12 @@ import base64
 
 import requests
 from concurrent.futures import ThreadPoolExecutor
-
 from googleapiclient import discovery
 from oauth2client.client import GoogleCredentials
+from tornado import concurrent
+
 from .task import TranscriptionTask
-from tornado import concurrent, ioloop
+
 
 class CustomHttp(object):
   def __init__(self, timeout=None):
