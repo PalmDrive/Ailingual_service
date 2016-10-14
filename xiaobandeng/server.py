@@ -200,12 +200,17 @@ class TranscribeHandler(BaseHandler):
             self.company_name,
             self.requirement)
 
-        audio_dir, starts = vad.slice(0, target_file)
-        if self.fragment_length_limit:
-            starts = preprocessor.preprocess_clip_length(
-                audio_dir, starts, self.fragment_length_limit)
-        else:
-            starts = preprocessor.preprocess_clip_length(audio_dir, starts)
+        audio_dir, starts = vad.slice(3, target_file)
+        # if self.fragment_length_limit:
+        # starts = preprocessor.preprocess_clip_length(
+        #         audio_dir, starts, self.fragment_length_limit)
+        # else:
+        #     starts = preprocessor.preprocess_clip_length(audio_dir, starts)
+        starts = preprocessor.preprocess_clip_length(
+            audio_dir,
+            starts,
+            self.fragment_length_limit,
+            self.force_fragment_length)
 
         basedir, subdir, files = next(os.walk(audio_dir))
         file_list = [os.path.join(basedir, file) for file in sorted(files)]
@@ -217,6 +222,7 @@ class TranscribeHandler(BaseHandler):
                     self.upload_oss_in_thread, self.media_id, file_list
                 ))
 
+        preprocessor.smoothen_clips_edge(file_list)
         # create a task group to organize transcription tasks
         task_group = TaskGroup(self.transcription_callback)
 
@@ -243,30 +249,37 @@ class TranscribeHandler(BaseHandler):
         addr = self.get_argument("addr")
         addr = urllib.quote(addr.encode("utf8"), ":/")
 
-        media_name = self.get_argument("media_name").encode("utf8")
-        language = self.get_argument("lan", "zh")
-        company_name = self.get_argument("company").encode("utf8")
+        self.addr = addr
+        self.media_name = self.get_argument("media_name").encode("utf8")
+        self.media_id = str(uuid.uuid4())
+        self.language = self.get_argument("lan", "zh")
+        self.company_name = self.get_argument("company").encode("utf8")
+
         fragment_length_limit = self.get_argument("max_fragment_length", 10)
         if fragment_length_limit:
             fragment_length_limit = int(fragment_length_limit)
-        upload_oss = self.get_argument("upload_oss", False)
-        requirement = self.get_argument("requirement", u"字幕/纯文本/关键词/摘要")
-        if upload_oss == "true" or upload_oss == "True":
-            upload_oss = True
-        else:
-            upload_oss = False
-        service_providers = self.get_argument(
-            "service_providers", "baidu").split(",")
-        self.addr = addr
-        self.media_name = media_name
-        self.media_id = str(uuid.uuid4())
-        self.language = language
-        self.company_name = company_name
         self.fragment_length_limit = fragment_length_limit
-        self.upload_oss = upload_oss
-        self.service_providers = service_providers
-        self.requirement = requirement.split(",")
+        self.requirement = self.get_argument("requirement",
+                                             u"字幕,纯文本,关键词,摘要").split(',')
+
+        upload_oss = self.get_argument("upload_oss", False)
+        if upload_oss == "true" or upload_oss == "True":
+            self.upload_oss = True
+        else:
+            self.upload_oss = False
+        self.service_providers = self.get_argument(
+            "service_providers", "baidu").split(",")
+
         self.client_callback_url = self.get_argument("callback", None)
+
+        force_fragment_length = self.get_argument("force_fragment_length",
+                                                  False)
+        if force_fragment_length == "true" or force_fragment_length == "True":
+            force_fragment_length = True
+        else:
+            force_fragment_length = False
+        self.force_fragment_length = force_fragment_length
+
         self.is_async = self.get_argument("async", False)
 
         self.log_content = {}
@@ -282,12 +295,12 @@ class TranscribeHandler(BaseHandler):
 
         if self.is_async:
             tornado.ioloop.IOLoop.current().add_callback(
-                self._handle, addr, language
+                self._handle, self.addr, self.language
             )
             self.write("success")
             self.finish()
         else:
-            self._handle(addr, language)
+            self._handle(self.addr, self.language)
 
     def _handle(self, addr, language):
         ext = get_ext(addr)
@@ -352,7 +365,6 @@ class SrtHandler(BaseHandler):
 
 
 class LrcHandler(BaseHandler):
-
     def get(self, media_id):
         source = self.get_argument("service_source", 0)
 
@@ -373,22 +385,22 @@ class LrcHandler(BaseHandler):
         else:
             self.write("not exist")
 
-    def fmt_time(self,seconds):
+    def fmt_time(self, seconds):
         seconds = round(seconds, 2)
         # t_start = datetime.datetime(1970, 1, 1)
         # t_delta = datetime.timedelta(seconds=seconds)
         # t_end = t_start + t_delta
         # time_tuple = (t_end.hour - t_start.hour,
-        #               t_end.minute - t_start.minute,
+        # t_end.minute - t_start.minute,
         #               t_end.second - t_start.second,
         #               t_end.microsecond - t_start.microsecond)
-        minute, second = divmod(seconds,60)
+        minute, second = divmod(seconds, 60)
         return "[%s:%s]" % (str(int(minute)), str(second))
 
     def fmt_content(self, media):
         content_list = media.get(self.content_key)
         content = content_list[0] if content_list else ""
-        content = re.sub(u"[,，。\.?？!！]"," ",content)
+        content = re.sub(u"[,，。\.?？!！]", " ", content)
         return content
 
     def write_content(self, media_list):
@@ -400,11 +412,11 @@ class LrcHandler(BaseHandler):
 
 def make_app(use_autoreload):
     return tornado.web.Application([
-        (r"/test", TestHandler),
-        (r"/transcribe", TranscribeHandler),
-        (r"/medium/(.*)/srt", SrtHandler),
-        (r"/medium/(.*)/lrc", LrcHandler),
-    ], autoreload=use_autoreload)
+                                       (r"/test", TestHandler),
+                                       (r"/transcribe", TranscribeHandler),
+                                       (r"/medium/(.*)/srt", SrtHandler),
+                                       (r"/medium/(.*)/lrc", LrcHandler),
+                                   ], autoreload=use_autoreload)
 
 
 if __name__ == "__main__":
