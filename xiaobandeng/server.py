@@ -50,8 +50,9 @@ class BaseHandler(tornado.web.RequestHandler):
                         "x-smartchat-key,client-source")
         self.set_header("Access-Control-Allow-Methods",
                         "PUT,POST,GET,DELETE,OPTIONS")
-        # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求发送。
-        # 如果服务器端的响应中,没有返回Access-Control-Allow-Credentials: true的响应头，
+        # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求
+        # 发送。如果服务器端的响应中,没有返回
+        # Access-Control-Allow-Credentials: true的响应头，
         # 那么浏览器将不会把响应结果传递给发出请求的脚本程序.
 
         # 给一个带有withCredentials的请求发送响应的时候,
@@ -69,7 +70,9 @@ class BaseHandler(tornado.web.RequestHandler):
         if app_id and app_key:
             return user_mgr.login(app_id, app_key)
         else:
-            return (False, Exception("app_id or app_key not found in http headers"))
+            return (False,
+                    Exception("app_id or app_key not found in http headers"))
+
 
 class TestHandler(BaseHandler):
     def get(self):
@@ -151,9 +154,7 @@ class TranscribeHandler(BaseHandler):
         client.fetch(self.client_callback_url,
                      callback=notified_callback,
                      method="POST",
-                     body=urllib.urlencode(post_data)
-        )
-
+                     body=urllib.urlencode(post_data))
 
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
@@ -340,7 +341,7 @@ class LrcHandler(BaseHandler):
         else:
             self.write("not exist")
 
-    def fmt_time(self,seconds):
+    def fmt_time(self, seconds):
         seconds = round(seconds, 2)
         # t_start = datetime.datetime(1970, 1, 1)
         # t_delta = datetime.timedelta(seconds=seconds)
@@ -349,13 +350,13 @@ class LrcHandler(BaseHandler):
         #               t_end.minute - t_start.minute,
         #               t_end.second - t_start.second,
         #               t_end.microsecond - t_start.microsecond)
-        minute, second = divmod(seconds,60)
+        minute, second = divmod(seconds, 60)
         return "[%s:%s]" % (str(int(minute)), str(second))
 
     def fmt_content(self, media):
         content_list = media.get(self.content_key)
         content = content_list[0] if content_list else ""
-        content = re.sub(u"[,，。\.?？!！]"," ",content)
+        content = re.sub(u"[,，。\.?？!！]", " ", content)
         return content
 
     def write_content(self, media_list):

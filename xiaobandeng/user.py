@@ -1,10 +1,10 @@
 # coding:utf-8
+from __future__ import absolute_import
 
 import leancloud
-from datetime import datetime
-from env_config import CONFIG
-import traceback, sys
 import uuid
+
+
 # singleton instance
 class UserMgr(object):
     _instance = None
@@ -18,10 +18,6 @@ class UserMgr(object):
             return UserMgr._instance
 
     def __init__(self):
-
-        APP_ID = CONFIG.LEANCLOUD_APP_ID
-        MASTER_KEY = CONFIG.LEANCLOUD_MASTER_KEY
-        leancloud.init(APP_ID, MASTER_KEY)
         self.User = leancloud.User
 
     def create_user(self, username, passwd):
@@ -59,10 +55,10 @@ class UserMgr(object):
     def login(self, username, passwd):
         try:
             self.User().login(username, passwd)
-            #this api didn't return user.
+            # this api didn't return user.
             res = True, ''
         except leancloud.LeanCloudError as e:
-            #use e.error,e.code to get error message
+            # use e.error,e.code to get error message
             res = False, e
         return res
 
@@ -72,6 +68,8 @@ if __name__ == "__main__":
     import json
     import env_config
     import argparse
+    from os import sys, path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
     pwd = os.path.dirname(__file__)
     env = 'develop'
@@ -80,18 +78,18 @@ if __name__ == "__main__":
     env_config.init_config(config_dict)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--create_company',dest='company_name',
-                        help='create a company with random appid and appkey',
-                        type=str,
+    parser.add_argument(
+        '--create_company', dest='company_name',
+        help='create a company with random appid and appkey',
+        type=str,
      )
 
     args = parser.parse_args()
     user_mgr = UserMgr()
 
-    if  args.company_name:
-        print  user_mgr.create_company(args.company_name)
-        print  'created a company user'
-
+    if args.company_name:
+        print user_mgr.create_company(args.company_name)
+        print 'created a company user'
 
     # print user_mgr.create_user('hello1', 'world')
 

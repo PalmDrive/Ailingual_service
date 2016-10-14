@@ -1,17 +1,13 @@
 import leancloud
 from datetime import datetime
-from env_config import CONFIG
 import logging
 
 CLASS_NAME_TRANSCRIPT = "Transcript"
 CLASS_NAME_MEDIA = "Media"
 
+
 class LeanCloud(object):
     def __init__(self):
-        APP_ID = CONFIG.LEANCLOUD_APP_ID
-        MASTER_KEY = CONFIG.LEANCLOUD_MASTER_KEY
-
-        leancloud.init(APP_ID, MASTER_KEY)
         self.Fragment = leancloud.Object.extend(CLASS_NAME_TRANSCRIPT)
         self.fragments = {}
         self.fragment_query = self.Fragment.query
@@ -19,8 +15,10 @@ class LeanCloud(object):
         self.Media = leancloud.Object.extend(CLASS_NAME_MEDIA)
         self.media_query = self.Media.query
 
-    def set_fragment(self, fragment_order, start_at, end_at,
-            media_id, fragment_src):
+    def set_fragment(
+        self, fragment_order, start_at, end_at, media_id, fragment_src
+    ):
+
         if fragment_order in self.fragments:
             return
         fragment = self.Fragment()
@@ -31,7 +29,9 @@ class LeanCloud(object):
         fragment.set("fragment_src", fragment_src)
         self.fragments[fragment_order] = fragment
 
-    def add_transcription_to_fragment(self, fragment_order, content, source_name):
+    def add_transcription_to_fragment(
+        self, fragment_order, content, source_name
+    ):
         fragment = self.fragments[fragment_order]
         if fragment:
             key = "content_" + source_name
@@ -41,7 +41,15 @@ class LeanCloud(object):
             content_array.append(content)
             fragment.set(key, content_array)
 
-    def add_media(self, media_name, media_id, media_url, duration, company_name, requirement):
+    def add_media(
+        self,
+        media_name,
+        media_id,
+        media_url,
+        duration,
+        company_name,
+        requirement
+    ):
         media = self.Media()
         media.set("media_id", media_id)
         media.set("media_name", media_name)
@@ -76,17 +84,17 @@ class LeanCloud(object):
             query = self.fragment_query.equal_to("media_id", media_id)
             query.add_ascending("start_at")
 
-            if  start:
+            if start:
                 start_at = start.get("start_at")
             else:
                 start_at = 0
 
-            query.greater_than("start_at",start_at)
+            query.greater_than("start_at", start_at)
             query.limit(800)
             result = query.find()
             total_data.extend(result)
 
-            if len(result) == 800 :
+            if len(result) == 800:
                 start = result[-1]
                 batch_fetch(start)
             else:
@@ -97,6 +105,6 @@ class LeanCloud(object):
         logging.info("fetched :%s" % len(total_data))
         return total_data
 
-    def get_media(self,media_id):
-        query = self.media_query.equal_to("media_id",media_id)
+    def get_media(self, media_id):
+        query = self.media_query.equal_to("media_id", media_id)
         return query.find()[0]
