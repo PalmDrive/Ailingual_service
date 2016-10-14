@@ -201,11 +201,6 @@ class TranscribeHandler(BaseHandler):
             self.requirement)
 
         audio_dir, starts = vad.slice(3, target_file)
-        # if self.fragment_length_limit:
-        # starts = preprocessor.preprocess_clip_length(
-        #         audio_dir, starts, self.fragment_length_limit)
-        # else:
-        #     starts = preprocessor.preprocess_clip_length(audio_dir, starts)
         starts = preprocessor.preprocess_clip_length(
             audio_dir,
             starts,
