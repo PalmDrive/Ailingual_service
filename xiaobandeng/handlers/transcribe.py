@@ -2,13 +2,11 @@
 
 from __future__ import absolute_import
 
-import datetime
 import functools
 import json
 import logging
 import multiprocessing
 import os
-import re
 import tempfile
 import time
 import urllib
@@ -17,7 +15,7 @@ import wave
 from os.path import splitext
 from urlparse import urlparse
 
-import psutil
+
 import tornado.httpclient
 import tornado.httpserver
 import tornado.ioloop
@@ -25,18 +23,18 @@ import tornado.web
 from concurrent.futures import ThreadPoolExecutor
 from tornado.concurrent import run_on_executor
 
-from . import convertor
-from . import oss
-from . import preprocessor
-from . import vad
-from .lean_cloud import lean_cloud
-from .lean_cloud.quota import get_quota
-from .lean_cloud.quota import update_access_count
-from .lean_cloud.user import UserMgr
-from .transcribe import baidu
-from .transcribe import google
-from .transcribe.log import TranscriptionLog
-from .transcribe.task import TaskGroup
+from xiaobandeng.medium import convertor
+from xiaobandeng.ali_cloud import oss
+from xiaobandeng.medium import preprocessor
+from xiaobandeng.medium import vad
+
+from xiaobandeng.lean_cloud import lean_cloud
+from xiaobandeng.transcribe import baidu
+from xiaobandeng.transcribe  import google
+from xiaobandeng.transcribe.log import TranscriptionLog
+from xiaobandeng.task.task import TaskGroup
+from .base import BaseHandler
+
 
 
 def get_ext(url):
@@ -44,63 +42,6 @@ def get_ext(url):
     parsed = urlparse(url)
     root, ext = splitext(parsed.path)
     return ext  # or ext[1:] if you don"t want the leading "."
-
-
-class BaseHandler(tornado.web.RequestHandler):
-    def prepare(self):
-        # set access control allow_origin
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers",
-                        "X-Requested-With, Content-Type,"
-                        "x-smartchat-key,client-source")
-        self.set_header("Access-Control-Allow-Methods",
-                        "PUT,POST,GET,DELETE,OPTIONS")
-        # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求发送。
-        # 如果服务器端的响应中,没有返回Access-Control-Allow-Credentials: true的响应头，
-        # 那么浏览器将不会把响应结果传递给发出请求的脚本程序.
-
-        # 给一个带有withCredentials的请求发送响应的时候,
-        # 服务器端必须指定允许请求的域名,不能使用"*".否则无效
-        # self.set_header("Access-Control-Allow-Credentials", "true")
-
-    def options(self):
-        self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
-
-    def check_company_user(self):
-        user_mgr = UserMgr()
-        app_id = self.request.headers.get("app_id", "")
-        app_key = self.request.headers.get("app_key", "")
-        # return (true_or_false,user)
-        if app_id and app_key:
-            return user_mgr.login(app_id, app_key)
-        else:
-            return (
-                False, Exception("app_id or app_key not found in http headers")
-            )
-
-    def access_control(self, app_id):
-        # check system cpu & mem
-        if psutil.cpu_percent() > 90:
-            return False
-
-        if psutil.virtual_memory().percent() > 90:
-            return False
-
-        try:
-            count, quota = get_quota(app_id)
-            if count > quota - 1:
-                return False
-        except Exception as e:
-            logging.error(e)
-            return False
-
-        update_access_count(app_id)
-        return True
-
-
-class TestHandler(BaseHandler):
-    def get(self):
-        self.write("test ok")
 
 
 class TranscribeHandler(BaseHandler):
@@ -331,99 +272,3 @@ class TranscribeHandler(BaseHandler):
                                                 tmp_file, ext, language),
                      connect_timeout=120,
                      request_timeout=600, )
-
-
-class SrtHandler(BaseHandler):
-    def get(self, media_id):
-        source = self.get_argument("service_source", 0)
-
-        lc_content_keys = ["content_baidu", "content_google"]
-        content_key = lc_content_keys[int(source)]
-
-        lc = lean_cloud.LeanCloud()
-        media_list = lc.get_list(media_id=media_id)
-
-        def convert_time(seconds):
-            seconds = round(seconds, 3)
-            t_start = datetime.datetime(1970, 1, 1)
-            t_delta = datetime.timedelta(seconds=seconds)
-            t_end = t_start + t_delta
-            time_tuple = (t_end.hour - t_start.hour,
-                          t_end.minute - t_start.minute,
-                          t_end.second - t_start.second,
-                          t_end.microsecond - t_start.microsecond)
-            return ":".join([str(i) for i in time_tuple[:-1]]) + "," + \
-                   "%d" % (time_tuple[-1] / 1000)
-
-        if media_list:
-            filename = lc.get_media(media_id).get("media_name")
-            self.set_header("Content-Type", "application/octet-stream")
-            self.set_header("Content-Disposition",
-                            "attachment; filename=" + filename + ".srt")
-            for (index, media) in enumerate(media_list, 1):
-                self.write(str(media.get("fragment_order") + 1))
-                self.write("\n")
-                self.write(
-                    convert_time(media.get("start_at")) + "	-->	" +
-                    convert_time(media.get("end_at")))
-                self.write("\n")
-
-                content_list = media.get(content_key)
-
-                content = content_list[0] if content_list else ""
-                content = re.sub(u"[,，。\.?？!！]", " ", content)
-                self.write(content)
-                self.write("\n")
-                self.write("\n")
-            self.finish()
-
-        else:
-            self.write("not exist")
-
-
-class LrcHandler(BaseHandler):
-    def get(self, media_id):
-        source = self.get_argument("service_source", 0)
-
-        lc_content_keys = ["content_baidu", "content_google"]
-        self.content_key = lc_content_keys[int(source)]
-
-        lc = lean_cloud.LeanCloud()
-        media_list = lc.get_list(media_id=media_id)
-        if media_list:
-            filename = lc.get_media(media_id).get("media_name")
-            self.set_header("Content-Type", "application/octet-stream")
-            self.set_header("Content-Disposition",
-                            "attachment; filename=" + filename + ".lrc")
-
-            self.write_content(media_list)
-            self.finish()
-
-        else:
-            self.write("not exist")
-
-    def fmt_time(self, seconds):
-        seconds = round(seconds, 2)
-        minute, second = divmod(seconds, 60)
-        return "[%s:%s]" % (str(int(minute)), str(second))
-
-    def fmt_content(self, media):
-        content_list = media.get(self.content_key)
-        content = content_list[0] if content_list else ""
-        content = re.sub(u"[,，。\.?？!！]", " ", content)
-        return content
-
-    def write_content(self, media_list):
-        for (index, media) in enumerate(media_list, 1):
-            self.write(self.fmt_time(media.get("start_at")))
-            self.write(self.fmt_content(media))
-            self.write("\n")
-
-
-def make_app(use_autoreload):
-    return tornado.web.Application([
-                                       (r"/test", TestHandler),
-                                       (r"/transcribe", TranscribeHandler),
-                                       (r"/medium/(.*)/srt", SrtHandler),
-                                       (r"/medium/(.*)/lrc", LrcHandler),
-                                   ], autoreload=use_autoreload)

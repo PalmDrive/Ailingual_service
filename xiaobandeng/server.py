@@ -13,16 +13,14 @@ import tornado.web
 
 from xiaobandeng.config import CONFIG
 from xiaobandeng.config import load_config
-from xiaobandeng.handler import LrcHandler
-from xiaobandeng.handler import SrtHandler
-from xiaobandeng.handler import TestHandler
-from xiaobandeng.handler import TranscribeHandler
+from xiaobandeng.handlers.medium.lrc import LrcHandler
+from xiaobandeng.handlers.medium.srt import SrtHandler
+from xiaobandeng.handlers.transcribe import TranscribeHandler
 from xiaobandeng.lean_cloud import init
 
 
 def make_app(use_autoreload):
     return tornado.web.Application([
-                                       (r"/test", TestHandler),
                                        (r"/transcribe", TranscribeHandler),
                                        (r"/medium/(.*)/srt", SrtHandler),
                                        (r"/medium/(.*)/lrc", LrcHandler),
@@ -47,6 +45,7 @@ def main():
     # use sys.getdefaultencoding() to get current val
 
     reload(sys)
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     sys.setdefaultencoding("utf-8")
 
     define("port", default=8888, help="run on this port", type=int)
@@ -56,6 +55,7 @@ def main():
     tornado.options.parse_command_line()
 
     env = os.environ.get("PIPELINE_SERVICE_ENV")
+
     if not env:
         env = options.env
     load_config(env)

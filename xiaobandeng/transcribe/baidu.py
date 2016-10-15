@@ -9,8 +9,8 @@ import urllib2
 
 import tornado.httpclient
 
-from ..config import CONFIG
-from .task import TranscriptionTask
+from xiaobandeng.config import CONFIG
+from ..task.task import TranscriptionTask
 
 
 # #warn:
