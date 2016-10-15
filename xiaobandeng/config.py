@@ -20,7 +20,6 @@ def init_config(json_dict):
 
 def load_config(env):
     pwd = os.path.dirname(__file__)
-    sys.path.append(pwd)
     config_file = os.path.join(pwd, "config", env + ".json")
     config_dict = json.load(open(config_file))
     init_config(config_dict)
