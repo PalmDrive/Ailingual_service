@@ -9,7 +9,6 @@ import logging
 import multiprocessing
 import os
 import re
-import sys
 import tempfile
 import time
 import urllib
@@ -18,6 +17,7 @@ import wave
 from os.path import splitext
 from urlparse import urlparse
 
+import psutil
 import tornado.httpclient
 import tornado.httpserver
 import tornado.ioloop
@@ -29,10 +29,9 @@ from . import convertor
 from . import oss
 from . import preprocessor
 from . import vad
-from .config import CONFIG
-from .config import load_config
-from .lean_cloud import init
 from .lean_cloud import lean_cloud
+from .lean_cloud.quota import get_quota
+from .lean_cloud.quota import update_access_count
 from .lean_cloud.user import UserMgr
 from .transcribe import baidu
 from .transcribe import google
@@ -78,6 +77,25 @@ class BaseHandler(tornado.web.RequestHandler):
             return (
                 False, Exception("app_id or app_key not found in http headers")
             )
+
+    def access_control(self, app_id):
+        # check system cpu & mem
+        if psutil.cpu_percent() > 90:
+            return False
+
+        if psutil.virtual_memory().percent() > 90:
+            return False
+
+        try:
+            count, quota = get_quota(app_id)
+            if count > quota - 1:
+                return False
+        except Exception as e:
+            logging.error(e)
+            return False
+
+        update_access_count(app_id)
+        return True
 
 
 class TestHandler(BaseHandler):
