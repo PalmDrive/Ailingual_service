@@ -51,4 +51,5 @@ uritemplate==0.6
 wcwidth==0.1.7
 webrtcvad==2.0.8
 Werkzeug==0.11.11
+psutil==4.3.1
 -e git+https://github.com/PalmDrive/pipeline_service.git@579c586ece1365a63d54f56059b143d0a36d3199#egg=xiaobandeng
