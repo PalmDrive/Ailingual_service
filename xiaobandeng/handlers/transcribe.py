@@ -89,6 +89,8 @@ class TranscribeHandler(BaseHandler):
                     task.order, result, task.source_name())
 
         self.cloud_db.save()
+        if self.upload_oss:
+            self.cloud_db.create_crowdsourcing_tasks()
 
         if self.is_async:
             self.notified_client()
