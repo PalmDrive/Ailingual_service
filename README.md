@@ -1,5 +1,21 @@
 # pipeline_service
 
+# supervisor
+```
+config file:
+/etc/supervisor/conf.d/pipeline_service.conf
+start service:
+supervisorctl start pipeline_service
+stop service:
+supervisorctl stop pipeline_service
+restart service:
+supervisorctl reload pipeline_service
+status service:
+supervisorctl status pipeline_service
+service log:
+/root/dev/log/pipeline_service.log
+```  
+
 # ffmpeg
 ```
 install ffmpeg:  http://ericholsinger.com/general/install-ffmpeg-on-a-mac/
