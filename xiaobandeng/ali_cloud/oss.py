@@ -1,5 +1,7 @@
 from __future__ import absolute_import
+
 import os
+
 import oss2
 
 from xiaobandeng.config import CONFIG

@@ -10,6 +10,7 @@ import urllib2
 import tornado.httpclient
 
 from xiaobandeng.config import CONFIG
+
 from ..task.task import TranscriptionTask
 
 
