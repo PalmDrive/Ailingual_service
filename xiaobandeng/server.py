@@ -15,14 +15,12 @@ from xiaobandeng.config import CONFIG
 from xiaobandeng.config import load_config
 from xiaobandeng.handlers.medium.lrc import LrcHandler
 from xiaobandeng.handlers.medium.srt import SrtHandler
-from xiaobandeng.handlers.test import TestHandler
 from xiaobandeng.handlers.transcribe import TranscribeHandler
-from xiaobandeng.lib.storage.lean_cloud import init
+from xiaobandeng.storage.lean_cloud import init
 
 
 def make_app(use_autoreload):
     return tornado.web.Application([
-                                       (r"/test", TestHandler),
                                        (r"/transcribe", TranscribeHandler),
                                        (r"/medium/(.*)/srt", SrtHandler),
                                        (r"/medium/(.*)/lrc", LrcHandler),

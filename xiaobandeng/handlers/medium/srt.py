@@ -4,7 +4,7 @@ from __future__ import absolute_import
 
 
 import re
-from xiaobandeng.lib.storage import lean_cloud
+from xiaobandeng.storage import lean_cloud
 from ..base import BaseHandler
 
 

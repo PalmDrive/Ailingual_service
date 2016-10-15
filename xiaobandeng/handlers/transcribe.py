@@ -23,16 +23,16 @@ import tornado.web
 from concurrent.futures import ThreadPoolExecutor
 from tornado.concurrent import run_on_executor
 
-from xiaobandeng.lib.medium import convertor
-from xiaobandeng.lib.storage.ali_cloud import oss
-from xiaobandeng.lib.medium import preprocessor
-from xiaobandeng.lib.medium import vad
+from xiaobandeng.medium import convertor
+from xiaobandeng.storage.ali_cloud import oss
+from xiaobandeng.medium import preprocessor
+from xiaobandeng.medium import vad
 
-from xiaobandeng.lib.storage import lean_cloud
-from xiaobandeng.lib.transcribe import baidu
-from xiaobandeng.lib.transcribe  import google
-from xiaobandeng.lib.transcribe.log import TranscriptionLog
-from xiaobandeng.lib.task.task import TaskGroup
+from xiaobandeng.storage import lean_cloud
+from xiaobandeng.transcribe import baidu
+from xiaobandeng.transcribe  import google
+from xiaobandeng.transcribe.log import TranscriptionLog
+from xiaobandeng.task.task import TaskGroup
 from .base import BaseHandler
 
 

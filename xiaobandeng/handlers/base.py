@@ -6,7 +6,7 @@ import tornado.httpclient
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
-from xiaobandeng.lib.storage.lean_cloud.user import UserMgr
+from xiaobandeng.storage.lean_cloud.user import UserMgr
 
 
 class BaseHandler(tornado.web.RequestHandler):
