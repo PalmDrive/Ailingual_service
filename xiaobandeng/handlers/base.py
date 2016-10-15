@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
-
+import logging
 import psutil
 from xiaobandeng.lean_cloud.quota import get_quota
 from xiaobandeng.lean_cloud.quota import update_access_count
