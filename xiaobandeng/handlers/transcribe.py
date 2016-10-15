@@ -15,7 +15,6 @@ import wave
 from os.path import splitext
 from urlparse import urlparse
 
-
 import tornado.httpclient
 import tornado.httpserver
 import tornado.ioloop
@@ -23,18 +22,17 @@ import tornado.web
 from concurrent.futures import ThreadPoolExecutor
 from tornado.concurrent import run_on_executor
 
-from xiaobandeng.medium import convertor
 from xiaobandeng.ali_cloud import oss
+from xiaobandeng.lean_cloud import lean_cloud
+from xiaobandeng.medium import convertor
 from xiaobandeng.medium import preprocessor
 from xiaobandeng.medium import vad
-
-from xiaobandeng.lean_cloud import lean_cloud
-from xiaobandeng.transcribe import baidu
-from xiaobandeng.transcribe  import google
-from xiaobandeng.transcribe.log import TranscriptionLog
 from xiaobandeng.task.task import TaskGroup
-from .base import BaseHandler
+from xiaobandeng.transcribe import baidu
+from xiaobandeng.transcribe import google
+from xiaobandeng.transcribe.log import TranscriptionLog
 
+from .base import BaseHandler
 
 
 def get_ext(url):
@@ -93,11 +91,14 @@ class TranscribeHandler(BaseHandler):
             self.cloud_db.create_crowdsourcing_tasks()
 
         if self.is_async:
-            self.notified_client()
-        elif self.client_callback_url:
-            self.write(json.dumps({
-                "media_id": self.media_id
-            }))
+            if self.client_callback_url:
+                self.notify_client()
+            else:
+                self.log_content['notified_client'] = False
+                self.save_log(True)
+        else:
+            self.write(json.dumps(self.response_data()))
+            self.log_content['notified_client'] = False
             self.log_content["request_end_timestamp"] = time.time()
             self.save_log(True)
             self.finish()
@@ -110,7 +111,19 @@ class TranscribeHandler(BaseHandler):
         log.add(self.log_content)
         log.save()
 
-    def notified_client(self):
+    def response_data(self):
+        self.download_link = "/medium/%s/srt" % self.media_id
+
+        data = {
+            "data": {
+                "media_id": "%s" % self.media_id,
+                "transcript_srt_download_link": "%s" % self.download_link
+            }
+        }
+
+        return data
+
+    def notify_client(self):
         def notified_callback(response):
             logging.info("called origin client server...")
             self.log_content['notified_client'] = True
@@ -122,20 +135,11 @@ class TranscribeHandler(BaseHandler):
                 self.save_log(True)
                 logging.info("origin client server returned success")
 
-        self.download_link = "/medium/(%s)/srt" % self.media_id
-
-        post_data = {
-            "data": {
-                "media_id": "%s" % self.media_id,
-                "transcript_srt_download_link": "%s" % self.download_link
-            }
-        }
-
         client = tornado.httpclient.AsyncHTTPClient()
         client.fetch(self.client_callback_url,
                      callback=notified_callback,
                      method="POST",
-                     body=urllib.urlencode(post_data))
+                     body=urllib.urlencode(self.response_data()))
 
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
