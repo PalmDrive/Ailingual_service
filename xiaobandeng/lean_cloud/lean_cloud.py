@@ -7,6 +7,7 @@ import leancloud
 
 CLASS_NAME_TRANSCRIPT = "Transcript"
 CLASS_NAME_MEDIA = "Media"
+CLASS_NAME_CROWDSOURCINGTASK = "CrowdsourcingTask"
 
 
 class LeanCloud(object):
@@ -19,8 +20,11 @@ class LeanCloud(object):
         self.media_query = self.Media.query
         self.media = None
 
+        self.CrowdSourcingTask = leancloud.Object.extend(CLASS_NAME_CROWDSOURCINGTASK)
+        self.crowdsourcing_tasks = []
+
     def set_fragment(
-        self, fragment_order, start_at, end_at, media_id, fragment_src
+            self, fragment_order, start_at, end_at, media_id, fragment_src
     ):
         if fragment_order in self.fragments:
             return
@@ -33,7 +37,7 @@ class LeanCloud(object):
         self.fragments[fragment_order] = fragment
 
     def add_transcription_to_fragment(
-        self, fragment_order, content, source_name
+            self, fragment_order, content, source_name
     ):
         fragment = self.fragments[fragment_order]
         if fragment:
@@ -44,14 +48,31 @@ class LeanCloud(object):
             content_array.append(content)
             fragment.set(key, content_array)
 
+    def add_crowdsourcing_task(
+            self, media_id, fragment_id, fragment_order
+    ):
+        crowdsourcing_task = self.CrowdSourcingTask()
+        crowdsourcing_task.set("media_id", media_id)
+        crowdsourcing_task.set("fragment_id", fragment_id)
+        crowdsourcing_task.set("fragment_order", fragment_order)
+        crowdsourcing_task.set("status", 0)
+        crowdsourcing_task.set("fragment_type", "Transcript")
+        self.crowdsourcing_tasks.append(crowdsourcing_task)
+
+    def create_crowdsourcing_tasks(self):
+        for fragment_order, fragment in self.fragments.iteritems():
+            self.add_crowdsourcing_task(fragment.get("media_id"), fragment.id, fragment_order)
+        if len(self.crowdsourcing_tasks) > 0:
+            self.CrowdSourcingTask.save_all(self.crowdsourcing_tasks)
+
     def add_media(
-        self,
-        media_name,
-        media_id,
-        media_url,
-        duration,
-        company_name,
-        requirement
+            self,
+            media_name,
+            media_id,
+            media_url,
+            duration,
+            company_name,
+            requirement
     ):
         media = self.Media()
         media.set("media_id", media_id)
