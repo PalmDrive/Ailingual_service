@@ -86,6 +86,9 @@ class TranscribeHandler(BaseHandler):
                 self.cloud_db.add_transcription_to_fragment(
                     task.order, result, task.source_name())
 
+        if self.pool:
+            self.pool.close()
+
         self.cloud_db.save()
         if self.upload_oss:
             self.cloud_db.create_crowdsourcing_tasks()
@@ -195,10 +198,11 @@ class TranscribeHandler(BaseHandler):
             for task in baidu_tasks:
                 task_group.add(task)
 
-        num_workers = multiprocessing.cpu_count()
-        pool = multiprocessing.Pool(num_workers)
         if "google" in self.service_providers:
-            google_speech_servce = google.GoogleASR(pool)
+            num_workers = multiprocessing.cpu_count()
+            self.pool = multiprocessing.Pool(num_workers)
+
+            google_speech_servce = google.GoogleASR(self.pool)
             google_tasks = google_speech_servce.batch_vop_tasks(
                 file_list, starts, language)
             for task in google_tasks:
@@ -256,6 +260,8 @@ class TranscribeHandler(BaseHandler):
         self.log_content["uri"] = self.request.uri
         self.log_content["method"] = self.request.method
         self.log_content["headers"] = str(self.request.headers)
+
+        self.pool = None
 
         if self.is_async:
             tornado.ioloop.IOLoop.current().add_callback(
