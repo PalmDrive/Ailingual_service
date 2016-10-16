@@ -50,7 +50,7 @@ def main():
 
     define("port", default=8888, help="run on this port", type=int)
     define("env", default="develop", help="develop production staging")
-    define("use_autoreload", default=True, help="set debug to use auto reload")
+    define("use_autoreload", default=False, help="set debug to use auto reload")
     define("unix_socket", default=None, help="unix socket path")
     tornado.options.parse_command_line()
 
