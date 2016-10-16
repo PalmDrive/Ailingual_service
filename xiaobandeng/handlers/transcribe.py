@@ -185,7 +185,6 @@ class TranscribeHandler(BaseHandler):
                     self.upload_oss_in_thread, self.media_id, file_list
                 ))
 
-        preprocessor.smoothen_clips_edge(file_list)
         # create a task group to organize transcription tasks
         task_group = TaskGroup(self.transcription_callback)
 
@@ -205,6 +204,8 @@ class TranscribeHandler(BaseHandler):
             for task in google_tasks:
                 task_group.add(task)
 
+        # you need to smoothen the file after building all tasks but before task group starts
+        preprocessor.smoothen_clips_edge(file_list)
         task_group.start()
 
     @tornado.web.asynchronous
