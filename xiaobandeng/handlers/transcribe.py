@@ -195,11 +195,9 @@ class TranscribeHandler(BaseHandler):
             for task in baidu_tasks:
                 task_group.add(task)
 
-        num_workers = multiprocessing.cpu_count()
-        pool = multiprocessing.Pool(num_workers)
         if "google" in self.service_providers:
-            google_speech_servce = google.GoogleASR(pool)
-            google_tasks = google_speech_servce.batch_vop_tasks(
+            google_speech_service = google.GoogleASR()
+            google_tasks = google_speech_service.batch_vop_tasks(
                 file_list, starts, language)
             for task in google_tasks:
                 task_group.add(task)

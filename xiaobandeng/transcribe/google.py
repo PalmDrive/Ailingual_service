@@ -88,7 +88,7 @@ class TaskGoogle(TranscriptionTask):
 class GoogleASR(object):
     # Application default credentials provided by env variable
     # GOOGLE_APPLICATION_CREDENTIALS
-    def __init__(self, pool = None):
+    def __init__(self):
         self.auth_url = 'https://www.googleapis.com/auth/cloud-platform'
         credentials = GoogleCredentials.get_application_default().create_scoped(
             [self.auth_url])
