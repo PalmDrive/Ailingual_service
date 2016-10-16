@@ -2,6 +2,12 @@
 
 # supervisor
 ```
+introduce and configure:
+http://www.cnblogs.com/luojianqun/p/5684194.html
+install:
+pip install supervisor
+run servervisor:
+supervisord
 config file:
 /etc/supervisor/conf.d/pipeline_service.conf
 start service:
