@@ -5,7 +5,6 @@ from __future__ import absolute_import
 import functools
 import json
 import logging
-import multiprocessing
 import os
 import tempfile
 import time
@@ -256,12 +255,16 @@ class TranscribeHandler(BaseHandler):
         self.log_content["headers"] = str(self.request.headers)
 
         if self.is_async:
-            tornado.ioloop.IOLoop.current().add_callback(
-                self._handle, self.addr, self.language
-            )
-            self.write("success")
-            self.log_content["request_end_time"] = time.time()
-            self.finish()
+            company_login_state, error = self.check_company_user()
+            if company_login_state:
+                tornado.ioloop.IOLoop.current().add_callback(
+                    self._handle, self.addr, self.language
+                )
+                self.write(json.dumps({"status": "success"}))
+                self.log_content["request_end_time"] = time.time()
+                self.finish()
+            else:
+                self.write(json.dumps({"status": "fail", "message":error }))
         else:
             self._handle(self.addr, self.language)
 
