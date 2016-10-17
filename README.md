@@ -10,12 +10,16 @@ run servervisor:
 supervisord
 config file:
 /etc/supervisor/conf.d/pipeline_service.conf
-start service:
+restart supervisord:
+supervisorctl reload
+
+start pipeline_service:
 supervisorctl start pipeline_service
-stop service:
+stop pipeline_service:
 supervisorctl stop pipeline_service
-restart service:
-supervisorctl reload pipeline_service
+restart pipeline_service:
+supervisorctl restart pipeline_service
+
 status service:
 supervisorctl status pipeline_service
 service log:
