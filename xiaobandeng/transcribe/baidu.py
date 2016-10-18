@@ -13,10 +13,8 @@ from xiaobandeng.config import CONFIG
 
 from ..task.task import TranscriptionTask
 
-
-# #warn:
-# #baidu oauth api  access token expires 30 days
-# #
+# warn:
+# baidu oauth api  access token expires 30 days
 
 
 class TaskBaidu(TranscriptionTask):

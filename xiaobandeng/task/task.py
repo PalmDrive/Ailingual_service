@@ -1,10 +1,28 @@
-#coding:utf8
+# coding:utf8
 
 from __future__ import absolute_import
 
 import datetime
 import logging
 import wave
+
+
+PENDING_TASKS = 0
+
+
+def current_pending_tasks():
+    global PENDING_TASKS
+    return PENDING_TASKS
+
+
+def increase_pending_task(count=1):
+    global PENDING_TASKS
+    PENDING_TASKS += 1
+
+
+def decrease_pending_task(count=1):
+    global PENDING_TASKS
+    PENDING_TASKS -= 1
 
 
 class TaskGroup(object):
@@ -57,7 +75,9 @@ class Task(object):
         self._task_group = task_group
 
     def complete(self):
-        logging.info('task %s completed,result: %s' % (self.order, self.result[0] if len(self.result) > 0 else ""))
+        logging.info('task %s completed,result: %s' % (
+            self.order, self.result[0] if len(self.result) > 0 else ""))
+        decrease_pending_task(1)
         self.done = True
         if self.completion_callback:
             self.completion_callback(self)
@@ -66,7 +86,14 @@ class Task(object):
 
 
 class TranscriptionTask(Task):
-    def __init__(self, file_name, start_time, order=None, lan='zh', completion_callback=None):
+    def __init__(
+        self,
+        file_name,
+        start_time,
+        order=None,
+        lan='zh',
+        completion_callback=None
+    ):
         super(TranscriptionTask, self).__init__(completion_callback)
         self.file_name = file_name
         self.lan = lan
