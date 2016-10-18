@@ -44,7 +44,9 @@ class BaseHandler(tornado.web.RequestHandler):
             return user_mgr.login(app_id, app_key)
         else:
             return (
-                False, Exception("app_id or app_key not found in http headers")
+                False, {"code": 110001,
+                        "error":"app_id or app_key not found in http headers"
+                        }
             )
 
 

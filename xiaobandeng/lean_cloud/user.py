@@ -60,5 +60,5 @@ class UserMgr(object):
             res = True, ''
         except leancloud.LeanCloudError as e:
             # use e.error,e.code to get error message
-            res = False, e
+            res = False, {"code": e.code, "error": e.error}
         return res
