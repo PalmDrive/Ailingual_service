@@ -10,9 +10,10 @@ import tornado.ioloop
 import tornado.web
 
 import psutil
-from xiaobandeng.lean_cloud.quota import get_quota
-from xiaobandeng.lean_cloud.quota import update_access_count
-from xiaobandeng.lean_cloud.user import UserMgr
+from ..lean_cloud.quota import get_quota
+from ..lean_cloud.quota import update_access_count
+from ..lean_cloud.user import UserMgr
+from ..task import current_pending_tasks
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -49,7 +50,6 @@ class BaseHandler(tornado.web.RequestHandler):
                         }
             )
 
-
     def access_control(self, app_id):
         # check system cpu & mem
         if psutil.cpu_percent() > 90:
@@ -58,6 +58,11 @@ class BaseHandler(tornado.web.RequestHandler):
         if psutil.virtual_memory().percent() > 90:
             return False
 
+        # pending tasks
+        if current_pending_tasks() > 1000:
+            return False
+
+        # access quota
         try:
             count, quota = get_quota(app_id)
             if count > quota - 1:

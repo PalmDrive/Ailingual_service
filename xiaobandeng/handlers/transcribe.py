@@ -30,7 +30,7 @@ from xiaobandeng.task.task import TaskGroup
 from xiaobandeng.transcribe import baidu
 from xiaobandeng.transcribe import google
 from xiaobandeng.transcribe.log import TranscriptionLog
-
+from ..task import increase_pending_task
 from .base import BaseHandler
 
 
@@ -192,6 +192,7 @@ class TranscribeHandler(BaseHandler):
             baidu_tasks = baidu_speech_service.batch_vop_tasks(
                 file_list, starts, language)
             for task in baidu_tasks:
+                increase_pending_task(1)
                 task_group.add(task)
 
         if "google" in self.service_providers:
@@ -199,9 +200,11 @@ class TranscribeHandler(BaseHandler):
             google_tasks = google_speech_service.batch_vop_tasks(
                 file_list, starts, language)
             for task in google_tasks:
+                increase_pending_task(1)
                 task_group.add(task)
 
-        # you need to smoothen the file after building all tasks but before task group starts
+        # you need to smoothen the file after building all tasks but
+        # before task group starts
         preprocessor.smoothen_clips_edge(file_list)
         task_group.start()
 
