@@ -122,5 +122,12 @@ Transcribe API:
     A class to represent a task used to transcribe.
     
 @class BaiduTask:
-    A class to represent a transcription task using Baidu Speech service. 
+    A class to represent a transcription task using Baidu Speech service. /
+```
+
+# Access control
+```
+在leancloud 创建ClientQuota表格， 包含app_id, access_quota, access_count. 这里面app_id 和_user表格里面的app_id 匹配。 access_quota包含该用户授予的访问次数， access_count表示该用户已经访问的次数。 注意其中的次数指的是成功访问的次数。
+
+access_control 方法接受app_id, 返回boolean，True表示能访问， False 表示不能
 ```
