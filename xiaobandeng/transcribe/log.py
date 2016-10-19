@@ -20,8 +20,8 @@ class TranscriptionLog(object):
         for (k, v) in log_content.items():
             self.log.set(k, v)
 
-        self.log.set("media_duration", log_content["media_duration"] or 0)
-        self.log.set("notified_client", "yes" if log_content["notified_client"] else "no" )
+        self.log.set("media_duration", log_content.get("media_duration", 0))
+        self.log.set("notified_client", "yes" if log_content.get("notified_client") else "no" )
 
     def save(self):
         try:

@@ -30,7 +30,7 @@ from xiaobandeng.task.task import TaskGroup
 from xiaobandeng.transcribe import baidu
 from xiaobandeng.transcribe import google
 from xiaobandeng.transcribe.log import TranscriptionLog
-from ..task.task  import increase_pending_task
+from ..task.task import increase_pending_task
 from .base import BaseHandler
 
 
@@ -122,6 +122,15 @@ class TranscribeHandler(BaseHandler):
 
         return data
 
+    def response_error(self, error):
+        data = {
+            "error": {
+                "message": "%s" % error
+            }
+        }
+
+        return data
+
     def notify_client(self):
         def notified_callback(response):
             logging.info("called origin client server...")
@@ -146,7 +155,9 @@ class TranscribeHandler(BaseHandler):
             self.log_content["request_end_time"] = time.time()
             self.log_content["error_type"] = 'download_addr'
             self.save_log(False)
+            self.write(json.dumps(self.response_error("Download address is invalid")))
             self.finish()
+            return
 
         logging.info("downloaded,saved to: %s" % tmp_file)
         self.write_file(response, tmp_file)
@@ -267,7 +278,7 @@ class TranscribeHandler(BaseHandler):
                 self.log_content["request_end_time"] = time.time()
                 self.finish()
             else:
-                self.write(json.dumps({"status": "fail", "message":error }))
+                self.write(json.dumps({"status": "fail", "message": error}))
         else:
             self._handle(self.addr, self.language)
 
