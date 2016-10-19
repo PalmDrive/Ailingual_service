@@ -122,6 +122,15 @@ class TranscribeHandler(BaseHandler):
 
         return data
 
+    def response_error(self, error):
+        data = {
+            "error": {
+                "message": "%s" % error
+            }
+        }
+
+        return data
+
     def notify_client(self):
         def notified_callback(response):
             logging.info("called origin client server...")
@@ -146,7 +155,9 @@ class TranscribeHandler(BaseHandler):
             self.log_content["request_end_time"] = time.time()
             self.log_content["error_type"] = 'download_addr'
             self.save_log(False)
+            self.write(json.dumps(self.response_error("Download address is invalid")))
             self.finish()
+            return
 
         logging.info("downloaded,saved to: %s" % tmp_file)
         self.write_file(response, tmp_file)
@@ -244,7 +255,12 @@ class TranscribeHandler(BaseHandler):
             force_fragment_length = False
         self.force_fragment_length = force_fragment_length
 
-        self.is_async = self.get_argument("async", False)
+        is_async = self.get_argument("async", False)
+        if is_async == "true" or is_async == "True":
+            is_async = True
+        else:
+            is_async = False
+        self.is_async = is_async
 
         self.log_content = {}
         self.log_content["request_start_timestamp"] = time.time()
@@ -265,9 +281,9 @@ class TranscribeHandler(BaseHandler):
                 )
                 self.write(json.dumps({"status": "success"}))
                 self.log_content["request_end_time"] = time.time()
-                self.finish()
             else:
-                self.write(json.dumps({"status": "fail", "message":error }))
+                self.write(json.dumps({"status": "fail", "message": error}))
+            self.finish()
         else:
             self._handle(self.addr, self.language)
 
