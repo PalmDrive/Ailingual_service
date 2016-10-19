@@ -27,7 +27,9 @@ class CaptionHandler(BaseHandler):
         index = 0
 
         for transcript in all_transcript:
-            content = transcript.content_baidu[0]
+            print transcript.get("content_baidu")
+            print '----'*20
+            content = transcript.get("content_baidu")[0]
             content = content.strip(u"，")
             caption_content_list = content.split(u"，")
 
