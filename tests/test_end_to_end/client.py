@@ -29,3 +29,7 @@ def send_request():
             content=response.content))
     except requests.exceptions.RequestException:
         print('HTTP Request failed')
+
+
+if __name__ == '__main__':
+    send_request()
