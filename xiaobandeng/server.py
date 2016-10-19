@@ -16,6 +16,7 @@ from xiaobandeng.config import load_config
 from xiaobandeng.handlers.medium.lrc import LrcHandler
 from xiaobandeng.handlers.medium.srt import SrtHandler
 from xiaobandeng.handlers.transcribe import TranscribeHandler
+from xiaobandeng.handlers.medium.caption import  CaptionHandler
 from xiaobandeng.lean_cloud import init
 
 
@@ -24,6 +25,7 @@ def make_app(use_autoreload):
                                        (r"/transcribe", TranscribeHandler),
                                        (r"/medium/(.*)/srt", SrtHandler),
                                        (r"/medium/(.*)/lrc", LrcHandler),
+                                       (r"/medium/(.*)/caption", CaptionHandler),
                                    ], autoreload=use_autoreload)
 
 

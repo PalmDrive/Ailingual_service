@@ -13,7 +13,7 @@ import psutil
 from ..lean_cloud.quota import get_quota
 from ..lean_cloud.quota import update_access_count
 from ..lean_cloud.user import UserMgr
-from ..task import current_pending_tasks
+from ..task.task import current_pending_tasks
 
 
 class BaseHandler(tornado.web.RequestHandler):
