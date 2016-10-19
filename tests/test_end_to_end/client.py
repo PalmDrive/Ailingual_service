@@ -15,7 +15,7 @@ def send_request():
                 "company": "company_nameee",
                 "upload_oss": "true",
                 "max_fragment_length": "10",
-                "async": "1",
+                "async": "true",
                 "callback": "http://localhost:10000/test",
             },
             headers={
