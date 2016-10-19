@@ -28,6 +28,10 @@ class SrtHandler(BaseHandler):
                           t_end.minute - t_start.minute,
                           t_end.second - t_start.second,
                           t_end.microsecond - t_start.microsecond)
+
+            print ":".join(["%02d"%i for i in time_tuple[:-1]]) + "," + \
+                   "%d" % (time_tuple[-1] / 1000)
+
             return ":".join([str(i) for i in time_tuple[:-1]]) + "," + \
                    "%d" % (time_tuple[-1] / 1000)
 
