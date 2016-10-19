@@ -255,7 +255,12 @@ class TranscribeHandler(BaseHandler):
             force_fragment_length = False
         self.force_fragment_length = force_fragment_length
 
-        self.is_async = self.get_argument("async", False)
+        is_async = self.get_argument("async", False)
+        if is_async == "true" or is_async == "True":
+            is_async = True
+        else:
+            is_async = False
+        self.is_async = is_async
 
         self.log_content = {}
         self.log_content["request_start_timestamp"] = time.time()
@@ -276,9 +281,9 @@ class TranscribeHandler(BaseHandler):
                 )
                 self.write(json.dumps({"status": "success"}))
                 self.log_content["request_end_time"] = time.time()
-                self.finish()
             else:
                 self.write(json.dumps({"status": "fail", "message": error}))
+            self.finish()
         else:
             self._handle(self.addr, self.language)
 
