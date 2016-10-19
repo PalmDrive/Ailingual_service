@@ -129,4 +129,4 @@ class LeanCloud(object):
 
     def get_media(self, media_id):
         query = self.media_query.equal_to("media_id", media_id)
-        return query.find()[0]
+        return query.first()
