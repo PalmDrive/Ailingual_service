@@ -8,7 +8,7 @@ import json
 
 
 class CaptionHandler(BaseHandler):
-    def get(self, media_id):
+    def post(self, media_id):
         lc = LeanCloud()
         media = lc.get_media(media_id)
         print dir(media)
