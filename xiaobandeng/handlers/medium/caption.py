@@ -33,7 +33,7 @@ class CaptionHandler(BaseHandler):
 
             for content in caption_content_list:
                 fragment_order, start_at, end_at, media_id, fragment_src = (
-                    index, 0.02, 0, caption_media_id, "" )
+                    index, 0.00, 0.00, caption_media_id, "" )
                 lc.set_fragment(fragment_order, start_at, end_at, media_id,
                                 fragment_src)
                 lc.add_transcription_to_fragment(index, content, "baidu")
