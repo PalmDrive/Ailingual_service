@@ -12,12 +12,14 @@ from ..base import BaseHandler
 class SrtHandler(BaseHandler):
     def get(self, media_id):
         source = self.get_argument("service_source", 0)
+        platform = self.get_argument("plat", 'unix')
 
         lc_content_keys = ["content_baidu", "content_google"]
         content_key = lc_content_keys[int(source)]
 
         lc = lean_cloud.LeanCloud()
         media_list = lc.get_list(media_id=media_id)
+
 
         def convert_time(seconds):
             seconds = round(seconds, 3)
@@ -29,11 +31,17 @@ class SrtHandler(BaseHandler):
                           t_end.second - t_start.second,
                           t_end.microsecond - t_start.microsecond)
 
-            print ":".join(["%02d"%i for i in time_tuple[:-1]]) + "," + \
-                   "%d" % (time_tuple[-1] / 1000)
+            # print ":".join(["%02d"%i for i in time_tuple[:-1]]) + "," + \
+            #        "%d" % (time_tuple[-1] / 1000)
 
-            return ":".join([str(i) for i in time_tuple[:-1]]) + "," + \
-                   "%d" % (time_tuple[-1] / 1000)
+            return ":".join(["%02d"%i for i in time_tuple[:-1]]) + "," + \
+                   "%03d" % (time_tuple[-1] / 1000)
+        if platform == "win":
+            sep = "\r\n"
+            encoding = "gbk"
+        else:
+            sep = "\n"
+            encoding = "utf8"
 
         if media_list:
             filename = lc.get_media(media_id).get("media_name")
@@ -42,19 +50,20 @@ class SrtHandler(BaseHandler):
                             "attachment; filename=" + filename + ".srt")
             for (index, media) in enumerate(media_list, 1):
                 self.write(str(media.get("fragment_order") + 1))
-                self.write("\n")
+                self.write(sep)
+
                 self.write(
-                    convert_time(media.get("start_at")) + "	-->	" +
+                    convert_time(media.get("start_at")) + " --> " +
                     convert_time(media.get("end_at")))
-                self.write("\n")
+                self.write(sep)
 
                 content_list = media.get(content_key)
 
                 content = content_list[0] if content_list else ""
                 content = re.sub(u"[,，。\.?？!！]", " ", content)
-                self.write(content)
-                self.write("\n")
-                self.write("\n")
+                self.write(content.encode(encoding))
+                self.write(sep)
+                self.write(sep)
             self.finish()
 
         else:
