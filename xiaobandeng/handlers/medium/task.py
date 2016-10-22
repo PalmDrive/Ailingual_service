@@ -3,8 +3,8 @@ from ..base import BaseHandler
 from xiaobandeng.lean_cloud import lean_cloud
 
 class EditorTaskHandler(BaseHandler):
-    def get(self, *args, **kwargs):
-        self.media_id = self.get_argument("media_id")
+    def get(self, media_id):
+        self.media_id = media_id
 
         self.lc = lean_cloud.LeanCloud()
         self.media = self.lc.get_media(self.media_id)
