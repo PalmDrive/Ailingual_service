@@ -16,6 +16,8 @@ from xiaobandeng.config import load_config
 from xiaobandeng.handlers.medium.lrc import LrcHandler
 from xiaobandeng.handlers.medium.srt import SrtHandler
 from xiaobandeng.handlers.transcribe import TranscribeHandler
+from xiaobandeng.handlers.medium.caption import CaptionHandler
+from xiaobandeng.handlers.medium.task import EditorTaskHandler
 from xiaobandeng.lean_cloud import init
 
 
@@ -24,6 +26,8 @@ def make_app(use_autoreload):
                                        (r"/transcribe", TranscribeHandler),
                                        (r"/medium/(.*)/srt", SrtHandler),
                                        (r"/medium/(.*)/lrc", LrcHandler),
+                                       (r"/medium/(.*)/caption", CaptionHandler),
+                                       (r"/medium/(.*)/create_task",EditorTaskHandler),
                                    ], autoreload=use_autoreload)
 
 
@@ -70,6 +74,7 @@ def main():
     logging.info("running on %s" % (options.unix_socket or options.port))
 
     tornado.ioloop.IOLoop.instance().start()
+
 
 if __name__ == "__main__":
     main()

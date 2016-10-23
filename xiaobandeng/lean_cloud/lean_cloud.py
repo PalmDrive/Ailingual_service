@@ -8,7 +8,7 @@ import leancloud
 CLASS_NAME_TRANSCRIPT = "Transcript"
 CLASS_NAME_MEDIA = "Media"
 CLASS_NAME_CROWDSOURCINGTASK = "CrowdsourcingTask"
-
+CLASS_NAME_EDITORTASK = "EditorTask"
 
 class LeanCloud(object):
     def __init__(self):
@@ -22,6 +22,10 @@ class LeanCloud(object):
 
         self.CrowdSourcingTask = leancloud.Object.extend(CLASS_NAME_CROWDSOURCINGTASK)
         self.crowdsourcing_tasks = []
+
+        self.EditorTask = leancloud.Object.extend(CLASS_NAME_EDITORTASK)
+        self.editor_task_query = self.EditorTask.query
+        self.tasks = []
 
     def set_fragment(
             self, fragment_order, start_at, end_at, media_id, fragment_src
@@ -129,4 +133,26 @@ class LeanCloud(object):
 
     def get_media(self, media_id):
         query = self.media_query.equal_to("media_id", media_id)
-        return query.find()[0]
+        return query.first()
+
+    def add_task(self, media_id, order, start_at, end_at, task_name):
+        task = self.EditorTask()
+        task.set("medi_id", media_id)
+        task.set("task_order", order)
+        task.set("start_at", start_at)
+        task.set("end_at", end_at)
+        task.set("task_name", task_name)
+        self.tasks.append(task)
+
+    def get_fragment_by_start_at(self, start_at):
+        self.fragment_query.greater_than_or_equal_to("start_at", start_at)
+        self.fragment_query.limit(1)
+        return self.fragment_query.find()
+
+    def save_tasks(self):
+        try:
+            leancloud.Object.save_all(self.tasks)
+        except Exception as e:
+            print e.error
+            print e.code
+            raise

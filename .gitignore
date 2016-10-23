@@ -9,3 +9,4 @@ xiaobandeng/config/staging.json
 xiaobandeng/config/production.json
 .idea/
 .cache/
+google_credential.json

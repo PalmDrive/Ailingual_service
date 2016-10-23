@@ -33,7 +33,7 @@ class BaseHandler(tornado.web.RequestHandler):
         # 服务器端必须指定允许请求的域名,不能使用"*".否则无效
         # self.set_header("Access-Control-Allow-Credentials", "true")
 
-    def options(self):
+    def options(self, *args,**kwargs):
         self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
 
     def check_company_user(self):
