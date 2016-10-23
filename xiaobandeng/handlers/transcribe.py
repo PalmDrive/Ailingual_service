@@ -91,7 +91,7 @@ class TranscribeHandler(BaseHandler):
 
         if self.is_async:
             if self.client_callback_url:
-                self.notify_client()
+                self.notify_client(self.response_data())
             else:
                 self.log_content['notified_client'] = False
                 self.save_log(True)
@@ -105,7 +105,7 @@ class TranscribeHandler(BaseHandler):
     def save_log(self, status):
         self.log_content["transcribe_end_timestamp"] = time.time()
         self.log_content["media_id"] = self.media_id
-        self.log_content["status"] = "success" if status else "fail"
+        self.log_content["status"] = "success" if status else "failure"
         log = TranscriptionLog()
         log.add(self.log_content)
         log.save()
@@ -122,16 +122,7 @@ class TranscribeHandler(BaseHandler):
 
         return data
 
-    def response_error(self, error):
-        data = {
-            "error": {
-                "message": "%s" % error
-            }
-        }
-
-        return data
-
-    def notify_client(self):
+    def notify_client(self, resp):
         def notified_callback(response):
             logging.info("called origin client server...")
             self.log_content['notified_client'] = True
@@ -147,7 +138,8 @@ class TranscribeHandler(BaseHandler):
         client.fetch(self.client_callback_url,
                      callback=notified_callback,
                      method="POST",
-                     body=urllib.urlencode(self.response_data()))
+                     body=urllib.urlencode(resp))
+
 
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
@@ -155,8 +147,14 @@ class TranscribeHandler(BaseHandler):
             self.log_content["request_end_time"] = time.time()
             self.log_content["error_type"] = 'download_addr'
             self.save_log(False)
-            self.write(json.dumps(self.response_error("Download address is invalid")))
-            self.finish()
+
+            error_code = 1003
+            error_msg = "Media address is invalid."
+            if self.is_async:
+                self.notify_client(self.response_error(error_code, error_msg))
+            else:
+                self.write(json.dumps(self.response_error(error_code, error_msg)))
+                self.finish()
             return
 
         logging.info("downloaded,saved to: %s" % tmp_file)
@@ -219,48 +217,99 @@ class TranscribeHandler(BaseHandler):
         preprocessor.smoothen_clips_edge(file_list)
         task_group.start()
 
+    def error_missing_arg(self, arg_name):
+        return self.response_error(1002, 'parameter is missing: %s' % arg_name)
+
+    def error_invalid_arg(self, arg_name):
+        return self.response_error(1002, 'parameter has invalid value %s' % arg_name)
+
     @tornado.web.asynchronous
     def get(self):
-        addr = self.get_argument("addr")
+        env = os.environ.get("PIPELINE_SERVICE_ENV")
+        is_prod = (env == 'product')
+        company_login_state, error = self.check_company_user()
+        if not company_login_state:
+            self.write(json.dumps(error))
+            self.finish()
+            return
+        addr = self.get_argument("addr", None)
+        if addr == None:
+            self.write(json.dumps(self.error_missing_arg('addr')))
+            self.finish()
         addr = urllib.quote(addr.encode("utf8"), ":/")
 
         self.addr = addr
-        self.media_name = self.get_argument("media_name").encode("utf8")
+
+        media_name = self.get_argument("media_name", None)
+        if media_name == None:
+            self.write(json.dumps(self.error_missing_arg('media_name')))
+            self.finish()
+
+        self.media_name = media_name.encode("utf8")
+
         self.media_id = str(uuid.uuid4())
+
         self.language = self.get_argument("lan", "zh")
-        self.company_name = self.get_argument("company").encode("utf8")
 
-        fragment_length_limit = self.get_argument("max_fragment_length", 10)
-        if fragment_length_limit:
-            fragment_length_limit = int(fragment_length_limit)
-        self.fragment_length_limit = fragment_length_limit
-        self.requirement = self.get_argument("requirement",
-                                             u"字幕,纯文本,关键词,摘要").split(',')
+        self.company_name = None
+        if not is_prod:
+            self.company_name = self.get_argument("company", None)
 
-        upload_oss = self.get_argument("upload_oss", False)
-        if upload_oss == "true" or upload_oss == "True":
-            self.upload_oss = True
+        if self.company_name == None:
+            current_user = self.user_mgr.current_user()
+            self.company_name = current_user.get('company_name')
+
+        self.company_name = self.company_name.encode("utf8")
+
+        if not is_prod:
+            fragment_length_limit = self.get_argument("max_fragment_length", 10)
+            if fragment_length_limit:
+                fragment_length_limit = int(fragment_length_limit)
+            self.fragment_length_limit = fragment_length_limit
+        else:
+            self.fragment_length_limit = 10
+
+        if not is_prod:
+            self.requirement = self.get_argument("requirement",
+                                                 u"字幕,纯文本,关键词,摘要").split(',')
+
+        if not is_prod:
+            upload_oss = self.get_argument("upload_oss", False)
+            if upload_oss == "true" or upload_oss == "True":
+                self.upload_oss = True
+            else:
+                self.upload_oss = False
         else:
             self.upload_oss = False
-        self.service_providers = self.get_argument(
-            "service_providers", "baidu").split(",")
 
-        self.client_callback_url = self.get_argument("callback", None)
-
-        force_fragment_length = self.get_argument("force_fragment_length",
-                                                  False)
-        if force_fragment_length == "true" or force_fragment_length == "True":
-            force_fragment_length = True
+        if not is_prod:
+            self.service_providers = self.get_argument(
+                "service_providers", "baidu").split(",")
         else:
-            force_fragment_length = False
-        self.force_fragment_length = force_fragment_length
+            self.service_providers = "baidu"
 
-        is_async = self.get_argument("async", False)
-        if is_async == "true" or is_async == "True":
-            is_async = True
+        self.client_callback_url = self.get_argument("callback_url", None)
+
+        if not is_prod:
+            force_fragment_length = self.get_argument("force_fragment_length",
+                                                      False)
+            if force_fragment_length == "true" or force_fragment_length == "True":
+                force_fragment_length = True
+            else:
+                force_fragment_length = False
+            self.force_fragment_length = force_fragment_length
         else:
-            is_async = False
-        self.is_async = is_async
+            self.force_fragment_length = False
+
+        if not is_prod:
+            is_async = self.get_argument("async", False)
+            if is_async == "true" or is_async == "True":
+                is_async = True
+            else:
+                is_async = False
+            self.is_async = is_async
+        else:
+            self.is_async = True
 
         self.log_content = {}
         self.log_content["request_start_timestamp"] = time.time()
@@ -274,15 +323,11 @@ class TranscribeHandler(BaseHandler):
         self.log_content["headers"] = str(self.request.headers)
 
         if self.is_async:
-            company_login_state, error = self.check_company_user()
-            if company_login_state:
-                tornado.ioloop.IOLoop.current().add_callback(
-                    self._handle, self.addr, self.language
-                )
-                self.write(json.dumps({"status": "success"}))
-                self.log_content["request_end_time"] = time.time()
-            else:
-                self.write(json.dumps({"status": "fail", "message": error}))
+            tornado.ioloop.IOLoop.current().add_callback(
+                self._handle, self.addr, self.language
+            )
+            self.write(json.dumps(self.response_success()))
+            self.log_content["request_end_time"] = time.time()
             self.finish()
         else:
             self._handle(self.addr, self.language)

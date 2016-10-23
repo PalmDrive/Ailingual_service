@@ -62,3 +62,6 @@ class UserMgr(object):
             # use e.error,e.code to get error message
             res = False, {"code": e.code, "error": e.error}
         return res
+
+    def current_user(self):
+        return self.User().get_current()

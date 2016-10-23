@@ -37,17 +37,22 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
 
     def check_company_user(self):
-        user_mgr = UserMgr()
+        self.user_mgr = UserMgr()
         app_id = self.request.headers.get("app_id", "")
         app_key = self.request.headers.get("app_key", "")
         # return (true_or_false,user)
         if app_id and app_key:
-            return user_mgr.login(app_id, app_key)
+            status, error_dict = self.user_mgr.login(app_id, app_key)
+            if status:
+                return (True, '')
+            else:
+                return (False,
+                        self.response_error(error_dict.get("code"), "The app_id and app_key mismatch.")
+                        )
         else:
             return (
-                False, {"code": 110001,
-                        "error": "app_id or app_key not found in http headers"
-                }
+                False,
+                self.response_error(1001, "The app_id or app_key is not found in HTTP headers.")
             )
 
     def access_control(self, app_id):
@@ -73,3 +78,22 @@ class BaseHandler(tornado.web.RequestHandler):
 
         update_access_count(app_id)
         return True
+
+
+    def response_error(self, code, error):
+        data = {
+            "status": "failure",
+            "error": {
+                "code": str(code),
+                "message": "%s" % error
+            }
+        }
+
+        return data
+
+    def response_success(self):
+        data = {
+            "status": "success",
+        }
+
+        return data

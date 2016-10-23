@@ -100,7 +100,7 @@ Transcribe API:
         baidu,google
     Default is 'baidu'.
     
-@param (optional) String: client_callback_url
+@param (optional) String: callback_url
     The callback url that will be called upon the completion of our transcription process.
     
 @param (optional) Boolean: force_fragment_length
