@@ -308,7 +308,13 @@ class TranscribeHandler(BaseHandler):
             self.service_providers = self.get_argument(
                 "service_providers", "baidu").split(",")
         else:
-            self.service_providers = "baidu,google"
+            lans = self.language.split(",")
+            if len(lans) > 1:
+                self.service_providers = ["baidu","google"]
+            elif "en" in lans:
+                self.service_providers = ["google"]
+            else:
+                self.service_providers = ["baidu"]
 
         self.client_callback_url = self.get_argument("callback_url", None)
 
