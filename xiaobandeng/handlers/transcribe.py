@@ -134,6 +134,7 @@ class TranscribeHandler(BaseHandler):
                 self.save_log(True)
                 logging.info("origin client server returned success")
 
+        logging.info("notify callback : %s" % str(resp))
         client = tornado.httpclient.AsyncHTTPClient()
         client.fetch(self.client_callback_url,
                      callback=notified_callback,
@@ -197,25 +198,44 @@ class TranscribeHandler(BaseHandler):
         task_group = TaskGroup(self.transcription_callback)
 
         if "baidu" in self.service_providers:
-            baidu_speech_service = baidu.BaiduNLP()
-            baidu_tasks = baidu_speech_service.batch_vop_tasks(
-                file_list, starts, language)
-            for task in baidu_tasks:
-                increase_pending_task(1)
-                task_group.add(task)
+            try:
+                lan = language
+                if self.is_prod:
+                    if 'zh' in language.split(','):
+                        lan = 'zh'
+                    else:
+                        raise Exception
+                baidu_speech_service = baidu.BaiduNLP()
+                baidu_tasks = baidu_speech_service.batch_vop_tasks(
+                    file_list, starts, lan)
+                self.enqueue_tasks(task_group, baidu_tasks)
+            except Exception:
+                pass
 
         if "google" in self.service_providers:
-            google_speech_service = google.GoogleASR()
-            google_tasks = google_speech_service.batch_vop_tasks(
-                file_list, starts, language)
-            for task in google_tasks:
-                increase_pending_task(1)
-                task_group.add(task)
+            try:
+                lan = language
+                if self.is_prod:
+                    if 'en' in language.split(','):
+                        lan = 'en'
+                    else:
+                        raise Exception
+                google_speech_service = google.GoogleASR()
+                google_tasks = google_speech_service.batch_vop_tasks(
+                    file_list, starts, lan)
+                self.enqueue_tasks(task_group, google_tasks)
+            except Exception:
+                pass
 
         # you need to smoothen the file after building all tasks but
         # before task group starts
         preprocessor.smoothen_clips_edge(file_list)
         task_group.start()
+
+    def enqueue_tasks(self, task_group, tasks):
+        for task in tasks:
+            increase_pending_task(1)
+            task_group.add(task)
 
     def error_missing_arg(self, arg_name):
         return self.response_error(1002, 'parameter is missing: %s' % arg_name)
@@ -226,7 +246,8 @@ class TranscribeHandler(BaseHandler):
     @tornado.web.asynchronous
     def get(self):
         env = os.environ.get("PIPELINE_SERVICE_ENV")
-        is_prod = (env == 'product')
+        self.is_prod = (env == 'production')
+
         company_login_state, error = self.check_company_user()
         if not company_login_state:
             self.write(json.dumps(error))
@@ -252,7 +273,7 @@ class TranscribeHandler(BaseHandler):
         self.language = self.get_argument("lan", "zh")
 
         self.company_name = None
-        if not is_prod:
+        if not self.is_prod:
             self.company_name = self.get_argument("company", None)
 
         if self.company_name == None:
@@ -261,7 +282,7 @@ class TranscribeHandler(BaseHandler):
 
         self.company_name = self.company_name.encode("utf8")
 
-        if not is_prod:
+        if not self.is_prod:
             fragment_length_limit = self.get_argument("max_fragment_length", 10)
             if fragment_length_limit:
                 fragment_length_limit = int(fragment_length_limit)
@@ -269,11 +290,13 @@ class TranscribeHandler(BaseHandler):
         else:
             self.fragment_length_limit = 10
 
-        if not is_prod:
+        if not self.is_prod:
             self.requirement = self.get_argument("requirement",
                                                  u"字幕,纯文本,关键词,摘要").split(',')
+        else:
+            self.requirement = []
 
-        if not is_prod:
+        if not self.is_prod:
             upload_oss = self.get_argument("upload_oss", False)
             if upload_oss == "true" or upload_oss == "True":
                 self.upload_oss = True
@@ -282,15 +305,15 @@ class TranscribeHandler(BaseHandler):
         else:
             self.upload_oss = False
 
-        if not is_prod:
+        if not self.is_prod:
             self.service_providers = self.get_argument(
                 "service_providers", "baidu").split(",")
         else:
-            self.service_providers = "baidu"
+            self.service_providers = "baidu,google"
 
         self.client_callback_url = self.get_argument("callback_url", None)
 
-        if not is_prod:
+        if not self.is_prod:
             force_fragment_length = self.get_argument("force_fragment_length",
                                                       False)
             if force_fragment_length == "true" or force_fragment_length == "True":
@@ -301,12 +324,13 @@ class TranscribeHandler(BaseHandler):
         else:
             self.force_fragment_length = False
 
-        if not is_prod:
-            is_async = self.get_argument("async", False)
-            if is_async == "true" or is_async == "True":
-                is_async = True
-            else:
+
+        if not self.is_prod:
+            is_async = self.get_argument("async", True)
+            if is_async == "false" or is_async == "False":
                 is_async = False
+            else:
+                is_async = True
             self.is_async = is_async
         else:
             self.is_async = True
