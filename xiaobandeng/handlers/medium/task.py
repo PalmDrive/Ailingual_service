@@ -2,7 +2,8 @@
 from ..base import BaseHandler
 from xiaobandeng.lean_cloud import lean_cloud
 
-class EditorTaskHandler(BaseHandler):
+
+class CreateEditorTaskHandler(BaseHandler):
     def get(self, media_id):
         self.media_id = media_id
 
@@ -28,5 +29,11 @@ class EditorTaskHandler(BaseHandler):
         self.lc.save_tasks()
 
     def add_task(self, order, start_at, end_at):
-        self.lc.add_task(self.media_id, order, start_at, end_at,
-                         self.media.get("media_name") + "-" + str(order))
+        self.lc.add_task(self.media, order, start_at, end_at,
+                         self.media.get("media_name") + "-" + str(order), )
+
+
+class AddUserTaskCountHandler(BaseHandler):
+    def get(self):
+        uid = self.get_argument("uid")
+        self.lc = lean_cloud.LeanCloud()
