@@ -144,13 +144,12 @@ class TranscribeHandler(BaseHandler):
 
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
-            self.write("media download error:%s" % str(response.code))
             self.log_content["request_end_time"] = time.time()
             self.log_content["error_type"] = 'download_addr'
             self.save_log(False)
 
             error_code = 1003
-            error_msg = "Media address is invalid."
+            error_msg = "Media download error. Check your media address."
             if self.is_async:
                 self.notify_client(self.response_error(error_code, error_msg))
             else:
