@@ -245,8 +245,8 @@ class TranscribeHandler(BaseHandler):
     @tornado.web.asynchronous
     def get(self):
         env = os.environ.get("PIPELINE_SERVICE_ENV")
-        # self.is_prod = (env == 'production')
-        self.is_prod = True
+        self.is_prod = (env == 'production')
+
         company_login_state, error = self.check_company_user()
         if not company_login_state:
             self.write(json.dumps(error))
