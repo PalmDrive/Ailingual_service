@@ -17,7 +17,7 @@ from xiaobandeng.handlers.medium.lrc import LrcHandler
 from xiaobandeng.handlers.medium.srt import SrtHandler
 from xiaobandeng.handlers.transcribe import TranscribeHandler
 from xiaobandeng.handlers.medium.caption import CaptionHandler
-from xiaobandeng.handlers.medium.task import EditorTaskHandler
+from xiaobandeng.handlers.medium.task import CreateEditorTaskHandler
 from xiaobandeng.lean_cloud import init
 
 
@@ -27,7 +27,7 @@ def make_app(use_autoreload):
                                        (r"/medium/(.*)/srt", SrtHandler),
                                        (r"/medium/(.*)/lrc", LrcHandler),
                                        (r"/medium/(.*)/caption", CaptionHandler),
-                                       (r"/medium/(.*)/create_task",EditorTaskHandler),
+                                       (r"/medium/(.*)/create_task",CreateEditorTaskHandler),
                                    ], autoreload=use_autoreload)
 
 
