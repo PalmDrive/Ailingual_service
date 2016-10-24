@@ -134,6 +134,7 @@ class TranscribeHandler(BaseHandler):
                 self.save_log(True)
                 logging.info("origin client server returned success")
 
+        logging.info("notify callback : %s" % str(resp))
         client = tornado.httpclient.AsyncHTTPClient()
         client.fetch(self.client_callback_url,
                      callback=notified_callback,
@@ -323,12 +324,13 @@ class TranscribeHandler(BaseHandler):
         else:
             self.force_fragment_length = False
 
+
         if not self.is_prod:
-            is_async = self.get_argument("async", False)
-            if is_async == "true" or is_async == "True":
-                is_async = True
-            else:
+            is_async = self.get_argument("async", True)
+            if is_async == "false" or is_async == "False":
                 is_async = False
+            else:
+                is_async = True
             self.is_async = is_async
         else:
             self.is_async = True
