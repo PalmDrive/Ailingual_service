@@ -79,7 +79,9 @@ class LeanCloud(object):
             media_url,
             duration,
             company_name,
-            requirement
+            requirement,
+            language,
+            service_provider,
     ):
         media = self.Media()
         media.set("media_id", media_id)
@@ -90,6 +92,8 @@ class LeanCloud(object):
         media.set("transcribed_at", datetime.now())
         media.set("status", "Auto Transcribed")
         media.set("requirement", requirement)
+        media.set("lan", language)
+        media.set("service_providers", service_provider)
         self.media = media
 
     def save(self):
