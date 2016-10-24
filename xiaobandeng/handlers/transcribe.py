@@ -11,6 +11,7 @@ import time
 import urllib
 import uuid
 import wave
+import traceback
 from os.path import splitext
 from urlparse import urlparse
 
@@ -93,11 +94,11 @@ class TranscribeHandler(BaseHandler):
             if self.client_callback_url:
                 self.notify_client(self.response_data())
             else:
-                self.log_content['notified_client'] = False
+                self.log_content["notified_client"] = False
                 self.save_log(True)
         else:
             self.write(json.dumps(self.response_data()))
-            self.log_content['notified_client'] = False
+            self.log_content["notified_client"] = False
             self.log_content["request_end_timestamp"] = time.time()
             self.save_log(True)
             self.finish()
@@ -125,7 +126,7 @@ class TranscribeHandler(BaseHandler):
     def notify_client(self, resp):
         def notified_callback(response):
             logging.info("called origin client server...")
-            self.log_content['notified_client'] = True
+            self.log_content["notified_client"] = True
 
             if response.error:
                 self.save_log(False)
@@ -145,7 +146,7 @@ class TranscribeHandler(BaseHandler):
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
             self.log_content["request_end_time"] = time.time()
-            self.log_content["error_type"] = 'download_addr'
+            self.log_content["error_type"] = "download_addr"
             self.save_log(False)
 
             error_code = 1003
@@ -153,7 +154,8 @@ class TranscribeHandler(BaseHandler):
             if self.is_async:
                 self.notify_client(self.response_error(error_code, error_msg))
             else:
-                self.write(json.dumps(self.response_error(error_code, error_msg)))
+                self.write(
+                    json.dumps(self.response_error(error_code, error_msg)))
                 self.finish()
             return
 
@@ -174,7 +176,10 @@ class TranscribeHandler(BaseHandler):
             self.addr,
             duration,
             self.company_name,
-            self.requirement)
+            self.requirement,
+            language.split(","),
+            self.service_providers,
+        )
 
         audio_dir, starts = vad.slice(3, target_file)
         starts = preprocessor.preprocess_clip_length(
@@ -195,13 +200,12 @@ class TranscribeHandler(BaseHandler):
 
         # create a task group to organize transcription tasks
         task_group = TaskGroup(self.transcription_callback)
-
         if "baidu" in self.service_providers:
             try:
                 lan = language
                 if self.is_prod:
-                    if 'zh' in language.split(','):
-                        lan = 'zh'
+                    if "zh" in language.split(","):
+                        lan = "zh"
                     else:
                         raise Exception
                 baidu_speech_service = baidu.BaiduNLP()
@@ -215,8 +219,8 @@ class TranscribeHandler(BaseHandler):
             try:
                 lan = language
                 if self.is_prod:
-                    if 'en' in language.split(','):
-                        lan = 'en'
+                    if "en" in language.split(","):
+                        lan = "en"
                     else:
                         raise Exception
                 google_speech_service = google.GoogleASR()
@@ -224,6 +228,8 @@ class TranscribeHandler(BaseHandler):
                     file_list, starts, lan)
                 self.enqueue_tasks(task_group, google_tasks)
             except Exception:
+                traceback.print_exc()
+                print '---'*200
                 pass
 
         # you need to smoothen the file after building all tasks but
@@ -237,15 +243,16 @@ class TranscribeHandler(BaseHandler):
             task_group.add(task)
 
     def error_missing_arg(self, arg_name):
-        return self.response_error(1002, 'parameter is missing: %s' % arg_name)
+        return self.response_error(1002, "parameter is missing: %s" % arg_name)
 
     def error_invalid_arg(self, arg_name):
-        return self.response_error(1002, 'parameter has invalid value %s' % arg_name)
+        return self.response_error(1002,
+                                   "parameter has invalid value %s" % arg_name)
 
     @tornado.web.asynchronous
     def get(self):
         env = os.environ.get("PIPELINE_SERVICE_ENV")
-        self.is_prod = (env == 'production')
+        self.is_prod = (env == "production")
 
         company_login_state, error = self.check_company_user()
         if not company_login_state:
@@ -254,21 +261,18 @@ class TranscribeHandler(BaseHandler):
             return
         addr = self.get_argument("addr", None)
         if addr == None:
-            self.write(json.dumps(self.error_missing_arg('addr')))
+            self.write(json.dumps(self.error_missing_arg("addr")))
             self.finish()
         addr = urllib.quote(addr.encode("utf8"), ":/")
-
         self.addr = addr
 
         media_name = self.get_argument("media_name", None)
         if media_name == None:
-            self.write(json.dumps(self.error_missing_arg('media_name')))
+            self.write(json.dumps(self.error_missing_arg("media_name")))
             self.finish()
 
         self.media_name = media_name.encode("utf8")
-
         self.media_id = str(uuid.uuid4())
-
         self.language = self.get_argument("lan", "zh")
 
         self.company_name = None
@@ -277,7 +281,7 @@ class TranscribeHandler(BaseHandler):
 
         if self.company_name == None:
             current_user = self.user_mgr.current_user()
-            self.company_name = current_user.get('company_name')
+            self.company_name = current_user.get("company_name")
 
         self.company_name = self.company_name.encode("utf8")
 
@@ -291,7 +295,7 @@ class TranscribeHandler(BaseHandler):
 
         if not self.is_prod:
             self.requirement = self.get_argument("requirement",
-                                                 u"字幕,纯文本,关键词,摘要").split(',')
+                                                 u"字幕,纯文本,关键词,摘要").split(",")
         else:
             self.requirement = []
 
@@ -308,7 +312,13 @@ class TranscribeHandler(BaseHandler):
             self.service_providers = self.get_argument(
                 "service_providers", "baidu").split(",")
         else:
-            self.service_providers = "baidu,google"
+            lans = self.language.split(",")
+            if len(lans) > 1:
+                self.service_providers = ["baidu","google"]
+            elif "en" in lans:
+                self.service_providers = ["google"]
+            else:
+                self.service_providers = ["baidu"]
 
         self.client_callback_url = self.get_argument("callback_url", None)
 
@@ -322,7 +332,6 @@ class TranscribeHandler(BaseHandler):
             self.force_fragment_length = force_fragment_length
         else:
             self.force_fragment_length = False
-
 
         if not self.is_prod:
             is_async = self.get_argument("async", True)
@@ -357,7 +366,7 @@ class TranscribeHandler(BaseHandler):
 
     def _handle(self, addr, language):
         ext = get_ext(addr)
-        tmp_file = tempfile.NamedTemporaryFile().name + ext
+        tmp_file = tempfile.NamedTemporaryFile(suffix=ext).name
         client = tornado.httpclient.AsyncHTTPClient(
             max_body_size=1024 * 1024 * 1024 * 0.8)
         # call self.ondownload after get the request file

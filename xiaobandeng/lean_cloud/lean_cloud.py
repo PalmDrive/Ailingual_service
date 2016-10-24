@@ -10,6 +10,7 @@ CLASS_NAME_MEDIA = "Media"
 CLASS_NAME_CROWDSOURCINGTASK = "CrowdsourcingTask"
 CLASS_NAME_EDITORTASK = "EditorTask"
 
+
 class LeanCloud(object):
     def __init__(self):
         self.Fragment = leancloud.Object.extend(CLASS_NAME_TRANSCRIPT)
@@ -20,7 +21,8 @@ class LeanCloud(object):
         self.media_query = self.Media.query
         self.media = None
 
-        self.CrowdSourcingTask = leancloud.Object.extend(CLASS_NAME_CROWDSOURCINGTASK)
+        self.CrowdSourcingTask = leancloud.Object.extend(
+            CLASS_NAME_CROWDSOURCINGTASK)
         self.crowdsourcing_tasks = []
 
         self.EditorTask = leancloud.Object.extend(CLASS_NAME_EDITORTASK)
@@ -65,7 +67,8 @@ class LeanCloud(object):
 
     def create_crowdsourcing_tasks(self):
         for fragment_order, fragment in self.fragments.iteritems():
-            self.add_crowdsourcing_task(fragment.get("media_id"), fragment.id, fragment_order)
+            self.add_crowdsourcing_task(fragment.get("media_id"), fragment.id,
+                                        fragment_order)
         if len(self.crowdsourcing_tasks) > 0:
             self.CrowdSourcingTask.save_all(self.crowdsourcing_tasks)
 
@@ -76,7 +79,9 @@ class LeanCloud(object):
             media_url,
             duration,
             company_name,
-            requirement
+            requirement,
+            language,
+            service_provider,
     ):
         media = self.Media()
         media.set("media_id", media_id)
@@ -87,6 +92,8 @@ class LeanCloud(object):
         media.set("transcribed_at", datetime.now())
         media.set("status", "Auto Transcribed")
         media.set("requirement", requirement)
+        media.set("lan", language)
+        media.set("service_providers", service_provider)
         self.media = media
 
     def save(self):
@@ -135,13 +142,13 @@ class LeanCloud(object):
         query = self.media_query.equal_to("media_id", media_id)
         return query.first()
 
-    def add_task(self, media_id, order, start_at, end_at, task_name):
+    def add_task(self, media_object_id, order, start_at, end_at, task_name):
         task = self.EditorTask()
-        task.set("medi_id", media_id)
+        task.set("media_object_id", media_object_id)
         task.set("task_order", order)
         task.set("start_at", start_at)
         task.set("end_at", end_at)
-        task.set("task_name", task_name)
+        task.set("name", task_name)
         self.tasks.append(task)
 
     def get_fragment_by_start_at(self, start_at):

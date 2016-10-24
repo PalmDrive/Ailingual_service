@@ -11,13 +11,28 @@ from ..base import BaseHandler
 
 class LrcHandler(BaseHandler):
     def get(self, media_id):
-        source = self.get_argument("service_source", 0)
+        # source = self.get_argument("service_source", 0)
+        platform = self.get_argument("plat", 'win')
 
-        lc_content_keys = ["content_baidu", "content_google"]
-        self.content_key = lc_content_keys[int(source)]
+        # lc_content_keys = ["content_baidu", "content_google"]
+        # self.content_key = lc_content_keys[int(source)]
+        lc = lean_cloud.LeanCloud()
+        media = lc.get_media(media_id)
+        self.content_keys = ["content_" + i for i in
+                             media.get("service_providers")]
+        if not self.content_keys:
+            self.content_keys = ["content_baidu"]
+
+        if platform == "win":
+            self.sep = "\r\n"
+            self.encoding = "gbk"
+        else:
+            self.sep = "\n"
+            self.encoding = "utf8"
 
         lc = lean_cloud.LeanCloud()
         media_list = lc.get_list(media_id=media_id)
+
         if media_list:
             filename = lc.get_media(media_id).get("media_name")
             self.set_header("Content-Type", "application/octet-stream")
@@ -36,13 +51,17 @@ class LrcHandler(BaseHandler):
         return "[%s:%s]" % (str(int(minute)), str(second))
 
     def fmt_content(self, media):
-        content_list = media.get(self.content_key)
-        content = content_list[0] if content_list else ""
-        content = re.sub(u"[,，。\.?？!！]", " ", content)
-        return content
+        content_list = []
+        for content_key in self.content_keys:
+            contents = media.get(content_key)
+            content = contents[0] if contents else ""
+            content = re.sub(u"[,，。\.?？!！]", " ", content)
+            content_list.append(content)
+
+        return self.sep.join(content_list)
 
     def write_content(self, media_list):
         for (index, media) in enumerate(media_list, 1):
             self.write(self.fmt_time(media.get("start_at")))
             self.write(self.fmt_content(media))
-            self.write("\n")
+            self.write(self.sep)
