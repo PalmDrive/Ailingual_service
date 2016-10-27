@@ -142,9 +142,10 @@ class LeanCloud(object):
         query = self.media_query.equal_to("media_id", media_id)
         return query.first()
 
-    def add_task(self, media_object_id, order, start_at, end_at, task_name):
+    def add_task(self, media_object, order, start_at, end_at, task_name):
         task = self.EditorTask()
-        task.set("media_object_id", media_object_id)
+        task.set("media_id", media_object.get("media_id"))
+        task.set("media_object_id", media_object)
         task.set("task_order", order)
         task.set("start_at", start_at)
         task.set("end_at", end_at)
