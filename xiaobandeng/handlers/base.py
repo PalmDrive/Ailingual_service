@@ -22,7 +22,8 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers",
                         "X-Requested-With, Content-Type,"
-                        "x-smartchat-key,client-source")
+                        "x-smartchat-key,client-source,"
+                        "app_id,app_key")
         self.set_header("Access-Control-Allow-Methods",
                         "PUT,POST,GET,DELETE,OPTIONS")
         # 如果CORS请求将withCredentials标志设置为true，使得Cookies可以随着请求发送。
@@ -33,7 +34,7 @@ class BaseHandler(tornado.web.RequestHandler):
         # 服务器端必须指定允许请求的域名,不能使用"*".否则无效
         # self.set_header("Access-Control-Allow-Credentials", "true")
 
-    def options(self, *args,**kwargs):
+    def options(self, *args, **kwargs):
         self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
 
     def check_company_user(self):
@@ -47,12 +48,14 @@ class BaseHandler(tornado.web.RequestHandler):
                 return (True, '')
             else:
                 return (False,
-                        self.response_error(error_dict.get("code"), "The app_id and app_key mismatch.")
-                        )
+                        self.response_error(error_dict.get("code"),
+                                            "The app_id and app_key mismatch.")
+                )
         else:
             return (
                 False,
-                self.response_error(1001, "The app_id or app_key is not found in HTTP headers.")
+                self.response_error(1001,
+                                    "The app_id or app_key is not found in HTTP headers.")
             )
 
     def access_control(self, app_id):
