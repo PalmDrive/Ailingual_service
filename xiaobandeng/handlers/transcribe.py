@@ -213,7 +213,7 @@ class TranscribeHandler(BaseHandler):
                         raise Exception
                 baidu_speech_service = baidu.BaiduNLP()
                 baidu_tasks = baidu_speech_service.batch_vop_tasks(
-                    file_list, starts, lan)
+                    file_list, starts, durations, lan)
                 self.enqueue_tasks(task_group, baidu_tasks)
             except Exception:
                 pass
@@ -228,7 +228,7 @@ class TranscribeHandler(BaseHandler):
                         raise Exception
                 google_speech_service = google.GoogleASR()
                 google_tasks = google_speech_service.batch_vop_tasks(
-                    file_list, starts, lan)
+                    file_list, starts, durations, lan)
                 self.enqueue_tasks(task_group, google_tasks)
             except Exception:
                 traceback.print_exc()

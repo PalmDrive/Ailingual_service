@@ -90,6 +90,7 @@ class TranscriptionTask(Task):
         self,
         file_name,
         start_time,
+        duration=None,
         order=None,
         lan='zh',
         completion_callback=None
@@ -100,18 +101,17 @@ class TranscriptionTask(Task):
         self.frames = None
         self.rate = 0
         self.body = ''
-        self.duration = 0
         self.start_time = start_time
         self.order = order
-
-        self.file_prepare()
+        self.duration = duration
 
     def file_prepare(self):
         wav = wave.open(self.file_name)
         self.frames = wav.getnframes()
         self.rate = wav.getframerate()
         self.body = wav.readframes(wav.getnframes())
-        self.duration = self.frames / float(self.rate)
+        if self.duration == None:
+            self.duration = self.frames / float(self.rate)
         wav.close()
 
     def source_name(self):

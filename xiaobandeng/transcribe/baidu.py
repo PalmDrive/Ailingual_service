@@ -22,8 +22,8 @@ class TaskBaidu(TranscriptionTask):
     lans = {"zh": ['zh', 'zh', 'zh', 'zh', 'zh', 'zh'],
             "en": ['en', 'en', 'en', 'en', 'en', 'en']
             }
-    def __init__(self, token, file_name, start_time, order=None, lan='zh', completion_callback=None):
-        super(TaskBaidu, self).__init__(file_name, start_time, order, lan, completion_callback)
+    def __init__(self, token, file_name, start_time, duration=None, order=None, lan='zh', completion_callback=None):
+        super(TaskBaidu, self).__init__(file_name, start_time, duration, order, lan, completion_callback)
         self.token = token
         self.max_try = 6
         self._try = 0
@@ -87,7 +87,7 @@ class TaskBaidu(TranscriptionTask):
             # logging.info('%s====>%s'%(self.order, self.result))
             return
 
-        self.result = 'Baidu API error: %d %s' % (res['err_no'], res['err_msg'])
+        self.result = ['Baidu API error: %d %s' % (res['err_no'], res['err_msg'])]
         self.complete()
 
 
@@ -133,10 +133,10 @@ class BaiduNLP(object):
     #     task_list.start()
     #     logging.info(datetime.datetime.now())
 
-    def batch_vop_tasks(self, file_list, starts, lan):
+    def batch_vop_tasks(self, file_list, starts, durations, lan):
         for task_id, file_name in enumerate(file_list):
             for l in lan.split(','):
-                yield TaskBaidu(self.access_token, file_name, starts[task_id], task_id, l)
+                yield TaskBaidu(self.access_token, file_name, starts[task_id], durations[task_id], task_id, l)
     #
     # def vop(self, file_name, lan):
     #     def callback(task):
