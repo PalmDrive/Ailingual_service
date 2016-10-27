@@ -7,11 +7,12 @@ import wave
 def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_length=10, force_preferred_length=False):
     print('break pause: %f' % break_pause)
     # length limit of audio for VOP api
-    length_limit = 60
-    if length_limit < preferred_length:
-        preferred_length = length_limit
+    upper_length_limit = 60
+    lower_length_limit = 1
+    if upper_length_limit < preferred_length:
+        preferred_length = upper_length_limit
     elif force_preferred_length:
-        length_limit = preferred_length
+        upper_length_limit = preferred_length
     # length we prefer using to avoid context-less transcription issue
 
     # initialization
@@ -48,7 +49,7 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
                 if not is_voices[i]:
                     print('pause time: %f' % duration)
                 # if the current clip is a breaking pause (long enough), then break it
-                if (not is_voices[i]) and duration >= break_pause:
+                if (not is_voices[i]) and duration >= break_pause and clip_duration >= lower_length_limit:
                     if clip_count > 0:  # combine the remaining pieces
                         write_previous_clips(outfile, data)
                         clip_durations.append(clip_duration)
@@ -85,8 +86,8 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
                     clip_count = 0
 
                     # if the current clip is too long, slice clip into smaller pieces with equal length
-                    if duration > length_limit:
-                        n = int(math.ceil(duration / length_limit))
+                    if duration > upper_length_limit:
+                        n = int(math.ceil(duration / upper_length_limit))
                         for j in range(0, n):
                             extract_slice(f, outfile,
                                           long(j * duration / n * 1000),
