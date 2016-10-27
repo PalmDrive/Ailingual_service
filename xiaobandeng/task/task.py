@@ -104,6 +104,7 @@ class TranscriptionTask(Task):
         self.start_time = start_time
         self.order = order
         self.duration = duration
+        self.file_prepare()
 
     def file_prepare(self):
         wav = wave.open(self.file_name)
