@@ -181,10 +181,13 @@ class TranscribeHandler(BaseHandler):
             self.service_providers,
         )
 
-        audio_dir, starts = vad.slice(3, target_file)
-        starts = preprocessor.preprocess_clip_length(
+        audio_dir, starts, is_voices, break_pause = vad.slice(3, target_file)
+
+        starts, durations = preprocessor.preprocess_clip_length(
             audio_dir,
             starts,
+            is_voices,
+            break_pause,
             self.fragment_length_limit,
             self.force_fragment_length)
 
