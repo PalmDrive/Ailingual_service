@@ -54,7 +54,7 @@ class SrtHandler(BaseHandler):
                             "attachment; filename=" + filename + ".srt")
 
             for (index, fragment) in enumerate(fragment_list, 1):
-                self.write(str(index + 1))
+                self.write(str(index))
                 self.write(sep)
 
                 self.write(
