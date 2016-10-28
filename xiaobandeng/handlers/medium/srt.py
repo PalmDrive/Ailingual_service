@@ -52,8 +52,9 @@ class SrtHandler(BaseHandler):
             self.set_header("Content-Type", "application/octet-stream")
             self.set_header("Content-Disposition",
                             "attachment; filename=" + filename + ".srt")
+
             for (index, fragment) in enumerate(fragment_list, 1):
-                self.write(str(fragment.get("fragment_order") + 1))
+                self.write(str(index + 1))
                 self.write(sep)
 
                 self.write(
