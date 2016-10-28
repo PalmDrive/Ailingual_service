@@ -100,7 +100,9 @@ class TranscribeHandler(BaseHandler):
             self.log_content['notified_client'] = False
             self.log_content["request_end_timestamp"] = time.time()
             self.save_log(True)
+
             self.finish()
+            return
 
     def save_log(self, status):
         self.log_content["transcribe_end_timestamp"] = time.time()
@@ -252,10 +254,12 @@ class TranscribeHandler(BaseHandler):
             self.write(json.dumps(error))
             self.finish()
             return
+
         addr = self.get_argument("addr", None)
         if addr == None:
             self.write(json.dumps(self.error_missing_arg('addr')))
             self.finish()
+            return
         addr = urllib.quote(addr.encode("utf8"), ":/")
 
         self.addr = addr
@@ -264,7 +268,7 @@ class TranscribeHandler(BaseHandler):
         if media_name == None:
             self.write(json.dumps(self.error_missing_arg('media_name')))
             self.finish()
-
+            return
         self.media_name = media_name.encode("utf8")
 
         self.media_id = str(uuid.uuid4())
@@ -275,10 +279,10 @@ class TranscribeHandler(BaseHandler):
         if not self.is_prod:
             self.company_name = self.get_argument("company", None)
 
-        if self.company_name == None:
-            current_user = self.user_mgr.current_user()
-            self.company_name = current_user.get('company_name')
-
+        # if self.company_name == None:
+            # current_user = self.user_mgr.current_user()
+            # self.company_name = current_user.get('company_name')
+           # self.company_name
         self.company_name = self.company_name.encode("utf8")
 
         if not self.is_prod:
@@ -352,6 +356,7 @@ class TranscribeHandler(BaseHandler):
             self.write(json.dumps(self.response_success()))
             self.log_content["request_end_time"] = time.time()
             self.finish()
+            return
         else:
             self._handle(self.addr, self.language)
 

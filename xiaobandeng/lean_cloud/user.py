@@ -20,6 +20,15 @@ class UserMgr(object):
 
     def __init__(self):
         self.User = leancloud.User
+        self.user_query = self.User.query
+
+    def get_user(self, uid):
+        try:
+            user = self.user_query.get(uid)
+            return user
+        except leancloud.LeanCloudError as e:
+            if e.code ==101:
+                return None
 
     def create_user(self, username, passwd):
         user = self.User()
@@ -34,16 +43,20 @@ class UserMgr(object):
 
         return res
 
-    def create_company(self, company_name):
-        user = self.User()
+    def create_app_info(self):
         c_uuid = str(uuid.uuid1())
+        return c_uuid[:23], c_uuid[24:]
+
+    def create_company(self, company_name, username, password):
+        user = self.User()
+        c_uuid = self.create_app_info()
 
         user.set('company_name', company_name)
-        user.set('app_id', c_uuid[:23])
-        user.set('app_key', c_uuid[24:])
+        user.set('app_id', c_uuid[0])
+        user.set('app_key', c_uuid[1])
 
-        user.set('username', c_uuid[:23])
-        user.set('password', c_uuid[24:])
+        user.set('username', username)
+        user.set('password', password)
 
         try:
             user.sign_up()

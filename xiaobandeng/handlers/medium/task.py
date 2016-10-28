@@ -1,7 +1,7 @@
 # coding:u8
 from ..base import BaseHandler
+from xiaobandeng.lean_cloud.user import UserMgr
 from xiaobandeng.lean_cloud import lean_cloud
-
 
 class CreateEditorTaskHandler(BaseHandler):
     def get(self, media_id):
@@ -27,6 +27,7 @@ class CreateEditorTaskHandler(BaseHandler):
             task_order += 1
 
         self.lc.save_tasks()
+        self.write(self.response_success())
 
     def add_task(self, order, start_at, end_at):
         self.lc.add_task(self.media, order, start_at, end_at,
@@ -35,5 +36,17 @@ class CreateEditorTaskHandler(BaseHandler):
 
 class AddUserTaskCountHandler(BaseHandler):
     def get(self):
+
         uid = self.get_argument("uid")
-        self.lc = lean_cloud.LeanCloud()
+        diff_count = int(self.get_argument("task_count", 0))
+        user_mgr = UserMgr()
+        query = user_mgr.User.query
+        user = query.get(uid)
+        task_count = user.get("task_count", 0)
+        task_count += diff_count
+        if task_count < 0:
+            task_count = 0
+
+        user.set("task_count",task_count)
+        user.save()
+        self.write("success")

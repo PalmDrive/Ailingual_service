@@ -9,10 +9,10 @@ from xiaobandeng.config import CONFIG
 
 class TranscriptionLog(object):
     def __init__(self):
-        APP_ID = CONFIG.LEANCLOUD_APP_ID
-        MASTER_KEY = CONFIG.LEANCLOUD_MASTER_KEY
-
-        leancloud.init(APP_ID, MASTER_KEY)
+        # APP_ID = CONFIG.LEANCLOUD_APP_ID
+        # MASTER_KEY = CONFIG.LEANCLOUD_MASTER_KEY
+        #
+        # leancloud.init(APP_ID, MASTER_KEY)
         self.Log = leancloud.Object.extend("TranscriptionLog")
         self.log = self.Log()
 
