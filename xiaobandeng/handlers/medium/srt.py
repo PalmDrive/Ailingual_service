@@ -20,9 +20,8 @@ class SrtHandler(BaseHandler):
         lc = lean_cloud.LeanCloud()
         fragment_list = lc.get_list(media_id=media_id)
         media = lc.get_media(media_id)
-        content_keys = ["content_" + i for i in media.get("service_providers")]
-        if not content_keys:
-            content_keys = ["content_baidu"]
+        provider_list = media.get("service_providers") or ["baidu"]
+        content_keys = ["content_" + i for i in provider_list]
 
         def convert_time(seconds):
             seconds = round(seconds, 3)
@@ -52,8 +51,9 @@ class SrtHandler(BaseHandler):
             self.set_header("Content-Type", "application/octet-stream")
             self.set_header("Content-Disposition",
                             "attachment; filename=" + filename + ".srt")
+
             for (index, fragment) in enumerate(fragment_list, 1):
-                self.write(str(fragment.get("fragment_order") + 1))
+                self.write(str(index))
                 self.write(sep)
 
                 self.write(
