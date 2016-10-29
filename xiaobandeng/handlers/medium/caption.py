@@ -20,7 +20,6 @@ class CaptionHandler(BaseHandler):
                      media.get("lan"), media.get("service_providers")
         )
 
-        caption_transcript_list = []
         all_transcript = lc.get_list(media_id)
         index = 0
 
@@ -47,7 +46,7 @@ class CaptionHandler(BaseHandler):
             lc.add_transcription_to_fragment(index, content, "baidu")
             index += 1
 
-        lc.fragments[0].set("start_at", 0.01);
+        lc.fragments[0].set("start_at", 0.01)
 
         media.save()
         lc.save()

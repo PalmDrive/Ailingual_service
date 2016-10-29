@@ -18,8 +18,9 @@ class LrcHandler(BaseHandler):
         # self.content_key = lc_content_keys[int(source)]
         lc = lean_cloud.LeanCloud()
         media = lc.get_media(media_id)
-        self.content_keys = ["content_" + i for i in
-                             media.get("service_providers")]
+        service_providers = media.get("service_providers") or []
+        self.content_keys = ["content_" + i for i in service_providers]
+
         if not self.content_keys:
             self.content_keys = ["content_baidu"]
 
