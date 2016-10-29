@@ -5,6 +5,7 @@ import contextlib
 import sys
 import tempfile
 import wave
+import statistics
 
 import webrtcvad
 
@@ -118,26 +119,13 @@ def slice(aggressive, filename):
 
 
     pause_durations = sorted(pause_durations)
-    max_diff = 0
-    break_pause = 0.5
-    for i, duration in enumerate(pause_durations):
-        print "duration %f" % duration
-        if i + 1 < len(pause_durations) :
-            if pause_durations[i+1] > 0.5:
-                break
-            diff = (pause_durations[i+1] - duration)
-            if diff > max_diff:
-                max_diff = diff
-                break_pause = pause_durations[i+1]
-            print "duration difference from next %f" % diff
-
-    print "max diff %s" % max_diff
+    break_pause = statistics.median(pause_durations)
     print "calculated break pause %s" % break_pause
 
-    if break_pause > 0.5:
-        break_pause = 0.5
-    elif break_pause < 0.15:
-        break_pause = 0.15
+    if break_pause > 0.7:
+        break_pause = 0.7
+    elif break_pause < 0.3:
+        break_pause = 0.3
     return dirpath, starts, is_voices, break_pause
 
 

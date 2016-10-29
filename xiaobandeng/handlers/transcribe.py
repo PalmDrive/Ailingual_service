@@ -181,7 +181,9 @@ class TranscribeHandler(BaseHandler):
             self.service_providers,
         )
 
-        audio_dir, starts, is_voices, break_pause = vad.slice(3, target_file)
+        vad_aggressiveness = 0
+
+        audio_dir, starts, is_voices, break_pause = vad.slice(vad_aggressiveness, target_file)
 
         starts, durations = preprocessor.preprocess_clip_length(
             audio_dir,
@@ -237,7 +239,7 @@ class TranscribeHandler(BaseHandler):
 
         # you need to smoothen the file after building all tasks but
         # before task group starts
-        preprocessor.smoothen_clips_edge(file_list)
+        # preprocessor.smoothen_clips_edge(file_list)
         task_group.start()
 
     def enqueue_tasks(self, task_group, tasks):
