@@ -93,6 +93,8 @@ class LeanCloud(object):
         media.set("status", "Auto Transcribed")
         media.set("requirement", requirement)
         media.set("lan", language)
+        if not service_provider:
+            service_provider =[]
         media.set("service_providers", service_provider)
         self.media = media
 
