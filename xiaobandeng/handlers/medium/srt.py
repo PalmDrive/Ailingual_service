@@ -20,11 +20,8 @@ class SrtHandler(BaseHandler):
         lc = lean_cloud.LeanCloud()
         fragment_list = lc.get_list(media_id=media_id)
         media = lc.get_media(media_id)
-        provider_list = media.get("service_providers") or []
-
+        provider_list = media.get("service_providers") or ["baidu"]
         content_keys = ["content_" + i for i in provider_list]
-        if not content_keys:
-            content_keys = ["content_baidu"]
 
         def convert_time(seconds):
             seconds = round(seconds, 3)
