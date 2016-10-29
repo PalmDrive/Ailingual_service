@@ -181,7 +181,7 @@ class TranscribeHandler(BaseHandler):
             self.service_providers,
         )
 
-        vad_aggressiveness = 0
+        vad_aggressiveness = 2
 
         audio_dir, starts, is_voices, break_pause = vad.slice(vad_aggressiveness, target_file)
 
@@ -296,7 +296,7 @@ class TranscribeHandler(BaseHandler):
                 fragment_length_limit = int(fragment_length_limit)
             self.fragment_length_limit = fragment_length_limit
         else:
-            self.fragment_length_limit = 10
+            self.fragment_length_limit = 7
 
         if not self.is_prod:
             self.requirement = self.get_argument("requirement",
