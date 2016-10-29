@@ -47,7 +47,6 @@ class CaptionHandler(BaseHandler):
             index += 1
 
         lc.fragments[0].set("start_at", 0.01)
-
         media.save()
         lc.save()
 
