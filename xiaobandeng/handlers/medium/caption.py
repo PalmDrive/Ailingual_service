@@ -8,30 +8,32 @@ import json
 
 
 class CaptionHandler(BaseHandler):
-
     def post(self, media_id):
         lc = LeanCloud()
         media = lc.get_media(media_id)
-        print dir(media)
-        print '------------'
+
+        print 'making caption of media%s' % media_id
+
         caption_media_id = str(uuid.uuid4())
         media.set("caption_media_id", caption_media_id)
 
         lc.add_media(media.get("media_name"), caption_media_id,
                      media.get("media_src"), media.get("duration"),
                      media.get("company_name"), media.get("requirement"),
-                     media.get("lan"),media.get("service_providers"
-                                                 "")
+                     media.get("lan"), media.get("service_providers")
+
         )
 
         caption_transcript_list = []
         all_transcript = lc.get_list(media_id)
         index = 0
 
+        print 'length of all transcript:%s'%len(all_transcript)
+
         for transcript in all_transcript:
             content = transcript.get("content_baidu")[0]
             content = content.strip(u"，")
-            content =content.replace(u"。", u"，")
+            content = content.replace(u"。", u"，")
             caption_content_list = content.split(u"，")
 
             for content in caption_content_list:
@@ -42,7 +44,7 @@ class CaptionHandler(BaseHandler):
                 lc.add_transcription_to_fragment(index, content, "baidu")
                 index += 1
 
-        lc.fragments[0].set("start_at",0.01);
+        lc.fragments[0].set("start_at", 0.01);
 
         media.save()
         lc.save()
