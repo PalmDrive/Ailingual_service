@@ -181,10 +181,15 @@ class TranscribeHandler(BaseHandler):
             self.service_providers,
         )
 
-        audio_dir, starts = vad.slice(3, target_file)
-        starts = preprocessor.preprocess_clip_length(
+        vad_aggressiveness = 2
+
+        audio_dir, starts, is_voices, break_pause = vad.slice(vad_aggressiveness, target_file)
+
+        starts, durations = preprocessor.preprocess_clip_length(
             audio_dir,
             starts,
+            is_voices,
+            break_pause,
             self.fragment_length_limit,
             self.force_fragment_length)
 
@@ -210,7 +215,7 @@ class TranscribeHandler(BaseHandler):
                         raise Exception
                 baidu_speech_service = baidu.BaiduNLP()
                 baidu_tasks = baidu_speech_service.batch_vop_tasks(
-                    file_list, starts, lan)
+                    file_list, starts, durations, lan)
                 self.enqueue_tasks(task_group, baidu_tasks)
             except Exception:
                 pass
@@ -225,7 +230,7 @@ class TranscribeHandler(BaseHandler):
                         raise Exception
                 google_speech_service = google.GoogleASR()
                 google_tasks = google_speech_service.batch_vop_tasks(
-                    file_list, starts, lan)
+                    file_list, starts, durations, lan)
                 self.enqueue_tasks(task_group, google_tasks)
             except Exception:
                 traceback.print_exc()
@@ -234,7 +239,7 @@ class TranscribeHandler(BaseHandler):
 
         # you need to smoothen the file after building all tasks but
         # before task group starts
-        preprocessor.smoothen_clips_edge(file_list)
+        # preprocessor.smoothen_clips_edge(file_list)
         task_group.start()
 
     def enqueue_tasks(self, task_group, tasks):
@@ -291,7 +296,7 @@ class TranscribeHandler(BaseHandler):
                 fragment_length_limit = int(fragment_length_limit)
             self.fragment_length_limit = fragment_length_limit
         else:
-            self.fragment_length_limit = 10
+            self.fragment_length_limit = 7
 
         if not self.is_prod:
             self.requirement = self.get_argument("requirement",

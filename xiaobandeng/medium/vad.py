@@ -5,6 +5,7 @@ import contextlib
 import sys
 import tempfile
 import wave
+import statistics
 
 import webrtcvad
 
@@ -62,26 +63,39 @@ def vad_collector(sample_rate, frame_duration_ms,
         if not triggered:
             num_voiced = len([f for f in ring_buffer
                               if vad.is_speech(f.bytes, sample_rate)])
-            if num_voiced > 0.9 * ring_buffer.maxlen:
-                sys.stdout.write('+(%s)' % (ring_buffer[0].timestamp,))
+            if num_voiced >= 0.5 * ring_buffer.maxlen:
+                # end a non-voiced chunk
+                new_voiced_frames = voiced_frames[-len(ring_buffer):]
+                del voiced_frames[-len(ring_buffer):]
+                if len(voiced_frames) > 0:
+                    yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, float(len(voiced_frames)*frame_duration_ms)/1000
+
+                # start a voiced chunk
                 triggered = True
+                voiced_frames = new_voiced_frames
+                clip_start = ring_buffer[0].timestamp
+                sys.stdout.write('+(%s)' % (clip_start,))
                 ring_buffer.clear()
         else:
             num_unvoiced = len([f for f in ring_buffer
                                 if not vad.is_speech(f.bytes, sample_rate)])
-            if num_unvoiced > 0.65 * ring_buffer.maxlen:
+            if num_unvoiced >= 0.4 * ring_buffer.maxlen:
+                # end a voiced chunk
                 sys.stdout.write('-(%s)' % (frame.timestamp + frame.duration))
+                yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, float(len(voiced_frames)*frame_duration_ms)/1000
+
+                # start a unvoiced chunk
                 triggered = False
-                yield b''.join([f.bytes for f in voiced_frames]), clip_start
-                ring_buffer.clear()
                 voiced_frames = []
                 clip_start = frame.timestamp + frame.duration
+                ring_buffer.clear()
+
     sys.stdout.write('\n')
     if voiced_frames:
-        yield b''.join([f.bytes for f in voiced_frames]), clip_start
+        yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, float(len(voiced_frames)*frame_duration_ms)/1000
 
 
-# aggressive is limited to 0..3. By experience, 3 is too aggressive. 0..2 is recommended.
+# aggressive is limited to 0..3. By experience, 3 is the most aggressive. 0 is the least aggressive.
 def slice(aggressive, filename):
     audio, sample_rate = read_wave(filename)
     vad = webrtcvad.Vad(int(aggressive))
@@ -91,12 +105,28 @@ def slice(aggressive, filename):
 
     dirpath = tempfile.mkdtemp()
     starts = []
-    for i, (segment, start) in enumerate(segments):
+    is_voices = []
+
+    pause_durations = []
+    for i, (segment, start, is_voice, duration) in enumerate(segments):
         path = dirpath + '/chunk-%d.wav' % i
         print(' Writing %s' % (path,))
         write_wave(path, segment, sample_rate)
         starts.append(start)
-    return dirpath, starts
+        is_voices.append(is_voice)
+        if not is_voice:
+            pause_durations.append(duration)
+
+
+    pause_durations = sorted(pause_durations)
+    break_pause = statistics.median(pause_durations)
+    print "calculated break pause %s" % break_pause
+
+    if break_pause > 0.7:
+        break_pause = 0.7
+    elif break_pause < 0.3:
+        break_pause = 0.3
+    return dirpath, starts, is_voices, break_pause
 
 
 def main(args):

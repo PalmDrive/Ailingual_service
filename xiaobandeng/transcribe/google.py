@@ -31,8 +31,8 @@ DISCOVERY_URL = ('https://{api}.googleapis.com/$discovery/rest?'
 
 class TaskGoogle(TranscriptionTask):
 
-    def __init__(self, service, executor, file_name, start_time, order=None, lan='cmn-Hans-CN', completion_callback=None):
-        super(TaskGoogle, self).__init__(file_name, start_time, order, lan, completion_callback)
+    def __init__(self, service, executor, file_name, start_time, duration=None, order=None, lan='cmn-Hans-CN', completion_callback=None):
+        super(TaskGoogle, self).__init__(file_name, start_time, duration, order, lan, completion_callback)
         self.service = service
         self.executor = executor
         self.lan = lan
@@ -105,10 +105,10 @@ class GoogleASR(object):
     def vop(self, file_name, lan):
         TaskGoogle(self.service, self.executor, file_name, 0, 0, lan).start()
 
-    def batch_vop_tasks(self, file_list, starts, lan):
+    def batch_vop_tasks(self, file_list, starts, durations, lan):
         for task_id, file_name in enumerate(file_list):
             for l in lan.split(','):
-                yield TaskGoogle(self.service, self.executor, file_name, starts[task_id], task_id, self.lanCodes[l])
+                yield TaskGoogle(self.service, self.executor, file_name, starts[task_id], durations[task_id], task_id, self.lanCodes[l])
 
 def main(speech_file):
     """Transcribe the given audio file.

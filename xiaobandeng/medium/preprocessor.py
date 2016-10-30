@@ -4,23 +4,40 @@ import os
 import wave
 
 
-def preprocess_clip_length(audio_dir, starts, preferred_length=10, force_preferred_length=False):
+def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_length=10, force_preferred_length=False):
+    print('break pause: %f' % break_pause)
     # length limit of audio for VOP api
-    length_limit = 60
-    if length_limit < preferred_length:
-        preferred_length = length_limit
+    upper_length_limit = 60
+    lower_length_limit = 1
+    if upper_length_limit < preferred_length:
+        preferred_length = upper_length_limit
     elif force_preferred_length:
-        length_limit = preferred_length
+        upper_length_limit = preferred_length
     # length we prefer using to avoid context-less transcription issue
 
     # initialization
+
+    # count the order of output file
     output_count = 0
-    outfile = out_file_path(audio_dir, output_count)
+
+    # store total duration of current clip with the chunks collected
     clip_duration = 0
+
+    # store the audio frames to be written into the current clip
     data = []
+
+    # count how many chunks are ready to be written in current clip
     clip_count = 0
 
-    new_starts = []
+    # count how many voiced chunks are ready to be written in current clip
+    voiced_clip_count = 0
+
+    # store the start time of each clip
+    clip_starts = []
+
+    # store the duration of each clip
+    clip_durations = []
+
     for subdir, dirs, files in os.walk(audio_dir):
         for i in range(0, len(files)):
             file_name = "chunk-%d.wav" % i
@@ -29,66 +46,95 @@ def preprocess_clip_length(audio_dir, starts, preferred_length=10, force_preferr
                 frames = f.getnframes()
                 rate = f.getframerate()
                 duration = frames / float(rate)
-                print ('process clip %s duration %f, current total duration %f' % (file, duration, clip_duration))
+                print ('process clip %s duration %f, current total duration %f' % (file_name, duration, clip_duration))
+
+                if not is_voices[i]:
+                    print('pause time: %f' % duration)
+                # if the current clip is a breaking pause (long enough), then break it
+                if (not is_voices[i]) and duration >= break_pause and clip_duration >= lower_length_limit:
+                    if voiced_clip_count > 0:  # combine the remaining pieces
+                        write_previous_clip(audio_dir, output_count, data)
+                        clip_durations.append(clip_duration)
+                        outfile = out_file_path(audio_dir, output_count)
+                        print('break pause: combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
+                        print('\nstart at %f end_at: %f\n' % (clip_starts[-1], clip_starts[-1] + clip_duration))
+                        output_count += 1
+                    clip_duration = 0
+                    data = []
+                    clip_count = 0
+                    voiced_clip_count = 0
+
                 # if concatenating next clip won't make the combined clip exceed the length limit, add the next clip
-                if clip_duration + duration <= preferred_length:
+                elif clip_duration + duration <= preferred_length:
                     clip_duration += duration
                     data.append([f.getparams(), f.readframes(f.getnframes())])
                     f.close()
                     if clip_count == 0:
-                        new_starts.append(starts[i])
-                        print('clip start: %f' % (new_starts[-1]))
+                        clip_starts.append(starts[i])
+                        print('clip start: %f' % (clip_starts[-1]))
                     clip_count += 1
+                    if is_voices[i]:
+                        voiced_clip_count += 1
                     print (
                         'added to the previous clip %s duration %f - total duration %f' % (
-                            file, duration, clip_duration))
+                            file_name, duration, clip_duration))
                 else:
-                    if clip_count > 0:
-                        # combine the previous clips
-                        output = wave.open(outfile, 'wb')
-                        output.setparams(data[0][0])
-                        for params, frames in data:
-                            output.writeframes(frames)
-                        output.close()
+                    if voiced_clip_count > 0:
+                        write_previous_clip(audio_dir, output_count, data)
+                        clip_durations.append(clip_duration)
+                        outfile = out_file_path(audio_dir, output_count)
                         print('combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
-                        print('\nend_at: %f\n' % (new_starts[-1] + clip_duration))
+                        print('\nstart at %f end_at: %f\n' % (clip_starts[-1], clip_starts[-1] + clip_duration))
                         output_count += 1
-                    outfile = out_file_path(audio_dir, output_count)
                     clip_duration = 0
                     data = []
                     clip_count = 0
+                    voiced_clip_count = 0
+
                     # if the current clip is too long, slice clip into smaller pieces with equal length
-                    if duration > length_limit:
-                        n = int(math.ceil(duration / length_limit))
+                    if duration > upper_length_limit:
+                        n = int(math.ceil(duration / upper_length_limit))
                         for j in range(0, n):
+                            outfile = out_file_path(audio_dir, output_count)
                             extract_slice(f, outfile,
                                           long(j * duration / n * 1000),
                                           long((j + 1) * duration / n * 1000))
-                            print('slice audio %s into sub-audio %s' % (file, outfile))
-                            new_starts.append(starts[i] + j * duration / n)
-                            print('clip start: %f' % (new_starts[-1]))
+                            print('slice audio %s into sub-audio %s' % (file_name, outfile))
+                            clip_starts.append(starts[i] + j * duration / n)
+                            clip_durations.append(duration / n)
+                            print('clip start: %f' % (clip_starts[-1]))
                             output_count += 1
-                            outfile = out_file_path(audio_dir, output_count)
-                        print('\nend_at: %f\n' % (new_starts[-1] + duration / n))
+                        print('\nstart at %f end_at: %f\n' % (clip_starts[-1], clip_starts[-1] + duration / n))
                     else:
                         clip_duration += duration
                         data.append([f.getparams(), f.readframes(f.getnframes())])
                         f.close()
                         if clip_count == 0:
-                            new_starts.append(starts[i])
-                            print('clip start: %f' % (new_starts[-1]))
+                            clip_starts.append(starts[i])
+                            print('clip start: %f' % (clip_starts[-1]))
                         clip_count += 1
+                        if is_voices[i]:
+                            voiced_clip_count += 1
             os.remove(file_path)
-    if clip_count > 0:  # combine the remaining pieces
-        output = wave.open(outfile, 'wb')
-        output.setparams(data[0][0])
-        for params, frames in data:
-            output.writeframes(frames)
-        output.close()
-        print('combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
-        print('\nend_at: %f\n' % (new_starts[-1] + clip_duration))
-    return new_starts
 
+    # combine the remaining pieces
+    if voiced_clip_count > 0:
+        write_previous_clip(audio_dir, output_count, data)
+        clip_durations.append(clip_duration)
+        outfile = out_file_path(audio_dir, output_count)
+        print('combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
+        print('\nstart at %f end_at: %f\n' % (clip_starts[-1], clip_starts[-1] + clip_duration))
+
+    return clip_starts, clip_durations
+
+def write_previous_clip(audio_dir, output_count, data):
+    # combine the previous clips
+    outfile = out_file_path(audio_dir, output_count)
+    output = wave.open(outfile, 'wb')
+    output.setparams(data[0][0])
+    for params, frames in data:
+        output.writeframes(frames)
+    output.close()
 
 def out_file_path(dir_path, output_count):
     return os.path.join(dir_path, "pchunk-%08d.wav" % output_count)
