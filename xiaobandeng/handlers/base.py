@@ -22,7 +22,7 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers",
                         "X-Requested-With, Content-Type,"
-                        "x-smartchat-key,client-source,"
+                        "x-ailingual-key,client-source,"
                         "app_id,app_key")
         self.set_header("Access-Control-Allow-Methods",
                         "PUT,POST,GET,DELETE,OPTIONS")
