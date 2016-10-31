@@ -110,8 +110,9 @@ class LeanCloud(object):
 
             print "transcript and media saved to lean cloud"
         except leancloud.LeanCloudError as e:
-            print e
-            raise
+            print e.code
+            print e.error
+            print "error when call save of LeanCloud."
 
     def get_list(self, media_id):
         total_data = []
