@@ -94,9 +94,10 @@ class BaseHandler(tornado.web.RequestHandler):
 
         return data
 
-    def response_success(self):
+    def response_success(self, _append={}):
         data = {
             "status": "success",
         }
+        data.update(_append)
 
         return data

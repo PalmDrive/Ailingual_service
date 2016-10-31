@@ -94,9 +94,10 @@ class LeanCloud(object):
         media.set("requirement", requirement)
         media.set("lan", language)
         if not service_provider:
-            service_provider =[]
+            service_provider = []
         media.set("service_providers", service_provider)
         self.media = media
+        print 'added_media_id:%s' % media_id
 
     def save(self):
         try:
