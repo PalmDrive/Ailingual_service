@@ -25,7 +25,12 @@ class CaptionHandler(BaseHandler):
 
         text = ""
         for transcript in all_transcript:
-            content = transcript.get("content_baidu")[0]
+            try:
+                content = transcript.get("content_baidu")[0]
+                if not content:
+                    continue
+            except TypeError:
+                continue
             content = content.replace(u"。", u"，")
             content = content.replace(u"？", u"，")
             content = content.replace(u"！", u"，")
