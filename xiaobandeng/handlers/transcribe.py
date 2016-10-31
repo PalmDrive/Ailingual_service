@@ -183,7 +183,8 @@ class TranscribeHandler(BaseHandler):
 
         vad_aggressiveness = 2
 
-        audio_dir, starts, is_voices, break_pause = vad.slice(vad_aggressiveness, target_file)
+        audio_dir, starts, is_voices, break_pause = vad.slice(
+            vad_aggressiveness, target_file)
 
         starts, durations = preprocessor.preprocess_clip_length(
             audio_dir,
@@ -234,8 +235,6 @@ class TranscribeHandler(BaseHandler):
                 self.enqueue_tasks(task_group, google_tasks)
             except Exception:
                 traceback.print_exc()
-                print '---'*200
-                pass
 
         # you need to smoothen the file after building all tasks but
         # before task group starts
@@ -319,7 +318,7 @@ class TranscribeHandler(BaseHandler):
         else:
             lans = self.language.split(",")
             if len(lans) > 1:
-                self.service_providers = ["baidu","google"]
+                self.service_providers = ["baidu", "google"]
             elif "en" in lans:
                 self.service_providers = ["google"]
             else:
@@ -363,7 +362,8 @@ class TranscribeHandler(BaseHandler):
             tornado.ioloop.IOLoop.current().add_callback(
                 self._handle, self.addr, self.language
             )
-            self.write(json.dumps(self.response_success()))
+            self.write(
+                json.dumps(self.response_success({"media_id": self.media_id})))
             self.log_content["request_end_time"] = time.time()
             self.finish()
         else:
