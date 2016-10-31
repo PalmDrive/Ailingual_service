@@ -155,8 +155,16 @@ class LeanCloud(object):
         task.set("name", task_name)
         self.tasks.append(task)
 
-    def get_fragment_by_start_at(self, start_at):
+    def get_fragment_by_start_at(self, media_id, start_at):
         self.fragment_query.greater_than_or_equal_to("start_at", start_at)
+        self.fragment_query.add_ascending("start_at")
+        self.fragment_query.equal_to("media_id", media_id)
+        self.fragment_query.limit(1)
+        return self.fragment_query.find()
+
+    def get_last_fragment_by_end_at(self,media_id):
+        self.fragment_query.equal_to("media_id", media_id)
+        self.fragment_query.add_descending("end_at")
         self.fragment_query.limit(1)
         return self.fragment_query.find()
 

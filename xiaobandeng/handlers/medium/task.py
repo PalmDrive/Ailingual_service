@@ -12,14 +12,19 @@ class CreateEditorTaskHandler(BaseHandler):
         task_duration = 10 * 60
         start_time = 0
         task_order = 0
+        fragment = None
 
         while True:
-            fragment = self.lc.get_fragment_by_start_at(
+            fragment = self.lc.get_fragment_by_start_at(media_id,
                 start_time + task_duration)
             if fragment:
                 fragment = fragment[0]
+
+                print fragment.get("start_at")
                 self.add_task(task_order, start_time, fragment.get("start_at"))
             else:
+                # self.lc = lean_cloud.LeanCloud()
+                # fragment = self.lc.get_last_fragment_by_end_at(media_id)
                 self.add_task(task_order, start_time,
                               self.media.get("duration"))
                 break
