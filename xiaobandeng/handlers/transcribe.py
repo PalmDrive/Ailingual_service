@@ -102,6 +102,7 @@ class TranscribeHandler(BaseHandler):
             self.log_content["request_end_timestamp"] = time.time()
             self.save_log(True)
             self.finish()
+            return
 
     def save_log(self, status):
         self.log_content["transcribe_end_timestamp"] = time.time()
@@ -267,6 +268,7 @@ class TranscribeHandler(BaseHandler):
         if addr == None:
             self.write(json.dumps(self.error_missing_arg("addr")))
             self.finish()
+            return
         addr = urllib.quote(addr.encode("utf8"), ":/")
         self.addr = addr
 
@@ -274,7 +276,7 @@ class TranscribeHandler(BaseHandler):
         if media_name == None:
             self.write(json.dumps(self.error_missing_arg("media_name")))
             self.finish()
-
+            return
         self.media_name = media_name.encode("utf8")
         self.media_id = str(uuid.uuid4())
         self.language = self.get_argument("lan", "zh")
@@ -367,6 +369,7 @@ class TranscribeHandler(BaseHandler):
                     {"data": {"media_id": self.media_id}})))
             self.log_content["request_end_time"] = time.time()
             self.finish()
+            return
         else:
             self._handle(self.addr, self.language)
 
