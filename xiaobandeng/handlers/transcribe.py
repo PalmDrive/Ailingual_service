@@ -363,7 +363,8 @@ class TranscribeHandler(BaseHandler):
                 self._handle, self.addr, self.language
             )
             self.write(
-                json.dumps(self.response_success({"media_id": self.media_id})))
+                json.dumps(self.response_success(
+                    {"data": {"media_id": self.media_id}})))
             self.log_content["request_end_time"] = time.time()
             self.finish()
         else:
