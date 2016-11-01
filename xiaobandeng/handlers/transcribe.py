@@ -101,6 +101,7 @@ class TranscribeHandler(BaseHandler):
             self.log_content["notified_client"] = False
             self.log_content["request_end_timestamp"] = time.time()
             self.save_log(True)
+
             self.finish()
             return
 
@@ -264,6 +265,7 @@ class TranscribeHandler(BaseHandler):
             self.write(json.dumps(error))
             self.finish()
             return
+
         addr = self.get_argument("addr", None)
         if addr == None:
             self.write(json.dumps(self.error_missing_arg("addr")))
@@ -285,9 +287,11 @@ class TranscribeHandler(BaseHandler):
         if not self.is_prod:
             self.company_name = self.get_argument("company", None)
 
-        if self.company_name == None:
-            current_user = self.user_mgr.current_user()
-            self.company_name = current_user.get("company_name")
+        #can not get user ,not called login,user_session is stored in threadlocal
+        # if not self.company_name:
+            # current_user = self.user_mgr.current_user()
+            # self.company_name = current_user.get('company_name')
+           # self.company_name
 
         self.company_name = self.company_name.encode("utf8")
 

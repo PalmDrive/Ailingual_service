@@ -1,6 +1,7 @@
 {
-    "LEANCLOUD_MASTER_KEY": "ywhqmYxpFKTyemJrFl8YYT2j",
     "LEANCLOUD_APP_ID": "hwB46P8KvcGH258ka0JfnMww-gzGzoHsz",
+    "LEANCLOUD_APP_KEY": "ywhqmYxpFKTyemJrFl8YYT2j",
+    "LEANCLOUD_MASTER_KEY": "Sr5rLnoJuGvTVxR3VtKOTQbK",
     "OSS_ACCESS_KEY_ID": "ZblgTWN34znE5dOO",
     "OSS_ACCESS_KEY_SECRET": "S09puSorYwkbdyyAjWpqudXQ8mLvl9",
     "OSS_ENDPOINT_HOST": "oss-cn-hangzhou.aliyuncs.com",
