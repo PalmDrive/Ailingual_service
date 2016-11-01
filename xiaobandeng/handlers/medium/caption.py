@@ -14,7 +14,7 @@ class CaptionHandler(BaseHandler):
         caption_media_id = str(uuid.uuid4())
         media.set("caption_media_id", caption_media_id)
 
-        lc.add_media(media.get("media_name"), caption_media_id,
+        lc.add_media(media.get("media_name")+"__copyed", caption_media_id,
                      media.get("media_src"), media.get("duration"),
                      media.get("company_name"), media.get("requirement"),
                      media.get("lan"), media.get("service_providers")
