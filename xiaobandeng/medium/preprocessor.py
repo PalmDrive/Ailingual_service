@@ -7,7 +7,7 @@ import wave
 def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_length=10, force_preferred_length=False):
     print('break pause: %f' % break_pause)
     # length limit of audio for VOP api
-    upper_length_limit = 60
+    upper_length_limit = 30
     lower_length_limit = 1
     if upper_length_limit < preferred_length:
         preferred_length = upper_length_limit
@@ -46,7 +46,7 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
                 frames = f.getnframes()
                 rate = f.getframerate()
                 duration = frames / float(rate)
-                print ('process clip %s duration %f, current total duration %f' % (file_name, duration, clip_duration))
+                print ('start processing clip %s duration %f, current total duration %f' % (file_name, duration, clip_duration))
 
                 if not is_voices[i]:
                     print('pause time: %f' % duration)
@@ -69,11 +69,12 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
                     clip_duration += duration
                     data.append([f.getparams(), f.readframes(f.getnframes())])
                     f.close()
-                    if clip_count == 0:
-                        clip_starts.append(starts[i])
-                        print('clip start: %f' % (clip_starts[-1]))
+
                     clip_count += 1
                     if is_voices[i]:
+                        if voiced_clip_count == 0:
+                            clip_starts.append(starts[i])
+                            print('clip start 1: %f' % (clip_starts[-1]))
                         voiced_clip_count += 1
                     print (
                         'added to the previous clip %s duration %f - total duration %f' % (
@@ -109,11 +110,12 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
                         clip_duration += duration
                         data.append([f.getparams(), f.readframes(f.getnframes())])
                         f.close()
-                        if clip_count == 0:
-                            clip_starts.append(starts[i])
-                            print('clip start: %f' % (clip_starts[-1]))
+
                         clip_count += 1
                         if is_voices[i]:
+                            if voiced_clip_count == 0:
+                                clip_starts.append(starts[i])
+                                print('clip start 2: %f' % (clip_starts[-1]))
                             voiced_clip_count += 1
             os.remove(file_path)
 
