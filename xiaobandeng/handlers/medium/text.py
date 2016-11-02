@@ -17,8 +17,10 @@ class TextHandler(BaseHandler):
         content_key = "content_" + service_provider
 
         if all_transcript:
-            content = [transcript.get(content_key)[0] for transcript in
-                       all_transcript if transcript.get(content_key, [""])]
+
+            content = [transcript.get(content_key)[0] if transcript.get(
+                content_key) else "" for transcript in
+                       all_transcript]
 
             filename = media.get("media_name")
             self.set_header("Content-Type", "application/octet-stream")

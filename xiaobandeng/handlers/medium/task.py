@@ -11,12 +11,12 @@ class CreateEditorTaskHandler(BaseHandler):
         self.media = self.lc.get_media(self.media_id)
         task_duration = 10 * 60
         start_time = 0
-        task_order = 0
+        task_order = 1
         fragment = None
 
         while True:
             fragment = self.lc.get_fragment_by_start_at(media_id,
-                start_time + task_duration)
+                                                        start_time + task_duration)
             if fragment:
                 fragment = fragment[0]
 
@@ -36,7 +36,8 @@ class CreateEditorTaskHandler(BaseHandler):
 
     def add_task(self, order, start_at, end_at):
         self.lc.add_task(self.media, order, start_at, end_at,
-                         self.media.get("media_name") + "-" + str(order), )
+                         self.media.get("media_name") + u"{第" + str(
+                             order) + u"段}", )
 
 
 class AddUserTaskCountHandler(BaseHandler):
