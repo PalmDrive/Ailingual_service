@@ -3,13 +3,14 @@
 from __future__ import absolute_import
 
 import logging
+import psutil
 
 import tornado.httpclient
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 
-import psutil
+from .error_code import ECODE
 from ..lean_cloud.quota import get_quota
 from ..lean_cloud.quota import update_access_count
 from ..lean_cloud.user import UserMgr
@@ -43,20 +44,17 @@ class BaseHandler(tornado.web.RequestHandler):
         app_key = self.request.headers.get("app_key", "")
         # return (true_or_false,user)
         if app_id and app_key:
-            status, error_dict = self.user_mgr.login(app_id, app_key)
-            if status:
+            # status, error_dict = self.user_mgr.login(app_id, app_key)
+            self.user_mgr.user_query.equal_to("app_id", app_id)
+            self.user_mgr.user_query.equal_to("app_key", app_key)
+            result = self.user_mgr.user_query.find()
+
+            if result:
                 return (True, '')
             else:
                 return (False,
-                        self.response_error(error_dict.get("code"),
-                                            "The app_id and app_key mismatch.")
-                )
-        else:
-            return (
-                False,
-                self.response_error(1001,
-                                    "The app_id or app_key is not found in HTTP headers.")
-            )
+                        self.response_error(*ECODE.ERR_USER_NO_THAT_APP_INFO)
+                        )
 
     def access_control(self, app_id):
         # check system cpu & mem

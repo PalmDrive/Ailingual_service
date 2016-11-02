@@ -100,18 +100,17 @@ class LeanCloud(object):
         print 'added_media_id:%s' % media_id
 
     def save(self):
-        try:
-            self.Fragment.save_all(self.fragments.values())
+        # try:
+        self.Fragment.save_all(self.fragments.values())
 
-            relation = self.media.relation("containedTranscripts")
-            for fragment in self.fragments.values():
-                relation.add(fragment)
-            self.media.save()
-
-            print "transcript and media saved to lean cloud"
-        except leancloud.LeanCloudError as e:
-            print e
-            raise
+        relation = self.media.relation("containedTranscripts")
+        for fragment in self.fragments.values():
+            relation.add(fragment)
+        self.media.save()
+        # print "transcript and media saved to lean cloud"
+        # except leancloud.LeanCloudError as e:
+        #     print e
+        #     raise
 
     def get_list(self, media_id):
         total_data = []

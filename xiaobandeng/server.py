@@ -20,6 +20,8 @@ from xiaobandeng.handlers.medium.task import CreateEditorTaskHandler
 from xiaobandeng.handlers.medium.text import TextHandler
 
 from xiaobandeng.handlers.transcribe import TranscribeHandler
+from xiaobandeng.handlers.medium.task import AddUserTaskCountHandler
+from xiaobandeng.handlers.user.register import SetAppInfoHandler
 from xiaobandeng.lean_cloud import init
 
 
@@ -30,7 +32,9 @@ def make_app(use_autoreload):
                                        (r"/medium/(.*)/lrc", LrcHandler),
                                        (r"/medium/(.*)/txt", TextHandler),
                                        (r"/medium/(.*)/caption", CaptionHandler),
-                                       (r"/medium/(.*)/create_task",CreateEditorTaskHandler),
+                                       (r"/medium/(.*)/create_task", CreateEditorTaskHandler),
+                                       (r"/medium/add_task_count", AddUserTaskCountHandler),
+                                       (r"/user/set_app_info", SetAppInfoHandler),
                                    ], autoreload=use_autoreload)
 
 
