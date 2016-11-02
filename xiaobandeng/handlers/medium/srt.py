@@ -65,7 +65,7 @@ class SrtHandler(BaseHandler):
                     content_list = fragment.get(content_key)
 
                     content = content_list[0] if content_list else ""
-                    content = re.sub(u"[,，。\.?？!！]", " ", content)
+                    content = re.sub(u"[,，。?？!！]", " ", content)
                     self.write(content.encode(encoding))
                     self.write(sep)
 

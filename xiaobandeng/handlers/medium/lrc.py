@@ -53,7 +53,7 @@ class LrcHandler(BaseHandler):
         for content_key in self.content_keys:
             contents = media.get(content_key)
             content = contents[0] if contents else ""
-            content = re.sub(u"[,，。\.?？!！]", " ", content)
+            content = re.sub(u"[,，。?？!！]", " ", content)
             content_list.append(content.encode(self.encoding ))
 
         return self.sep.join(content_list)
