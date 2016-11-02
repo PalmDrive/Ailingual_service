@@ -76,13 +76,19 @@ class TaskGoogle(TranscriptionTask):
 
         res = f.result()
         print "google speech API result - ", res
-        results = []
+        result = ''
         if 'results' in res:
             result_arr = res['results']
             for dict in result_arr:
-                al = dict['alternatives'][0]
-                results.append(al['transcript'])
-        self.result = results
+                max_confidence = 0
+                transcript = ''
+                for al in dict['alternatives']:
+                    confidence = al['confidence']
+                    if confidence > max_confidence:
+                        max_confidence = confidence
+                        transcript = al['transcript']
+                result = result + transcript + ","
+        self.result = [result]
         self.complete()
 
 class GoogleASR(object):
