@@ -167,13 +167,13 @@ class TranscribeHandler(BaseHandler):
         self.write_file(response, tmp_file)
 
         try:
-            target_file = convertor.convert_to_wav(ext, tmp_file)
+            target_file = convertor.convert_to_wav(tmp_file)
             wav = wave.open(target_file)
             duration = wav.getnframes() / float(wav.getframerate())
             wav.close()
             self.log_content["media_duration"] = duration
         except Exception as ex:
-            logging.exception('exception caught in converting media')
+            logging.exception('exception caught in converting media type - ' + ext)
             traceback.print_exc()
             self.handle_error(*ECODE.ERR_MEDIA_UNSUPPORTED_FORMAT)
             return
