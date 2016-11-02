@@ -19,7 +19,7 @@ class CaptionHandler(BaseHandler):
                      media.get("company_name"), media.get("requirement"),
                      media.get("lan"), media.get("service_providers")
         )
-        lc.media.set("is_copy",True)
+        lc.media.set("is_copied",True)
         all_transcript = lc.get_list(media_id)
         index = 0
 
