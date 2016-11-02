@@ -287,11 +287,9 @@ class TranscribeHandler(BaseHandler):
         if not self.is_prod:
             self.company_name = self.get_argument("company", None)
 
-        #can not get user ,not called login,user_session is stored in threadlocal
-        # if not self.company_name:
-            # current_user = self.user_mgr.current_user()
-            # self.company_name = current_user.get('company_name')
-           # self.company_name
+        if not self.company_name:
+            current_user = self.current_user
+            self.company_name = current_user.get('company_name')
 
         self.company_name = self.company_name.encode("utf8")
 

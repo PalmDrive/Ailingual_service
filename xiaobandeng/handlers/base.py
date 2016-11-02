@@ -50,6 +50,7 @@ class BaseHandler(tornado.web.RequestHandler):
             result = self.user_mgr.user_query.find()
 
             if result:
+                self.current_user = result[0]
                 return (True, '')
             else:
                 return (False,
