@@ -76,5 +76,25 @@ class UserMgr(object):
             res = False, {"code": e.code, "error": e.error}
         return res
 
-    def current_user(self):
-        return self.User().get_current()
+    def set_current_user(self, user):
+        self.current_user = user
+        self.roles = None
+
+    def get_current_roles(self):
+        if self.roles:
+            return self.roles
+
+        role_query = leancloud.Query(leancloud.Role)
+        role_query.equal_to('users', self.current_user)
+        role_query_list = role_query.find()  # 返回当前用户的角色列表
+        self.roles = [role.get("name") for role in role_query_list]
+        return self.roles
+
+    def is_admin(self):
+        return 'admin' in self.get_current_roles()
+
+    def is_editor(self):
+        return 'editor' in self.get_current_roles()
+
+    def is_client(self):
+        return 'company' in self.get_current_roles()

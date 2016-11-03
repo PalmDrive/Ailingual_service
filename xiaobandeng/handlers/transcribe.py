@@ -270,10 +270,15 @@ class TranscribeHandler(BaseHandler):
         self.is_prod = (env == "production")
 
         company_login_state, error = self.check_company_user()
+
+        # Login failed
         if not company_login_state:
             self.write(json.dumps(error))
             self.finish()
             return
+
+        # On production, we limit dev options only to admin and editor
+        self.is_superuser = (not self.is_prod) or (self.user_mgr.is_admin() or self.user_mgr.is_editor())
 
         addr = self.get_argument("addr", None)
         if addr == None:
@@ -293,16 +298,16 @@ class TranscribeHandler(BaseHandler):
         self.language = self.get_argument("lan", "zh")
 
         self.company_name = None
-        if not self.is_prod:
+        if self.is_superuser:
             self.company_name = self.get_argument("company", None)
 
         if not self.company_name:
-            current_user = self.current_user
+            current_user = self.user_mgr.current_user
             self.company_name = current_user.get('company_name')
 
         self.company_name = self.company_name.encode("utf8")
 
-        if not self.is_prod:
+        if self.is_superuser:
             fragment_length_limit = self.get_argument("max_fragment_length", 10)
             if fragment_length_limit:
                 fragment_length_limit = int(fragment_length_limit)
@@ -310,13 +315,13 @@ class TranscribeHandler(BaseHandler):
         else:
             self.fragment_length_limit = 7
 
-        if not self.is_prod:
+        if self.is_superuser:
             self.requirement = self.get_argument("requirement",
                                                  u"字幕,纯文本,关键词,摘要").split(",")
         else:
             self.requirement = []
 
-        if not self.is_prod:
+        if self.is_superuser:
             upload_oss = self.get_argument("upload_oss", False)
             if upload_oss == "true" or upload_oss == "True":
                 self.upload_oss = True
@@ -325,7 +330,7 @@ class TranscribeHandler(BaseHandler):
         else:
             self.upload_oss = False
 
-        if not self.is_prod:
+        if self.is_superuser:
             self.service_providers = self.get_argument(
                 "service_providers", "baidu").split(",")
         else:
@@ -337,9 +342,7 @@ class TranscribeHandler(BaseHandler):
             else:
                 self.service_providers = ["baidu"]
 
-        self.client_callback_url = self.get_argument("callback_url", None)
-
-        if not self.is_prod:
+        if self.is_superuser:
             force_fragment_length = self.get_argument("force_fragment_length",
                                                       False)
             if force_fragment_length == "true" or force_fragment_length == "True":
@@ -350,7 +353,7 @@ class TranscribeHandler(BaseHandler):
         else:
             self.force_fragment_length = False
 
-        if not self.is_prod:
+        if self.is_superuser:
             is_async = self.get_argument("async", True)
             if is_async == "false" or is_async == "False":
                 is_async = False
@@ -359,6 +362,12 @@ class TranscribeHandler(BaseHandler):
             self.is_async = is_async
         else:
             self.is_async = True
+
+        self.client_callback_url = self.get_argument("callback_url", None)
+        if self.is_async and (not self.client_callback_url):
+            self.write(json.dumps(self.error_missing_arg("callback_url")))
+            self.finish()
+            return
 
         self.log_content = {}
         self.log_content["request_start_timestamp"] = time.time()
