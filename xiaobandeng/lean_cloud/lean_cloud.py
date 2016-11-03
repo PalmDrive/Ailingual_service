@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import logging
 from datetime import datetime
-
+from xiaobandeng.handlers import constants
 import leancloud
 
 CLASS_NAME_TRANSCRIPT = "Transcript"
@@ -92,6 +92,8 @@ class LeanCloud(object):
         media.set("transcribed_at", datetime.now())
         media.set("status", "Auto Transcribed")
         media.set("requirement", requirement)
+        media.set("assign_status", constants.LC_MEDIA_ASSIGN_STATUS_NONE)
+
         media.set("lan", language)
         if not service_provider:
             service_provider = []
@@ -109,8 +111,8 @@ class LeanCloud(object):
         self.media.save()
         # print "transcript and media saved to lean cloud"
         # except leancloud.LeanCloudError as e:
-        #     print e
-        #     raise
+        # print e
+        # raise
 
     def get_list(self, media_id):
         total_data = []
@@ -144,6 +146,12 @@ class LeanCloud(object):
         query = self.media_query.equal_to("media_id", media_id)
         return query.first()
 
+    def get_media_list_by_media_id(self, media_id_list):
+        self.media_query.contained_in("media_id", media_id_list)
+
+        return self.media_query.find()
+
+
     def add_task(self, media_object, order, start_at, end_at, task_name):
         task = self.EditorTask()
         task.set("media_id", media_object.get("media_id"))
@@ -161,7 +169,7 @@ class LeanCloud(object):
         self.fragment_query.limit(1)
         return self.fragment_query.find()
 
-    def get_last_fragment_by_end_at(self,media_id):
+    def get_last_fragment_by_end_at(self, media_id):
         self.fragment_query.equal_to("media_id", media_id)
         self.fragment_query.add_descending("end_at")
         self.fragment_query.limit(1)
