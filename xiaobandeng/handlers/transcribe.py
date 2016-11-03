@@ -33,6 +33,7 @@ from xiaobandeng.transcribe import google
 from xiaobandeng.transcribe.log import TranscriptionLog
 from ..task.task import increase_pending_task
 from .base import BaseHandler
+from .error_code import ECODE
 
 
 def get_ext(url):
@@ -145,31 +146,37 @@ class TranscribeHandler(BaseHandler):
                      body=urllib.urlencode(resp))
 
 
+    def handle_error(self, error_code, error_message):
+        self.log_content["request_end_time"] = time.time()
+        self.log_content["error_type"] = error_code
+        self.save_log(False)
+
+        if self.is_async:
+            self.notify_client(self.response_error(error_code, error_message))
+        else:
+            self.write(
+                json.dumps(self.response_error(error_code, error_message)))
+            self.finish()
+
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
-            self.log_content["request_end_time"] = time.time()
-            self.log_content["error_type"] = "download_addr"
-            self.save_log(False)
-
-            error_code = 1003
-            error_msg = "Media download error. Check your media address."
-            if self.is_async:
-                self.notify_client(self.response_error(error_code, error_msg))
-            else:
-                self.write(
-                    json.dumps(self.response_error(error_code, error_msg)))
-                self.finish()
+            self.handle_error(*ECODE.ERR_MEDIA_DOWNLOAD_FAILURE)
             return
 
         logging.info("downloaded,saved to: %s" % tmp_file)
         self.write_file(response, tmp_file)
 
-        target_file = convertor.convert_to_wav(ext, tmp_file)
-
-        wav = wave.open(target_file)
-        duration = wav.getnframes() / float(wav.getframerate())
-        wav.close()
-        self.log_content["media_duration"] = duration
+        try:
+            target_file = convertor.convert_to_wav(tmp_file)
+            wav = wave.open(target_file)
+            duration = wav.getnframes() / float(wav.getframerate())
+            wav.close()
+            self.log_content["media_duration"] = duration
+        except Exception as ex:
+            logging.exception('exception caught in converting media type - ' + ext)
+            traceback.print_exc()
+            self.handle_error(*ECODE.ERR_MEDIA_UNSUPPORTED_FORMAT)
+            return
 
         self.cloud_db = lean_cloud.LeanCloud()
         self.cloud_db.add_media(
@@ -221,7 +228,8 @@ class TranscribeHandler(BaseHandler):
                     file_list, starts, durations, lan)
                 self.enqueue_tasks(task_group, baidu_tasks)
             except Exception:
-                pass
+                logging.exception('exception caught using baidu ASR')
+                traceback.print_exc()
 
         if "google" in self.service_providers:
             try:
@@ -236,6 +244,7 @@ class TranscribeHandler(BaseHandler):
                     file_list, starts, durations, lan)
                 self.enqueue_tasks(task_group, google_tasks)
             except Exception:
+                logging.exception('exception caught using google ASR')
                 traceback.print_exc()
 
         # you need to smoothen the file after building all tasks but
@@ -249,10 +258,10 @@ class TranscribeHandler(BaseHandler):
             task_group.add(task)
 
     def error_missing_arg(self, arg_name):
-        return self.response_error(1002, "parameter is missing: %s" % arg_name)
+        return self.response_error(100001, "parameter is missing: %s" % arg_name)
 
     def error_invalid_arg(self, arg_name):
-        return self.response_error(1002,
+        return self.response_error(100002,
                                    "parameter has invalid value %s" % arg_name)
 
     @tornado.web.asynchronous
