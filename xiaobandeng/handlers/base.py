@@ -48,14 +48,13 @@ class BaseHandler(tornado.web.RequestHandler):
             self.user_mgr.user_query.equal_to("app_id", app_id)
             self.user_mgr.user_query.equal_to("app_key", app_key)
             result = self.user_mgr.user_query.find()
-
             if result:
                 self.user_mgr.set_current_user(result[0])
                 return (True, '')
-            else:
-                return (False,
-                        self.response_error(*ECODE.ERR_USER_NO_THAT_APP_INFO)
-                        )
+
+        return (False,
+                self.response_error(*ECODE.ERR_USER_NO_THAT_APP_INFO)
+                )
 
     def access_control(self, app_id):
         # check system cpu & mem
