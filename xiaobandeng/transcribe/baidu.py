@@ -6,6 +6,7 @@ import datetime
 import json
 import logging
 import urllib2
+import traceback
 
 import tornado.httpclient
 
@@ -37,8 +38,14 @@ class TaskBaidu(TranscriptionTask):
         return tornado.httpclient.AsyncHTTPClient()
 
     def start(self):
-        logging.info('start baidu vop on %s' % self.file_name)
-        self.fetch(self.url)
+        try:
+            logging.info('start baidu vop on %s' % self.file_name)
+            self.fetch(self.url)
+        except Exception as e:
+            logging.exception('exception caught in performing baidu transcription task %d' % self.order)
+            traceback.print_exc()
+            self.result = ['Transcription failed']
+            self.complete()
 
     def fetch(self, url):
         self.client.fetch(self.get_request(url), self.callback)
@@ -62,9 +69,16 @@ class TaskBaidu(TranscriptionTask):
     def retry(self):
         self._try += 1
         if self._try < self.max_try:
-            self.fetch(self.get_url(self.lans[self.lan][self._try]))
-            logging.info('retry %s %s...%s' % (self.__class__, self.order, datetime.datetime.now()))
+            try:
+                self.fetch(self.get_url(self.lans[self.lan][self._try]))
+                logging.info('retry %s %s...%s' % (self.__class__, self.order, datetime.datetime.now()))
+            except Exception as e:
+                logging.exception('exception caught in retrying baidu transcription task %d' % self.order)
+                traceback.print_exc()
+                self.result = ['Transcription failed']
+                self.complete()
         else:
+            logging.exception('out of retry quota in baidu transcription task %d' % self.order)
             self.result = []
             self.complete()
 

@@ -3,8 +3,9 @@ from __future__ import absolute_import
 
 import argparse
 import base64
-
+import logging
 import requests
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from googleapiclient import discovery
 from oauth2client.client import GoogleCredentials
@@ -42,13 +43,20 @@ class TaskGoogle(TranscriptionTask):
         return 'google'
 
     def start(self):
-        with open(self.file_name, 'rb') as speech:
-            # Base64 encode the binary audio file for inclusion in the JSON
-            # request.
-            speech_content = base64.b64encode(speech.read())
-        f = self.get_request(speech_content, self.lan)
-        f.add_done_callback(self.callback)
-        return f
+        try:
+            with open(self.file_name, 'rb') as speech:
+                # Base64 encode the binary audio file for inclusion in the JSON
+                # request.
+                speech_content = base64.b64encode(speech.read())
+            f = self.get_request(speech_content, self.lan)
+            f.add_done_callback(self.callback)
+            return f
+        except Exception as e:
+            logging.exception('exception caught in performing google transcription task %d' % self.order)
+            traceback.print_exc()
+            self.result = ['Transcription failed']
+            self.complete()
+
 
     @concurrent.run_on_executor
     def get_request(self, speech_content, lan='cmn-Hans-CN'):
@@ -72,24 +80,27 @@ class TaskGoogle(TranscriptionTask):
 
     def callback(self, f):
         if f.exception():
-            self.result = 'Google API error: %s' % f.exception()
-
-        res = f.result()
-        print "google speech API result - ", res
-        result = ''
-        if 'results' in res:
-            result_arr = res['results']
-            for dict in result_arr:
-                max_confidence = 0
-                transcript = ''
-                for al in dict['alternatives']:
-                    confidence = al['confidence']
-                    if confidence > max_confidence:
-                        max_confidence = confidence
-                        transcript = al['transcript']
-                result = result + transcript + ","
-        self.result = [result]
-        self.complete()
+            print "google speech API result - exception"
+            print f.exception
+            self.result = ['Transcription failed']
+            self.complete()
+        else:
+            res = f.result()
+            print "google speech API result - ", res
+            result = ''
+            if 'results' in res:
+                result_arr = res['results']
+                for dict in result_arr:
+                    max_confidence = 0
+                    transcript = ''
+                    for al in dict['alternatives']:
+                        confidence = al['confidence']
+                        if confidence > max_confidence:
+                            max_confidence = confidence
+                            transcript = al['transcript']
+                    result = result + transcript + ","
+            self.result = [result]
+            self.complete()
 
 class GoogleASR(object):
     # Application default credentials provided by env variable
