@@ -51,6 +51,10 @@ class BaseHandler(tornado.web.RequestHandler):
             if result:
                 self.user_mgr.set_current_user(result[0])
                 return (True, '')
+            else:
+                return (False,
+                        self.response_error(*ECODE.ERR_USER_APP_ID_APP_KEY_NOT_MATCH)
+                        )
 
         return (False,
                 self.response_error(*ECODE.ERR_USER_NO_THAT_APP_INFO)
