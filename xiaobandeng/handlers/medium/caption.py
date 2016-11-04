@@ -11,6 +11,10 @@ class CaptionHandler(BaseHandler):
     def post(self, media_id):
         lc = LeanCloud()
         media = lc.get_media(media_id)
+        if media.get("is_copied"):
+            self.write(self.response_success())
+            return
+
         caption_media_id = str(uuid.uuid4())
         media.set("caption_media_id", caption_media_id)
 
