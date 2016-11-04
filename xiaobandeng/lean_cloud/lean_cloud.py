@@ -152,7 +152,8 @@ class LeanCloud(object):
         return self.media_query.find()
 
 
-    def add_task(self, media_object, order, start_at, end_at, task_name):
+    def add_task(self, media_object, order, start_at, end_at, task_name,
+                 task_type):
         task = self.EditorTask()
         task.set("media_id", media_object.get("media_id"))
         task.set("media_object_id", media_object)
@@ -160,6 +161,7 @@ class LeanCloud(object):
         task.set("start_at", start_at)
         task.set("end_at", end_at)
         task.set("name", task_name)
+        task.set("task_type", task_type)
         self.tasks.append(task)
 
     def get_fragment_by_start_at(self, media_id, start_at):

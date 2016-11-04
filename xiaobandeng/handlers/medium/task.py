@@ -55,7 +55,7 @@ class CreateEditorTaskHandler(BaseHandler):
         self.lc.add_task(self.media, order, start_at, end_at,
                          self.media.get("media_name") + self.copy_list[
                              task_type] + u"{第" + str(
-                             order) + u"段}", )
+                             order) + u"段}", task_type)
 
 
 class BatchAssignUserHandler(BaseHandler):
