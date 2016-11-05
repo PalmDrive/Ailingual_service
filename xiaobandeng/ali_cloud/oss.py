@@ -17,10 +17,15 @@ def upload(media_id, file_list):
 
     # upload clips
     for f in file_list:
-        filename = os.path.basename(f)
-        # print "%s ----start@----%s"%(filename,datetime.datetime.now())
-        bucket.put_object_from_file(key + filename, f)
-        # print "%s ----end@----%s"%(filename,datetime.datetime.now())
+        for i in xrange(3):
+            filename = os.path.basename(f)
+            # print "%s ----start@----"%(filename)
+            result = bucket.put_object_from_file(key + filename, f)
+            # print "%s ----end@----%s %s" % (filename, str(result.status), str(result.resp))
+            if str(result.status) == "200":
+                break
+            else:
+                print "%s ----uploading process failed----%s" % (filename, str(result.status))
 
 
 def media_fragment_url(media_id, file_name):

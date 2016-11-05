@@ -148,7 +148,7 @@ class TranscribeHandler(BaseHandler):
 
     def handle_error(self, error_code, error_message):
         self.log_content["request_end_time"] = time.time()
-        self.log_content["error_type"] = error_code
+        self.log_content["error_type"] = str(error_code)
         self.save_log(False)
 
         if self.is_async:
