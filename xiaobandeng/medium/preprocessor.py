@@ -4,7 +4,8 @@ import os
 import wave
 
 
-def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_length=10, force_preferred_length=False):
+def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_length=10,
+                           force_preferred_length=False):
     print('break pause: %f' % break_pause)
     # length limit of audio for VOP api
     upper_length_limit = 30
@@ -46,17 +47,22 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
                 frames = f.getnframes()
                 rate = f.getframerate()
                 duration = frames / float(rate)
-                print ('start processing clip %s duration %f, current total duration %f' % (file_name, duration, clip_duration))
+                print ('start processing clip %s duration %f, current total duration %f'
+                       % (file_name, duration, clip_duration))
 
                 if not is_voices[i]:
                     print('pause time: %f' % duration)
                 # if the current clip is a breaking pause (long enough), then break it
-                if (not is_voices[i]) and duration >= break_pause and clip_duration >= lower_length_limit:
+                if (not is_voices[i]) \
+                        and duration >= break_pause \
+                        and clip_duration >= lower_length_limit \
+                        and (not force_preferred_length):
                     if voiced_clip_count > 0:  # combine the remaining pieces
                         write_previous_clip(audio_dir, output_count, data)
                         clip_durations.append(clip_duration)
                         outfile = out_file_path(audio_dir, output_count)
-                        print('break pause: combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
+                        print('break pause: combine %d clips into %s - clip_duration %f'
+                              % (clip_count, outfile, clip_duration))
                         print('\nstart at %f end_at: %f\n' % (clip_starts[-1], clip_starts[-1] + clip_duration))
                         output_count += 1
                     clip_duration = 0
@@ -129,6 +135,7 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
 
     return clip_starts, clip_durations
 
+
 def write_previous_clip(audio_dir, output_count, data):
     # combine the previous clips
     outfile = out_file_path(audio_dir, output_count)
@@ -137,6 +144,7 @@ def write_previous_clip(audio_dir, output_count, data):
     for params, frames in data:
         output.writeframes(frames)
     output.close()
+
 
 def out_file_path(dir_path, output_count):
     return os.path.join(dir_path, "pchunk-%08d.wav" % output_count)
