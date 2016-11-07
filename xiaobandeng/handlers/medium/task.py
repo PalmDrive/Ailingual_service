@@ -18,7 +18,7 @@ class CreateEditorTaskHandler(BaseHandler):
         task_order = 1
         fragment = None
 
-        self.copy_list = [u"检查", u"分类"]
+        self.copy_list = [u"校对", u"检查"]
 
         while True:
             fragment = self.lc.get_fragment_by_start_at(media_id,
