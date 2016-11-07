@@ -73,8 +73,9 @@ class LeanCloud(object):
 
     def batch_create_crowdsourcing_tasks(self, task_group):
         for fragment_order, fragment in self.fragments.iteritems():
-            self.add_crowdsourcing_task(fragment.get("media_id"), fragment.id,
-                                        fragment_order)
+            if  task_group.tasks[fragment_order].on_oss:
+                self.add_crowdsourcing_task(fragment.get("media_id"), fragment.id,
+                                            fragment_order)
 
         if len(self.crowdsourcing_tasks) > 0:
             self.CrowdSourcingTask.save_all(self.crowdsourcing_tasks)
