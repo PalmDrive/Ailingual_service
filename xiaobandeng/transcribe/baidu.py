@@ -56,8 +56,8 @@ class TaskBaidu(TranscriptionTask):
                        }
 
         return tornado.httpclient.HTTPRequest(url=url, method='POST',
-                                              connect_timeout=120,
-                                              request_timeout=600,
+                                              connect_timeout=1200,
+                                              request_timeout=12000,
                                               headers=http_header,
                                               body=self.body
                                               )
