@@ -42,9 +42,15 @@ class LeanCloud(object):
         fragment.set("fragment_src", fragment_src)
         self.fragments[fragment_order] = fragment
 
+    def set_fragment_src(self, fragment, src):
+        fragment.set("fragment_src", src)
+
     def add_transcription_to_fragment(
             self, fragment_order, content, source_name
     ):
+        # this fragment_order is the task_order
+        # is the task index in task_group.tasks
+
         fragment = self.fragments[fragment_order]
         if fragment:
             key = "content_" + source_name
@@ -65,10 +71,15 @@ class LeanCloud(object):
         crowdsourcing_task.set("fragment_type", "Transcript")
         self.crowdsourcing_tasks.append(crowdsourcing_task)
 
-    def create_crowdsourcing_tasks(self):
+    def batch_create_crowdsourcing_tasks(self, task_group):
         for fragment_order, fragment in self.fragments.iteritems():
-            self.add_crowdsourcing_task(fragment.get("media_id"), fragment.id,
-                                        fragment_order)
+            if task_group.tasks[fragment_order].on_oss:
+                self.add_crowdsourcing_task(fragment.get("media_id"),
+                                            fragment.id,
+                                            fragment_order)
+            else:
+                print "warnx:\n media id:%s, fragment no url fragment order is:%s" % (
+                    self.media.media_id, fragment_order)
         if len(self.crowdsourcing_tasks) > 0:
             self.CrowdSourcingTask.save_all(self.crowdsourcing_tasks)
 
@@ -93,6 +104,7 @@ class LeanCloud(object):
         media.set("status", "Auto Transcribed")
         media.set("requirement", requirement)
         media.set("assign_status", constants.LC_MEDIA_ASSIGN_STATUS_NONE)
+        media.set("completion_status", 0)
 
         media.set("lan", language)
         if not service_provider:
@@ -103,11 +115,13 @@ class LeanCloud(object):
 
     def save(self):
         # try:
+        # batch save all fragments
         self.Fragment.save_all(self.fragments.values())
 
         relation = self.media.relation("containedTranscripts")
         for fragment in self.fragments.values():
             relation.add(fragment)
+        # save media
         self.media.save()
         # print "transcript and media saved to lean cloud"
         # except leancloud.LeanCloudError as e:

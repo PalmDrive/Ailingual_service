@@ -46,14 +46,19 @@ def get_ext(url):
 class TranscribeHandler(BaseHandler):
     executor = ThreadPoolExecutor(5)
 
-    @run_on_executor
-    def upload_oss_in_thread(self, media_id, file_list):
-        # since oss api uses requests lib,the socket can not be
-        # selected by epoll
-        # now use a thread to make it run concurrently.
-        # but
-        oss.upload(media_id, file_list)
+    # @run_on_executor
+    # batch upload to oss, batch upload to leancloud
+    # sets fragment's downloading url  if uploading oss is success
+    # can not run two actions concurrently now since batch upload leancloud
+    # once
+
+    def upload_to_oss(self, media_id, task_group):
+        # upload to oss and create crowdsourcing tasks
+        oss.upload(media_id, task_group, self.cloud_db)
+
         logging.info("-----upload oss over-------")
+        self.cloud_db.batch_create_crowdsourcing_tasks(task_group)
+        logging.info("-----create crowdsourcing tasks over-------")
 
     def write_file(self, response, file_name):
         f = open(file_name, "wb")
@@ -74,22 +79,31 @@ class TranscribeHandler(BaseHandler):
             logging.info(
                 u"transcript result of %s : %s, duration %f, end_at %f" %
                 (task.file_name, task.result, task.duration, end_at))
-            fragment_src = oss.media_fragment_url(
-                self.media_id, task.file_name
-            )
+
+            # fragment_src = oss.media_fragment_url(
+            # self.media_id, task.file_name
+            # )
+            # after uploaded to oss,fragment_src will be set
+            #
             self.cloud_db.set_fragment(
                 task.order,
                 task.start_time,
                 end_at,
                 self.media_id,
-                fragment_src)
+                "")
+
             for result in results:
                 self.cloud_db.add_transcription_to_fragment(
                     task.order, result, task.source_name())
-
-        self.cloud_db.save()
+        # Upload media clips to Aliyun OSS
         if self.upload_oss:
-            self.cloud_db.create_crowdsourcing_tasks()
+            # tornado.ioloop.IOLoop.instance().add_callback(
+            # functools.partial(
+            # ))
+            self.upload_to_oss(self.media_id, task_group)
+
+        # save all fragments
+        self.cloud_db.save()
 
         if self.is_async:
             if self.client_callback_url:
@@ -173,7 +187,8 @@ class TranscribeHandler(BaseHandler):
             wav.close()
             self.log_content["media_duration"] = duration
         except Exception as ex:
-            logging.exception('exception caught in converting media type - ' + ext)
+            logging.exception(
+                'exception caught in converting media type - ' + ext)
             traceback.print_exc()
             self.handle_error(*ECODE.ERR_MEDIA_UNSUPPORTED_FORMAT)
             return
@@ -204,14 +219,8 @@ class TranscribeHandler(BaseHandler):
             self.force_fragment_length)
 
         basedir, subdir, files = next(os.walk(audio_dir))
-        file_list = [os.path.join(basedir, file) for file in sorted(files)]
-
-        # Upload media clips to Aliyun OSS
-        if self.upload_oss:
-            tornado.ioloop.IOLoop.instance().add_callback(
-                functools.partial(
-                    self.upload_oss_in_thread, self.media_id, file_list
-                ))
+        self.file_list = file_list = [os.path.join(basedir, file) for file in
+                                      sorted(files)]
 
         # create a task group to organize transcription tasks
         task_group = TaskGroup(self.transcription_callback)
@@ -258,7 +267,8 @@ class TranscribeHandler(BaseHandler):
             task_group.add(task)
 
     def error_missing_arg(self, arg_name):
-        return self.response_error(100001, "parameter is missing: %s" % arg_name)
+        return self.response_error(100001,
+                                   "parameter is missing: %s" % arg_name)
 
     def error_invalid_arg(self, arg_name):
         return self.response_error(100002,
@@ -278,7 +288,8 @@ class TranscribeHandler(BaseHandler):
             return
 
         # On production, we limit dev options only to admin and editor
-        self.is_superuser = (not self.is_prod) or (self.user_mgr.is_admin() or self.user_mgr.is_editor())
+        self.is_superuser = (not self.is_prod) or (
+            self.user_mgr.is_admin() or self.user_mgr.is_editor())
 
         addr = self.get_argument("addr", None)
         if addr == None:
