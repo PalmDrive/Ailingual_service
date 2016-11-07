@@ -54,6 +54,9 @@ class TranscribeHandler(BaseHandler):
         # but
         oss.upload(media_id, file_list)
         logging.info("-----upload oss over-------")
+        if self.upload_oss:
+            self.cloud_db.create_crowdsourcing_tasks()
+        logging.info("-----create crowdsourcing tasks over-------")
 
     def write_file(self, response, file_name):
         f = open(file_name, "wb")
@@ -88,8 +91,6 @@ class TranscribeHandler(BaseHandler):
                     task.order, result, task.source_name())
 
         self.cloud_db.save()
-        if self.upload_oss:
-            self.cloud_db.create_crowdsourcing_tasks()
 
         if self.is_async:
             if self.client_callback_url:
