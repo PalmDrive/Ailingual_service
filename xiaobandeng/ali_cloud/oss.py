@@ -6,6 +6,14 @@ import oss2
 
 from xiaobandeng.config import CONFIG
 
+def media_fragment_url(media_id, file_name):
+    return "%s%s.%s/media_fragments/%s/%s" % (CONFIG.OSS_ENDPOINT_HEAD,
+                                              CONFIG.OSS_BUCKET_NAME,
+                                              CONFIG.OSS_ENDPOINT_HOST,
+                                              media_id,
+                                              os.path.basename(file_name))
+
+
 
 # This method should be executed asynchronously
 def upload(media_id, task_group, cloud_db):
@@ -25,7 +33,11 @@ def upload(media_id, task_group, cloud_db):
         for i in xrange(3):
             # print "%s ----start@----"%(filename)
             filename = os.path.basename(f)
-            result = bucket.put_object_from_file(key + filename, f)
+            try:
+                result = bucket.put_object_from_file(key + filename, f)
+            except oss2.exceptions.OssError as err:
+                print "file:%s,errcount:%s,err:%s"%(f,i,err)
+                continue
             # print "%s ----end@----%s %s" % (filename, str(result.status), str(result.resp))
             if str(result.status) == "200":
                 task.on_oss = True
@@ -37,9 +49,3 @@ def upload(media_id, task_group, cloud_db):
                     filename, str(result.status))
 
 
-def media_fragment_url(media_id, file_name):
-    return "%s%s.%s/media_fragments/%s/%s" % (CONFIG.OSS_ENDPOINT_HEAD,
-                                              CONFIG.OSS_BUCKET_NAME,
-                                              CONFIG.OSS_ENDPOINT_HOST,
-                                              media_id,
-                                              os.path.basename(file_name))
