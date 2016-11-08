@@ -95,15 +95,16 @@ class TranscribeHandler(BaseHandler):
             for result in results:
                 self.cloud_db.add_transcription_to_fragment(
                     task.order, result, task.source_name())
+
+        # save all fragments
+        self.cloud_db.save()
+
         # Upload media clips to Aliyun OSS
         if self.upload_oss:
             # tornado.ioloop.IOLoop.instance().add_callback(
             # functools.partial(
             # ))
             self.upload_to_oss(self.media_id, task_group)
-
-        # save all fragments
-        self.cloud_db.save()
 
         if self.is_async:
             if self.client_callback_url:
