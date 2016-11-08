@@ -36,7 +36,7 @@ def upload(media_id, task_group, cloud_db):
             try:
                 result = bucket.put_object_from_file(key + filename, f)
             except oss2.exceptions.OssError as err:
-                print err
+                print "file:%s,errcount:%s,err:%s"%(f,i,err)
                 continue
             # print "%s ----end@----%s %s" % (filename, str(result.status), str(result.resp))
             if str(result.status) == "200":
