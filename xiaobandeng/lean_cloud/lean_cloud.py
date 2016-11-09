@@ -77,7 +77,7 @@ class LeanCloud(object):
                 self.add_crowdsourcing_task(fragment.get("media_id"),
                                             fragment.id,
                                             fragment_order)
-            else:
+            #else:
                 # print "warnx:\n media id:%s, fragment no url fragment order is:%s" % (
                 #     self.media.media_id, fragment_order)
         if len(self.crowdsourcing_tasks) > 0:
