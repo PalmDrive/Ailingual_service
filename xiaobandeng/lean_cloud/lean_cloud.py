@@ -77,9 +77,9 @@ class LeanCloud(object):
                 self.add_crowdsourcing_task(fragment.get("media_id"),
                                             fragment.id,
                                             fragment_order)
-            #else:
-                # print "warnx:\n media id:%s, fragment no url fragment order is:%s" % (
-                #     self.media.media_id, fragment_order)
+            else:
+                print "warnx:\n media id:%s, fragment no url fragment order is:%s" % (
+                    self.media.get("media_id"), fragment_order)
         if len(self.crowdsourcing_tasks) > 0:
             self.CrowdSourcingTask.save_all(self.crowdsourcing_tasks)
 
@@ -127,6 +127,22 @@ class LeanCloud(object):
         # except leancloud.LeanCloudError as e:
         # print e
         # raise
+
+    def batch_update_fragment_url(self):
+        fragments = []
+        for fragment in self.fragments.values():
+            if fragment.get("fragment_src"):
+                fragments.append(fragment)
+        if fragments:
+            # try:
+                # self.Fragment.save_all(fragments)
+            for  i in fragments:
+                i.save()
+            # except Exception as e:
+            #     print e.code
+            #     print e.error
+            #     print '--------------'
+            # print 'updated fragments url'
 
     def get_list(self, media_id):
         total_data = []

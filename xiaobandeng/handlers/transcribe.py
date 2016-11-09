@@ -101,10 +101,8 @@ class TranscribeHandler(BaseHandler):
 
         # Upload media clips to Aliyun OSS
         if self.upload_oss:
-            # tornado.ioloop.IOLoop.instance().add_callback(
-            # functools.partial(
-            # ))
             self.upload_to_oss(self.media_id, task_group)
+            self.cloud_db.batch_update_fragment_url()
 
         if self.is_async:
             if self.client_callback_url:
