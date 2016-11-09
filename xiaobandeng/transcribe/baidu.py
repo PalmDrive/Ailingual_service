@@ -22,9 +22,12 @@ class TaskBaidu(TranscriptionTask):
     vop_url = "http://vop.baidu.com/server_api"
     lans = {"zh": ['zh', 'zh', 'zh', 'zh', 'zh', 'zh'],
             "en": ['en', 'en', 'en', 'en', 'en', 'en']
-            }
-    def __init__(self, token, file_name, start_time, duration=None, order=None, lan='zh', completion_callback=None):
-        super(TaskBaidu, self).__init__(file_name, start_time, duration, order, lan, completion_callback)
+    }
+
+    def __init__(self, token, file_name, start_time, duration=None, order=None,
+                 lan='zh', completion_callback=None):
+        super(TaskBaidu, self).__init__(file_name, start_time, duration, order,
+                                        lan, completion_callback)
         self.token = token
         self.max_try = 6
         self._try = 0
@@ -42,7 +45,8 @@ class TaskBaidu(TranscriptionTask):
             logging.info('start baidu vop on %s' % self.file_name)
             self.fetch(self.url)
         except Exception as e:
-            logging.exception('exception caught in performing baidu transcription task %d' % self.order)
+            logging.exception(
+                'exception caught in performing baidu transcription task %d' % self.order)
             traceback.print_exc()
             self.result = ['Transcription failed']
             self.complete()
@@ -53,14 +57,14 @@ class TaskBaidu(TranscriptionTask):
     def get_request(self, url):
         http_header = {'Content-Type': 'audio/wav; rate=%d' % self.rate,
                        'Content-Length': str(len(self.body)),
-                       }
+        }
 
         return tornado.httpclient.HTTPRequest(url=url, method='POST',
                                               connect_timeout=1200,
                                               request_timeout=12000,
                                               headers=http_header,
                                               body=self.body
-                                              )
+        )
 
     def get_url(self, lan):
         return self.vop_url + '?cuid=' + '123442123233213' + '&token=' + \
@@ -71,26 +75,30 @@ class TaskBaidu(TranscriptionTask):
         if self._try < self.max_try:
             try:
                 self.fetch(self.get_url(self.lans[self.lan][self._try]))
-                logging.info('retry %s %s...%s' % (self.__class__, self.order, datetime.datetime.now()))
+                logging.info('retry %s %s...%s' % (
+                self.__class__, self.order, datetime.datetime.now()))
             except Exception as e:
-                logging.exception('exception caught in retrying baidu transcription task %d' % self.order)
+                logging.exception(
+                    'exception caught in retrying baidu transcription task %d' % self.order)
                 traceback.print_exc()
                 self.result = ['Transcription failed']
                 self.complete()
         else:
-            logging.exception('out of retry quota in baidu transcription task %d' % self.order)
+            logging.exception(
+                'out of retry quota in baidu transcription task %d' % self.order)
             self.result = []
             self.complete()
 
     def callback(self, res):
         if res.error:
-            logging.info('%s %s error:%s' % (self.__class__, self.order, res.error))
+            logging.info(
+                '%s %s error:%s' % (self.__class__, self.order, res.error))
             self.retry()
             return
 
         res = json.loads(res.body)
 
-        if int(res['err_no']) in (3301, 3302):
+        if int(res['err_no']) in (3301, 3302, 3303):
             # logging.info('%s baidu api error :%s'%(self.order ,res['err_no']))
             self.retry()
             return
@@ -101,7 +109,8 @@ class TaskBaidu(TranscriptionTask):
             # logging.info('%s====>%s'%(self.order, self.result))
             return
 
-        self.result = ['Baidu API error: %d %s' % (res['err_no'], res['err_msg'])]
+        logging.log("BAIDU API ERROR:%s===>%s" % (res["err_no"],res["err_msg"]))
+        self.result = [""]
         self.complete()
 
 
@@ -142,7 +151,7 @@ class BaiduNLP(object):
         return BaiduNLP.token_tuple[0]
 
     # def vop(self, file_list, callback, starts, lan):
-    #     task_list = TaskGroup(file_list, lan, callback, starts)
+    # task_list = TaskGroup(file_list, lan, callback, starts)
     #     task_list.set_task_type(TaskBaidu, self.access_token)
     #     task_list.start()
     #     logging.info(datetime.datetime.now())
@@ -150,11 +159,12 @@ class BaiduNLP(object):
     def batch_vop_tasks(self, file_list, starts, durations, lan):
         for task_id, file_name in enumerate(file_list):
             for l in lan.split(','):
-                yield TaskBaidu(self.access_token, file_name, starts[task_id], durations[task_id], task_id, l)
-    #
-    # def vop(self, file_name, lan):
-    #     def callback(task):
-    #         print task.result
-    #
-    #     task = TaskBaidu(self.access_token, file_name, 0, None, lan, callback)
-    #     task.start()
+                yield TaskBaidu(self.access_token, file_name, starts[task_id],
+                                durations[task_id], task_id, l)
+                #
+                # def vop(self, file_name, lan):
+                #     def callback(task):
+                #         print task.result
+                #
+                #     task = TaskBaidu(self.access_token, file_name, 0, None, lan, callback)
+                #     task.start()
