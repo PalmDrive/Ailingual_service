@@ -27,6 +27,7 @@ def upload(media_id, task_group, cloud_db):
     # upload clips
     # marking task.on_oss for batch call leancloud upload api
     # fragments fragment_order is task.id
+    # oss upload one transcript success,then crowdsourcing task create one
     for task in task_group.tasks:
         task.on_oss = False
         f = task.file_name

@@ -105,6 +105,7 @@ class TranscribeHandler(BaseHandler):
             # functools.partial(
             # ))
             self.upload_to_oss(self.media_id, task_group)
+            self.cloud_db.save()
 
         if self.is_async:
             if self.client_callback_url:
