@@ -288,7 +288,7 @@ class TranscribeHandler(BaseHandler):
 
         # On production, we limit dev options only to admin and editor
         self.is_superuser = (not self.is_prod) or (
-            self.user_mgr.is_admin() or self.user_mgr.is_editor())
+            self.user_mgr.is_admin() or self.user_mgr.is_editor() or self.user_mgr.is_client())
 
         addr = self.get_argument("addr", None)
         if addr == None:
