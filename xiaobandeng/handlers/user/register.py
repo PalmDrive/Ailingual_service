@@ -22,4 +22,10 @@ class SetAppInfoHandler(BaseHandler):
         user.set("app_key", app_info[1])
         user.save()
 
-        self.write(self.response_success())
+        res_data = {
+            "data": {"app_id": app_info[0],
+                     "app_key": app_info[1]
+            }
+        }
+
+        self.write(self.response_success(_append=res_data))

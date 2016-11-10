@@ -38,7 +38,7 @@ class BaseHandler(tornado.web.RequestHandler):
     def options(self, *args, **kwargs):
         self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
 
-    def check_company_user(self):
+    def check_appinfo(self):
         self.user_mgr = UserMgr()
         app_id = self.request.headers.get("app_id", "")
         app_key = self.request.headers.get("app_key", "")
