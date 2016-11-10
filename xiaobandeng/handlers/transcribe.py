@@ -325,11 +325,11 @@ class TranscribeHandler(BaseHandler):
         else:
             self.fragment_length_limit = 7
 
-        if self.is_superuser:
-            self.requirement = self.get_argument("requirement",
-                                                 u"字幕,纯文本,关键词,摘要").split(",")
-        else:
-            self.requirement = []
+        # if self.is_superuser:
+        self.requirement = self.get_argument("requirement",
+                                             u"字幕,纯文本,关键词,摘要").split(",")
+        # else:
+        # self.requirement = []
 
         if self.is_superuser:
             upload_oss = self.get_argument("upload_oss", False)
