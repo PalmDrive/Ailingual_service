@@ -278,10 +278,10 @@ class TranscribeHandler(BaseHandler):
         env = os.environ.get("PIPELINE_SERVICE_ENV")
         self.is_prod = (env == "production")
 
-        company_login_state, error = self.check_company_user()
+        have_user, error = self.check_appinfo()
 
         # Login failed
-        if not company_login_state:
+        if not have_user:
             self.write(json.dumps(error))
             self.finish()
             return
