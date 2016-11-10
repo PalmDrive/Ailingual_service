@@ -288,7 +288,7 @@ class TranscribeHandler(BaseHandler):
 
         # On production, we limit dev options only to admin and editor
         self.is_superuser = (not self.is_prod) or (
-            self.user_mgr.is_admin() or self.user_mgr.is_editor() or self.user_mgr.is_client())
+            self.user_mgr.is_admin() or self.user_mgr.is_editor())
 
         addr = self.get_argument("addr", None)
         if addr == None:
@@ -363,15 +363,12 @@ class TranscribeHandler(BaseHandler):
         else:
             self.force_fragment_length = False
 
-        if self.is_superuser:
-            is_async = self.get_argument("async", True)
-            if is_async == "false" or is_async == "False":
-                is_async = False
-            else:
-                is_async = True
-            self.is_async = is_async
+        is_async = self.get_argument("async", True)
+        if is_async == "false" or is_async == "False":
+            is_async = False
         else:
-            self.is_async = True
+            is_async = True
+        self.is_async = is_async
 
         self.client_callback_url = self.get_argument("callback_url", None)
         if self.is_async and (not self.client_callback_url):
