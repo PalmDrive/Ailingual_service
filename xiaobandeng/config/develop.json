@@ -8,6 +8,7 @@
     "OSS_ENDPOINT_HEAD": "http://",
     "OSS_BUCKET_NAME": "xiaobandeng-staging",
     "BAIDU_API_KEY": "2Qy9ddXQG2zzph38fIbSnttM",
-    "BAIDU_SECRET_KEY": "09c715169f839ca12db6d3c46b539fcb"
+    "BAIDU_SECRET_KEY": "09c715169f839ca12db6d3c46b539fcb",
+    "BOSON_API_KEY":"usdBIUiK.8823.g1JAM3QCmFpH"
 }
 

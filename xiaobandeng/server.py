@@ -35,6 +35,7 @@ def make_app(use_autoreload):
                                        (r"/medium/(.*)/create_task", CreateEditorTaskHandler),
                                        (r"/medium/bath_assign_user", BatchAssignUserHandler),
                                        (r"/user/set_app_info", SetAppInfoHandler),
+                                       (r"/summarize", SummarizeHandler),
                                    ], autoreload=use_autoreload)
 
 

@@ -11,7 +11,7 @@ from googleapiclient import discovery
 from oauth2client.client import GoogleCredentials
 from tornado import concurrent
 
-from ..task.task import TranscriptionTask
+from ..task.transcription_task import TranscriptionTask
 
 
 class CustomHttp(object):
