@@ -22,6 +22,7 @@ from xiaobandeng.handlers.medium.text import TextHandler
 from xiaobandeng.handlers.transcribe import TranscribeHandler
 from xiaobandeng.handlers.medium.task import BatchAssignUserHandler
 from xiaobandeng.handlers.user.register import SetAppInfoHandler
+from xiaobandeng.handlers.summarize import SummarizeHandler
 from xiaobandeng.lean_cloud import init
 
 

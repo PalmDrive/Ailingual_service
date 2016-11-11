@@ -12,7 +12,7 @@ import tornado.httpclient
 
 from xiaobandeng.config import CONFIG
 
-from ..task.transcription_task import TranscriptionTask
+from xiaobandeng.task.transcription_task import TranscriptionTask
 
 # warn:
 # baidu oauth api  access token expires 30 days

@@ -10,7 +10,6 @@ import tempfile
 import time
 import urllib
 import uuid
-import wave
 import traceback
 from os.path import splitext
 from urlparse import urlparse
@@ -23,14 +22,9 @@ import tornado.escape
 from concurrent.futures import ThreadPoolExecutor
 from tornado.concurrent import run_on_executor
 
-from xiaobandeng.ali_cloud import oss
 from xiaobandeng.lean_cloud import lean_cloud
-from xiaobandeng.medium import convertor
-from xiaobandeng.medium import preprocessor
-from xiaobandeng.medium import vad
 from xiaobandeng.task.task import TaskGroup
-from xiaobandeng.transcribe import baidu
-from xiaobandeng.transcribe import google
+from xiaobandeng.summarize.boson import BosonNLPService
 from xiaobandeng.transcribe.log import TranscriptionLog
 from ..task.task import increase_pending_task
 from .base import BaseHandler
@@ -44,78 +38,30 @@ def get_ext(url):
     return ext  # or ext[1:] if you don"t want the leading "."
 
 
-class TranscribeHandler(BaseHandler):
+class SummarizeHandler(BaseHandler):
     executor = ThreadPoolExecutor(5)
 
-    # @run_on_executor
-    # batch upload to oss, batch upload to leancloud
-    # sets fragment's downloading url  if uploading oss is success
-    # can not run two actions concurrently now since batch upload leancloud
-    # once
-
-    def upload_to_oss(self, media_id, task_group):
-        # upload to oss and create crowdsourcing tasks
-        oss.upload(media_id, task_group, self.cloud_db)
-
-        logging.info("-----upload oss over-------")
-        self.cloud_db.batch_create_crowdsourcing_tasks(task_group)
-        logging.info("-----create crowdsourcing tasks over-------")
-
-    def write_file(self, response, file_name):
-        f = open(file_name, "wb")
-        f.write(response.body)
-        f.close()
-        logging.info("write file:%s" % file_name)
-
-    def transcription_callback(self, task_group):
-        # warn: this method will change task.result
-        # punc_task_group(task_group)
-
+    def summarization_callback(self, task_group):
+        self.summary = ''
         for task in task_group.tasks:
-            # for play
-            end_at = task.start_time + task.duration - 0.01
-            task.start_time += 0.01
-
-            results = task.result
             logging.info(
-                u"transcript result of %s : %s, duration %f, end_at %f" %
-                (task.file_name, task.result, task.duration, end_at))
+                u"summarization result of %s : %s" %
+                (task.order, task.result))
+            self.summary = (task.result[0] if len(task.result) > 0 else "").encode('utf-8')
 
-            # fragment_src = oss.media_fragment_url(
-            # self.media_id, task.file_name
-            # )
-            # after uploaded to oss,fragment_src will be set
-            #
-            self.cloud_db.set_fragment(
-                task.order,
-                task.start_time,
-                end_at,
-                self.media_id,
-                "")
-
-            for result in results:
-                self.cloud_db.add_transcription_to_fragment(
-                    task.order, result, task.source_name())
-
-        # save all fragments
-        self.cloud_db.save()
-
-        # Upload media clips to Aliyun OSS
-        if self.upload_oss:
-            self.upload_to_oss(self.media_id, task_group)
-            self.cloud_db.batch_update_fragment_url()
 
         if self.is_async:
-            if self.client_callback_url:
-                self.notify_client(self.response_data())
-            else:
-                self.log_content["notified_client"] = False
-                self.save_log(True)
+            # if self.client_callback_url:
+            #     self.notify_client(self.response_data())
+            # else:
+            #     self.log_content["notified_client"] = False
+            #     self.save_log(True)
+            pass
         else:
-            self.write(json.dumps(self.response_data()))
-            self.log_content["notified_client"] = False
-            self.log_content["request_end_timestamp"] = time.time()
-            self.save_log(True)
+            self.write(json.dumps(self.response_data(), ensure_ascii=False, encoding="utf-8"))
+            # self.log_content["notified_client"] = False
+            # self.log_content["request_end_timestamp"] = time.time()
+            # self.save_log(True)
 
             self.finish()
             return
@@ -129,12 +75,9 @@ class TranscribeHandler(BaseHandler):
         log.save()
 
     def response_data(self):
-        self.download_link = "/medium/%s/srt" % self.media_id
-
         data = {
             "data": {
-                "media_id": "%s" % self.media_id,
-                "transcript_srt_download_link": "%s" % self.download_link
+                "summary": "%s" % self.summary,
             }
         }
 
@@ -171,95 +114,6 @@ class TranscribeHandler(BaseHandler):
             self.write(
                 json.dumps(self.response_error(error_code, error_message)))
             self.finish()
-
-    def on_donwload(self, tmp_file, ext, language, response):
-        if response.error:
-            self.handle_error(*ECODE.ERR_MEDIA_DOWNLOAD_FAILURE)
-            return
-
-        logging.info("downloaded,saved to: %s" % tmp_file)
-        self.write_file(response, tmp_file)
-
-        try:
-            target_file = convertor.convert_to_wav(tmp_file)
-            wav = wave.open(target_file)
-            duration = wav.getnframes() / float(wav.getframerate())
-            wav.close()
-            self.log_content["media_duration"] = duration
-        except Exception as ex:
-            logging.exception(
-                'exception caught in converting media type - ' + ext)
-            traceback.print_exc()
-            self.handle_error(*ECODE.ERR_MEDIA_UNSUPPORTED_FORMAT)
-            return
-
-        self.cloud_db = lean_cloud.LeanCloud()
-        self.cloud_db.add_media(
-            self.media_name,
-            self.media_id,
-            self.addr,
-            duration,
-            self.company_name,
-            self.requirement,
-            language.split(","),
-            self.service_providers,
-        )
-
-        vad_aggressiveness = 2
-
-        audio_dir, starts, is_voices, break_pause = vad.slice(
-            vad_aggressiveness, target_file)
-
-        starts, durations = preprocessor.preprocess_clip_length(
-            audio_dir,
-            starts,
-            is_voices,
-            break_pause,
-            self.fragment_length_limit,
-            self.force_fragment_length)
-
-        basedir, subdir, files = next(os.walk(audio_dir))
-        self.file_list = file_list = [os.path.join(basedir, file) for file in
-                                      sorted(files)]
-
-        # create a task group to organize transcription tasks
-        task_group = TaskGroup(self.transcription_callback)
-        if "baidu" in self.service_providers:
-            try:
-                lan = language
-                if self.is_prod:
-                    if "zh" in language.split(","):
-                        lan = "zh"
-                    else:
-                        raise Exception
-                baidu_speech_service = baidu.BaiduNLP()
-                baidu_tasks = baidu_speech_service.batch_vop_tasks(
-                    file_list, starts, durations, lan)
-                self.enqueue_tasks(task_group, baidu_tasks)
-            except Exception:
-                logging.exception('exception caught using baidu ASR')
-                traceback.print_exc()
-
-        if "google" in self.service_providers:
-            try:
-                lan = language
-                if self.is_prod:
-                    if "en" in language.split(","):
-                        lan = "en"
-                    else:
-                        raise Exception
-                google_speech_service = google.GoogleASR()
-                google_tasks = google_speech_service.batch_vop_tasks(
-                    file_list, starts, durations, lan)
-                self.enqueue_tasks(task_group, google_tasks)
-            except Exception:
-                logging.exception('exception caught using google ASR')
-                traceback.print_exc()
-
-        # you need to smoothen the file after building all tasks but
-        # before task group starts
-        # preprocessor.smoothen_clips_edge(file_list)
-        task_group.start()
 
     def enqueue_tasks(self, task_group, tasks):
         for task in tasks:
@@ -315,11 +169,22 @@ class TranscribeHandler(BaseHandler):
             )
             self.write(
                 json.dumps(self.response_success(
-                    {"data": {"media_id": self.media_id}})))
+                    {"data": {"summary": self.summary}}), ensure_ascii=False, encoding="utf-8"))
             self.finish()
             return
         else:
             self._handle(self.title, self.content)
 
     def _handle(self, title, content):
-        pass
+        # create a task group to organize transcription tasks
+        task_group = TaskGroup(self.summarization_callback)
+
+        try:
+            boson_service = BosonNLPService()
+            boson_tasks = boson_service.batch_summarization_tasks([title], [content])
+            self.enqueue_tasks(task_group, boson_tasks)
+        except Exception:
+            logging.exception('exception caught using Boson')
+            traceback.print_exc()
+
+        task_group.start()
