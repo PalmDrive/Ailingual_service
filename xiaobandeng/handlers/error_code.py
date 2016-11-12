@@ -11,3 +11,8 @@ ECODE.ERR_USER_HAVE_APP_INFO = (200001, "app_info already exists")
 ECODE.ERR_USER_NO_THAT_USER = (200002, "user not found")
 ECODE.ERR_USER_NO_THAT_APP_INFO = (200003, "app_key and app_id not exist")
 ECODE.ERR_USER_APP_ID_APP_KEY_NOT_MATCH = (200004,"app_key or appid not match")
+
+
+#transcript
+#200500-200500
+ECODE.CAPTION_EXISTS_TRANSCRIPT = (200500, "media exists timestamp transcript")

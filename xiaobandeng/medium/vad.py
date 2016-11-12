@@ -68,7 +68,9 @@ def vad_collector(sample_rate, frame_duration_ms,
                 new_voiced_frames = voiced_frames[-len(ring_buffer):]
                 del voiced_frames[-len(ring_buffer):]
                 if len(voiced_frames) > 0:
-                    yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, float(len(voiced_frames)*frame_duration_ms)/1000
+                    duration = float(len(voiced_frames)*frame_duration_ms)/1000
+                    print "clip start %s , duration %s" % (clip_start, duration)
+                    yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, duration
 
                 # start a voiced chunk
                 triggered = True
@@ -82,7 +84,9 @@ def vad_collector(sample_rate, frame_duration_ms,
             if num_unvoiced >= 0.4 * ring_buffer.maxlen:
                 # end a voiced chunk
                 sys.stdout.write('-(%s)' % (frame.timestamp + frame.duration))
-                yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, float(len(voiced_frames)*frame_duration_ms)/1000
+                duration = float(len(voiced_frames) * frame_duration_ms) / 1000
+                print "clip start %s , duration %s" % (clip_start, duration)
+                yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, duration
 
                 # start a unvoiced chunk
                 triggered = False
@@ -92,7 +96,9 @@ def vad_collector(sample_rate, frame_duration_ms,
 
     sys.stdout.write('\n')
     if voiced_frames:
-        yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, float(len(voiced_frames)*frame_duration_ms)/1000
+        duration = float(len(voiced_frames) * frame_duration_ms) / 1000
+        print "clip start %s , duration %s" % (clip_start, duration)
+        yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, duration
 
 
 # aggressive is limited to 0..3. By experience, 3 is the most aggressive. 0 is the least aggressive.
