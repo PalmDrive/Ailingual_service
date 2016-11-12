@@ -10,6 +10,12 @@ class CaptionHandler(BaseHandler):
     def post(self, media_id):
         lc = LeanCloud()
         media = lc.get_media(media_id)
+        transcript_set = self.get_argument("transcript_set", "1");
+        transcript_set_to_set_type_map = {
+          "1": "machine",
+          "2": "ut",
+          "3": "timestamp"
+        }
         transcript_sets = media.get("transcript_sets")
         if transcript_sets.get("timestamp"):
             self.write_error(self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
@@ -28,7 +34,7 @@ class CaptionHandler(BaseHandler):
         #              media.get("lan"), media.get("service_providers")
         # )
         # lc.media.set("is_copied",True)
-        all_transcript = lc.get_list(media_id)
+        all_transcript = lc.get_list(media_id, transcript_set_to_set_type_map[transcript_set])
         index = 0
 
         text = ""
