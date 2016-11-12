@@ -5,8 +5,6 @@ from ..base import BaseHandler
 from xiaobandeng.lean_cloud.lean_cloud import LeanCloud
 from ..error_code import ECODE
 
-import json
-
 
 class CaptionHandler(BaseHandler):
     def post(self, media_id):
@@ -63,12 +61,14 @@ class CaptionHandler(BaseHandler):
             index += 1
 
         lc.fragments[0].set("start_at", 0.01)
-        media.save()
-        lc.save()
+        lc.save_fragments()
 
         transcript_sets["timestamp"] = 1
 
-        media.set("transcript_sources", transcript_sets)
-        self.write(self.response_success())
+        print transcript_sets
 
+        media.set("transcript_sets", transcript_sets)
+        media.save()
+
+        self.write(self.response_success())
         self.finish()

@@ -122,11 +122,13 @@ class LeanCloud(object):
         self.media = media
         print 'added_media_id:%s' % media_id
 
+    def save_fragments(self):
+        self.Fragment.save_all(self.fragments.values())
+
     def save(self):
         # try:
         # batch save all fragments
-        self.Fragment.save_all(self.fragments.values())
-
+        self.save_fragments()
         relation = self.media.relation("containedTranscripts")
         for fragment in self.fragments.values():
             relation.add(fragment)
@@ -136,6 +138,7 @@ class LeanCloud(object):
         # except leancloud.LeanCloudError as e:
         # print e
         # raise
+
 
     def batch_update_fragment_url(self):
         fragments = []
