@@ -1,9 +1,10 @@
 # coding: utf8
 from __future__ import absolute_import
-
 import uuid
 from ..base import BaseHandler
 from xiaobandeng.lean_cloud.lean_cloud import LeanCloud
+from ..error_code import ECODE
+
 import json
 
 
@@ -11,19 +12,24 @@ class CaptionHandler(BaseHandler):
     def post(self, media_id):
         lc = LeanCloud()
         media = lc.get_media(media_id)
-        if media.get("is_copied"):
-            self.write(self.response_success())
+        transcript_sets = media.get("transcript_sets")
+        if transcript_sets.get("timestamp"):
+            self.write_error(self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
             return
 
-        caption_media_id = str(uuid.uuid4())
-        media.set("caption_media_id", caption_media_id)
+        # if media.get("is_copied"):
+        # self.write(self.response_success())
+        # return
 
-        lc.add_media(media.get("media_name")+"__copied", caption_media_id,
-                     media.get("media_src"), media.get("duration"),
-                     media.get("company_name"), media.get("requirement"),
-                     media.get("lan"), media.get("service_providers")
-        )
-        lc.media.set("is_copied",True)
+        # caption_media_id = str(uuid.uuid4())
+        # media.set("caption_media_id", caption_media_id)
+
+        # lc.add_media("copied__"+media.get("media_name"), caption_media_id,
+        #              media.get("media_src"), media.get("duration"),
+        #              media.get("company_name"), media.get("requirement"),
+        #              media.get("lan"), media.get("service_providers")
+        # )
+        # lc.media.set("is_copied",True)
         all_transcript = lc.get_list(media_id)
         index = 0
 
@@ -49,9 +55,10 @@ class CaptionHandler(BaseHandler):
 
         for content in caption_content_list:
             fragment_order, start_at, end_at, media_id, fragment_src = (
-                index, 0.00, 0.00, caption_media_id, "" )
+                index, 0.00, 0.00, media_id, "" )
             lc.set_fragment(fragment_order, start_at, end_at, media_id,
-                            fragment_src)
+                            fragment_src, set_type = "timestamp")
+
             lc.add_transcription_to_fragment(index, content, "baidu")
             index += 1
 
@@ -59,8 +66,9 @@ class CaptionHandler(BaseHandler):
         media.save()
         lc.save()
 
-        self.write(json.dumps({
-            "media_id": caption_media_id,
-        }))
+        transcript_sets["timestamp"] = 1
+
+        media.set("transcript_sources", transcript_sets)
+        self.write(self.response_success())
 
         self.finish()

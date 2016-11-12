@@ -30,16 +30,20 @@ class LeanCloud(object):
         self.tasks = []
 
     def set_fragment(
-            self, fragment_order, start_at, end_at, media_id, fragment_src
+            self, fragment_order, start_at, end_at, media_id, fragment_src,
+            set_type="machine"
     ):
         if fragment_order in self.fragments:
             return
+
         fragment = self.Fragment()
         fragment.set("media_id", media_id)
         fragment.set("fragment_order", fragment_order)
         fragment.set("start_at", start_at)
         fragment.set("end_at", end_at)
         fragment.set("fragment_src", fragment_src)
+        fragment.set("set_type", set_type)
+
         self.fragments[fragment_order] = fragment
 
     def set_fragment_src(self, fragment, src):
@@ -93,6 +97,7 @@ class LeanCloud(object):
             requirement,
             language,
             service_provider,
+            transcript_sets=None,
     ):
         media = self.Media()
         media.set("media_id", media_id)
@@ -105,11 +110,15 @@ class LeanCloud(object):
         media.set("requirement", requirement)
         media.set("assign_status", constants.LC_MEDIA_ASSIGN_STATUS_NONE)
         media.set("completion_status", 0)
-
         media.set("lan", language)
+
         if not service_provider:
             service_provider = []
         media.set("service_providers", service_provider)
+
+        if not transcript_sets:
+            media.set("transcript_sets", {"machine": 1})
+
         self.media = media
         print 'added_media_id:%s' % media_id
 
@@ -135,14 +144,14 @@ class LeanCloud(object):
                 fragments.append(fragment)
         if fragments:
             # try:
-                # self.Fragment.save_all(fragments)
-            for  i in fragments:
+            # self.Fragment.save_all(fragments)
+            for i in fragments:
                 i.save()
-            # except Exception as e:
-            #     print e.code
-            #     print e.error
-            #     print '--------------'
-            # print 'updated fragments url'
+                # except Exception as e:
+                # print e.code
+                # print e.error
+                # print '--------------'
+                # print 'updated fragments url'
 
     def get_list(self, media_id):
         total_data = []
