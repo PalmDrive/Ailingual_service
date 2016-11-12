@@ -156,12 +156,13 @@ class LeanCloud(object):
                 # print '--------------'
                 # print 'updated fragments url'
 
-    def get_list(self, media_id):
+    def get_list(self, media_id, set_type="machine"):
         total_data = []
 
         def batch_fetch(start):
             query = self.fragment_query.equal_to("media_id", media_id)
             query.add_ascending("start_at")
+            query.equal_to("set_type", set_type)
 
             if start:
                 start_at = start.get("start_at")
