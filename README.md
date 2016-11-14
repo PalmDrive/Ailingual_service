@@ -109,7 +109,41 @@ Transcribe API:
 
 ```
 
+```
+Summarize API:
+
+    summarize
+
+    curl -X POST -H "app_id: <app_id>" -H "app_key: <app_key>" -H "Content-Type: application/json"
+    -d '{
+        "title" : "title",
+        "content" : "content"
+    }' "http://localhost:8888/summarize?async=true&service_providers=tuofeng&callback_url=callbachurl"
+
+Url encoded params
+@param (optional) String: service_providers
+    The name of service providers for this transcription task.
+    Supported:
+        boson,tuofeng
+    Default is 'boson'.
+
+@param (optional) Boolean: async
+    Default is True.
+
+@param (Required when async is true) String: callback_url
+    The callback url that will be called upon the completion of our transcription process.
+
+Body params
+@param (optional) String: content
+    The content to be summarized
+
+@param (optional) String: title
+    The title of the content to be summarized
+
+```
+
 # Architecture Design
+
 ```
 
 @class TaskGroup:
