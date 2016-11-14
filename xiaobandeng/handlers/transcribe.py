@@ -31,7 +31,7 @@ from xiaobandeng.task.task import TaskGroup
 from xiaobandeng.transcribe import baidu
 from xiaobandeng.transcribe import google
 from xiaobandeng.transcribe.log import TranscriptionLog
-from ..task.task import increase_pending_task
+from xiaobandeng.task.task import increase_pending_task
 from .base import BaseHandler
 from .error_code import ECODE
 
