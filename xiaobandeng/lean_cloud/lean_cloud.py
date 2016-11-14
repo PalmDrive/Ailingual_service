@@ -10,7 +10,6 @@ CLASS_NAME_MEDIA = "Media"
 CLASS_NAME_CROWDSOURCINGTASK = "CrowdsourcingTask"
 CLASS_NAME_EDITORTASK = "EditorTask"
 
-
 class LeanCloud(object):
     def __init__(self):
         self.Fragment = leancloud.Object.extend(CLASS_NAME_TRANSCRIPT)

@@ -19,7 +19,7 @@ import tornado.escape
 from concurrent.futures import ThreadPoolExecutor
 from tornado.concurrent import run_on_executor
 
-from xiaobandeng.lean_cloud import lean_cloud
+from xiaobandeng.lean_cloud import lean_cloud_summarize
 from xiaobandeng.task.task import TaskGroup
 from xiaobandeng.summarize.boson import BosonNLPService
 from xiaobandeng.summarize.tuofeng import TuofengNLPService
@@ -47,30 +47,33 @@ class SummarizeHandler(BaseHandler):
                 (task.order, task.result))
             self.summary = task.result[0] if len(task.result) > 0 else ""
 
+        self.cloud_db = lean_cloud_summarize.LeanCloudSummarize()
+        self.cloud_db.add_summary(self.title, self.content, self.summary, self.user_mgr.current_user.id)
+        self.text_analysis_id = self.cloud_db.save()
 
         if self.is_async:
-            # if self.client_callback_url:
-            #     self.notify_client(self.response_data())
-            # else:
-            #     self.log_content["notified_client"] = False
-            #     self.save_log(True)
-            pass
+            if self.client_callback_url:
+                self.notify_client(self.response_data())
+            else:
+                self.log_content["notified_client"] = False
+                #self.save_log(True)
         else:
-            self.write(json.dumps(self.response_data(), ensure_ascii=False, encoding="utf-8"))
-            # self.log_content["notified_client"] = False
-            # self.log_content["request_end_timestamp"] = time.time()
+            self.write(self.json_dumps_utf8(self.response_data()))
+            self.log_content["notified_client"] = False
+            self.log_content["request_end_timestamp"] = time.time()
             # self.save_log(True)
 
             self.finish()
             return
 
     def save_log(self, status):
-        self.log_content["transcribe_end_timestamp"] = time.time()
-        self.log_content["media_id"] = self.media_id
-        self.log_content["status"] = "success" if status else "failure"
-        log = TranscriptionLog()
-        log.add(self.log_content)
-        log.save()
+        # self.log_content["transcribe_end_timestamp"] = time.time()
+        # self.log_content["text_analysis_id"] = self.text_analysis_id
+        # self.log_content["status"] = "success" if status else "failure"
+        # log = TranscriptionLog()
+        # log.add(self.log_content)
+        # log.save()
+        pass
 
     def response_data(self):
         data = {
@@ -84,7 +87,7 @@ class SummarizeHandler(BaseHandler):
     def notify_client(self, resp):
         def notified_callback(response):
             logging.info("called origin client server...")
-            self.log_content["notified_client"] = True
+            # self.log_content["notified_client"] = True
 
             if response.error:
                 self.save_log(False)
@@ -166,17 +169,34 @@ class SummarizeHandler(BaseHandler):
             self.finish()
             return
 
+        self.log_content = {}
+        self.log_content["request_start_timestamp"] = time.time()
+        self.log_content["arguments_get"] = self.request.arguments
+        self.log_content["arguments_post"] = self.request.body_arguments
+        self.log_content["ip"] = self.request.remote_ip
+        self.log_content["agent"] = self.request.headers.get("User-Agent", "")
+        self.log_content["path"] = self.request.path
+        self.log_content["uri"] = self.request.uri
+        self.log_content["method"] = self.request.method
+        self.log_content["headers"] = str(self.request.headers)
+
         if self.is_async:
             tornado.ioloop.IOLoop.current().add_callback(
-                self._handle, self.content
+                self._handle, self.title, self.content
             )
             self.write(
-                json.dumps(self.response_success(
-                    {"data": {"summary": self.summary}}), ensure_ascii=False, encoding="utf-8"))
+                self.json_dumps_utf8(
+                    self.response_success({})
+                )
+            )
             self.finish()
             return
         else:
             self._handle(self.title, self.content)
+
+
+    def json_dumps_utf8(self, j):
+        return json.dumps(j, ensure_ascii=False, encoding="utf-8")
 
     def _handle(self, title, content):
         # create a task group to organize summarization tasks
@@ -191,7 +211,7 @@ class SummarizeHandler(BaseHandler):
                 logging.exception('exception caught using Boson')
                 traceback.print_exc()
 
-        if "tuofeng" in self.service_providers:
+        elif "tuofeng" in self.service_providers:
             try:
                 tuofeng_service = TuofengNLPService()
                 tuofeng_tasks = tuofeng_service.batch_summarization_tasks([title], [content])
