@@ -14,7 +14,7 @@ import wave
 import traceback
 from os.path import splitext
 from urlparse import urlparse
-
+import shutil
 import tornado.httpclient
 import tornado.httpserver
 import tornado.ioloop
@@ -60,12 +60,6 @@ class TranscribeHandler(BaseHandler):
         self.cloud_db.batch_create_crowdsourcing_tasks(task_group)
         logging.info("-----create crowdsourcing tasks over-------")
 
-    def write_file(self, response, file_name):
-        f = open(file_name, "wb")
-        f.write(response.body)
-        f.close()
-        logging.info("write file:%s" % file_name)
-
     def transcription_callback(self, task_group):
         # warn: this method will change task.result
         # punc_task_group(task_group)
@@ -76,9 +70,9 @@ class TranscribeHandler(BaseHandler):
             task.start_time += 0.01
 
             results = task.result
-            logging.info(
-                u"transcript result of %s : %s, duration %f, end_at %f" %
-                (task.file_name, task.result, task.duration, end_at))
+            # logging.info(
+            #     u"transcript result of %s : %s, duration %f, end_at %f" %
+            #     (task.file_name, task.result, task.duration, end_at))
 
             # fragment_src = oss.media_fragment_url(
             # self.media_id, task.file_name
@@ -103,6 +97,11 @@ class TranscribeHandler(BaseHandler):
         if self.upload_oss:
             self.upload_to_oss(self.media_id, task_group)
             self.cloud_db.batch_update_fragment_url()
+
+        #delete media dir
+        print 'deleting media clip dir...'
+        shutil.rmtree(self.tmp_media_dir)
+
 
         if self.is_async:
             if self.client_callback_url:
@@ -176,16 +175,18 @@ class TranscribeHandler(BaseHandler):
             self.handle_error(*ECODE.ERR_MEDIA_DOWNLOAD_FAILURE)
             return
 
-        logging.info("downloaded,saved to: %s" % tmp_file)
-        self.write_file(response, tmp_file)
+        logging.info("downloaded,saved to: %s" % tmp_file.name)
+        tmp_file.write(response.body)
+        tmp_file.flush()
 
         try:
-            target_file = convertor.convert_to_wav(tmp_file)
-            wav = wave.open(target_file)
+            wave_file_name = convertor.convert_to_wav(tmp_file.name)
+
+            wav = wave.open(wave_file_name, "rb")
             duration = wav.getnframes() / float(wav.getframerate())
-            wav.close()
+
             self.log_content["media_duration"] = duration
-        except Exception as ex:
+        except Exception:
             logging.exception(
                 'exception caught in converting media type - ' + ext)
             traceback.print_exc()
@@ -207,7 +208,13 @@ class TranscribeHandler(BaseHandler):
         vad_aggressiveness = 2
 
         audio_dir, starts, is_voices, break_pause = vad.slice(
-            vad_aggressiveness, target_file)
+            vad_aggressiveness, wave_file_name)
+
+        #wave file name
+        os.remove(wave_file_name)
+        tmp_file.close()
+        wav.close()
+        print 'removed temp file.'
 
         starts, durations = preprocessor.preprocess_clip_length(
             audio_dir,
@@ -220,6 +227,7 @@ class TranscribeHandler(BaseHandler):
         basedir, subdir, files = next(os.walk(audio_dir))
         self.file_list = file_list = [os.path.join(basedir, file) for file in
                                       sorted(files)]
+        self.tmp_media_dir = basedir
 
         # create a task group to organize transcription tasks
         task_group = TaskGroup(self.transcription_callback)
@@ -399,7 +407,8 @@ class TranscribeHandler(BaseHandler):
 
     def _handle(self, addr, language):
         ext = get_ext(addr)
-        tmp_file = tempfile.NamedTemporaryFile(suffix=ext).name
+        # this is a temporary file ,will be removed after close()
+        tmp_file = tempfile.NamedTemporaryFile("wb+", suffix=ext)
         client = tornado.httpclient.AsyncHTTPClient(
             max_body_size=1024 * 1024 * 1024 * 0.8)
         # call self.ondownload after get the request file
