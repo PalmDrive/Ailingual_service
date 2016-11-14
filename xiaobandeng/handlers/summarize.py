@@ -67,6 +67,7 @@ class SummarizeHandler(BaseHandler):
             return
 
     def save_log(self, status):
+        # TODO: add transaction log
         # self.log_content["transcribe_end_timestamp"] = time.time()
         # self.log_content["text_analysis_id"] = self.text_analysis_id
         # self.log_content["status"] = "success" if status else "failure"
