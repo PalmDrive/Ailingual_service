@@ -209,10 +209,12 @@ class TranscribeHandler(BaseHandler):
 
         audio_dir, starts, is_voices, break_pause = vad.slice(
             vad_aggressiveness, wave_file_name)
-        #this is a .wav file
-        # target_file.close()
+
+        #wave file name
+        os.remove(wave_file_name)
         tmp_file.close()
         wav.close()
+        print 'removed temp file.'
 
         starts, durations = preprocessor.preprocess_clip_length(
             audio_dir,
