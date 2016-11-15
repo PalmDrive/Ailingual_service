@@ -7,17 +7,20 @@ class LeanCloudSummarize(object):
 
     def __init__(self):
         self.TextAnalysis = leancloud.Object.extend(CLASS_NAME_TEXT_ANALYSIS)
+        self.text_analysis = self.TextAnalysis()
 
-    def add_summary(
-            self, title, content, summary, client_id
+    def init_text_analyisis(
+            self, title, content, client_id
     ):
-        text_analysis = self.TextAnalysis()
-        text_analysis.set("text", content)
+        self.text_analysis.set("text", content)
         if title:
-            text_analysis.set("title", title)
-        text_analysis.set("summary", summary)
+            self.text_analysis.set("title", title)
+
         text_analysis.set("clientId", client_id)
-        self.text_analysis = text_analysis
+
+    def set_summary(self, summary):
+        if summary:
+            self.text_analysis.set("summary", summary)
 
     def save(self):
         self.text_analysis.save()
