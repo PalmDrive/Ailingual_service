@@ -5,6 +5,8 @@ import uuid
 
 import leancloud
 
+CLASS_NAME_COMPANY = "Company"
+CLASS_NAME_APP = "App"
 
 # singleton instance
 class UserMgr(object):
@@ -21,6 +23,7 @@ class UserMgr(object):
     def __init__(self):
         self.User = leancloud.User
         self.user_query = self.User.query
+        self.company = None
 
     def get_user(self, uid):
         try:
@@ -98,3 +101,19 @@ class UserMgr(object):
 
     def is_client(self):
         return 'company' in self.get_current_roles()
+
+    def is_client_company(self):
+        return self.company.get('role') == 'client'
+
+    def authenticate(self, app_id, app_key):
+        self.App = leancloud.Object.extend(CLASS_NAME_APP)
+        self.app_query = self.App.query
+        self.app_query.equal_to("appId", app_id)
+        self.app_query.equal_to("appKey", app_key)
+        result = self.app_query.find()
+        if result and len(result) > 0:
+            self.app = result[0]
+            self.company = self.app.get('client')
+            return True
+        else:
+            return False

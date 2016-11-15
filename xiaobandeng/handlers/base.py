@@ -38,18 +38,14 @@ class BaseHandler(tornado.web.RequestHandler):
     def options(self, *args, **kwargs):
         self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
 
-    def check_appinfo(self):
+    def authenticate(self):
         self.user_mgr = UserMgr()
         app_id = self.request.headers.get("app_id", "")
         app_key = self.request.headers.get("app_key", "")
-        # return (true_or_false,user)
+
         if app_id and app_key:
-            # status, error_dict = self.user_mgr.login(app_id, app_key)
-            self.user_mgr.user_query.equal_to("app_id", app_id)
-            self.user_mgr.user_query.equal_to("app_key", app_key)
-            result = self.user_mgr.user_query.find()
+            result = self.user_mgr.authenticate(app_id, app_key)
             if result:
-                self.user_mgr.set_current_user(result[0])
                 return (True, '')
             else:
                 return (False,

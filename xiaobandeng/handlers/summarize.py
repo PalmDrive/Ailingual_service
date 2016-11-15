@@ -48,7 +48,7 @@ class SummarizeHandler(BaseHandler):
             self.summary = task.result[0] if len(task.result) > 0 else ""
 
         self.cloud_db = lean_cloud_summarize.LeanCloudSummarize()
-        self.cloud_db.add_summary(self.title, self.content, self.summary, self.user_mgr.current_user.id)
+        self.cloud_db.add_summary(self.title, self.content, self.summary, self.user_mgr.company.id)
         self.text_analysis_id = self.cloud_db.save()
 
         if self.is_async:
@@ -135,17 +135,16 @@ class SummarizeHandler(BaseHandler):
         env = os.environ.get("PIPELINE_SERVICE_ENV")
         self.is_prod = (env == "production")
 
-        have_user, error = self.check_appinfo()
+        authenticated, error = self.authenticate()
 
         # Login failed
-        if not have_user:
+        if not authenticated:
             self.write(json.dumps(error))
             self.finish()
             return
 
         # On production, we limit dev options only to admin and editor
-        self.is_superuser = (not self.is_prod) or (
-            self.user_mgr.is_admin() or self.user_mgr.is_editor())
+        self.is_superuser = (not self.is_prod) or (not self.user_mgr.is_client_company())
 
         data_json = tornado.escape.json_decode(self.request.body)
 

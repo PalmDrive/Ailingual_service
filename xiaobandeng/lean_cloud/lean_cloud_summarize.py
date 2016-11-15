@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import leancloud
 
 CLASS_NAME_TEXT_ANALYSIS = "TextAnalysis"
+CLASS_NAME_COMPANY = "Company"
 
 class LeanCloudSummarize(object):
 
@@ -16,7 +17,11 @@ class LeanCloudSummarize(object):
         if title:
             text_analysis.set("title", title)
         text_analysis.set("summary", summary)
-        text_analysis.set("clientId", client_id)
+
+        Company = leancloud.Object.extend(CLASS_NAME_COMPANY)
+        client = Company.create_without_data(client_id)
+        text_analysis.set("client", client)
+
         self.text_analysis = text_analysis
 
     def save(self):
