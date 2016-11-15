@@ -109,7 +109,7 @@ class TranscribeHandler(BaseHandler):
                 self.log_content["notified_client"] = False
                 self.save_log(True)
         else:
-            self.write(json.dumps(self.response_data()))
+            self.write(self.response_data())
             self.log_content["notified_client"] = False
             self.log_content["request_end_timestamp"] = time.time()
             self.save_log(True)
@@ -277,7 +277,8 @@ class TranscribeHandler(BaseHandler):
             self.notify_client(self.response_error(error_code, error_message))
         else:
             self.write(
-                json.dumps(self.response_error(error_code, error_message)))
+                self.response_error(error_code, error_message)
+            )
             self.finish()
 
     @tornado.web.asynchronous
@@ -289,7 +290,7 @@ class TranscribeHandler(BaseHandler):
 
         # Login failed
         if not authenticated:
-            self.write(json.dumps(error))
+            self.write(error)
             self.finish()
             return
 
@@ -298,7 +299,7 @@ class TranscribeHandler(BaseHandler):
 
         addr = self.get_argument("addr", None)
         if addr == None:
-            self.write(json.dumps(self.error_missing_arg("addr")))
+            self.write(self.error_missing_arg("addr"))
             self.finish()
             return
         addr = urllib.quote(addr.encode("utf8"), ":/")
@@ -306,7 +307,7 @@ class TranscribeHandler(BaseHandler):
 
         media_name = self.get_argument("media_name", None)
         if media_name == None:
-            self.write(json.dumps(self.error_missing_arg("media_name")))
+            self.write(self.error_missing_arg("media_name"))
             self.finish()
             return
         self.media_name = media_name.encode("utf8")
@@ -373,7 +374,7 @@ class TranscribeHandler(BaseHandler):
 
         self.client_callback_url = self.get_argument("callback_url", None)
         if self.is_async and (not self.client_callback_url):
-            self.write(json.dumps(self.error_missing_arg("callback_url")))
+            self.write(self.error_missing_arg("callback_url"))
             self.finish()
             return
 
@@ -393,8 +394,14 @@ class TranscribeHandler(BaseHandler):
                 self._handle, self.addr, self.language
             )
             self.write(
-                json.dumps(self.response_success(
-                    {"data": {"media_id": self.media_id}})))
+                self.response_success(
+                    {
+                        "data": {
+                        "media_id": self.media_id
+                        }
+                    }
+                )
+            )
             self.log_content["request_end_time"] = time.time()
             self.finish()
             return
