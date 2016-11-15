@@ -13,7 +13,7 @@ import tornado.web
 from .error_code import ECODE
 from ..lean_cloud.quota import get_quota
 from ..lean_cloud.quota import update_access_count
-from ..lean_cloud.user import UserMgr
+from ..lean_cloud.session import SessionMgr
 from ..task.task import current_pending_tasks
 
 
@@ -39,12 +39,12 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
 
     def authenticate(self):
-        self.user_mgr = UserMgr()
+        self.session_manager = SessionMgr()
         app_id = self.request.headers.get("app_id", "")
         app_key = self.request.headers.get("app_key", "")
 
         if app_id and app_key:
-            result = self.user_mgr.authenticate(app_id, app_key)
+            result = self.session_manager.authenticate(app_id, app_key)
             if result:
                 return (True, '')
             else:

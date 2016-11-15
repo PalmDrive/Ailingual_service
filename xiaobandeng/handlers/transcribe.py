@@ -185,7 +185,7 @@ class TranscribeHandler(BaseHandler):
             self.media_id,
             self.addr,
             duration,
-            self.user_mgr.company.id,
+            self.session_manager.company.id,
             self.client_id,
             self.requirement,
             language.split(","),
@@ -294,7 +294,7 @@ class TranscribeHandler(BaseHandler):
             return
 
         # On production, we limit dev options only to admin and editor
-        self.is_superuser = (not self.is_prod) or (not self.user_mgr.is_client_company())
+        self.is_superuser = (not self.is_prod) or (not self.session_manager.is_client_company())
 
         addr = self.get_argument("addr", None)
         if addr == None:
@@ -319,7 +319,7 @@ class TranscribeHandler(BaseHandler):
             self.client_id = None
 
         if not self.client_id:
-            self.client_id = self.user_mgr.company.id
+            self.client_id = self.session_manager.company.id
 
         if self.is_superuser:
             fragment_length_limit = self.get_argument("max_fragment_length", 10)
