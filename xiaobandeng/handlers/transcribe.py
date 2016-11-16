@@ -203,6 +203,8 @@ class TranscribeHandler(BaseHandler):
             self.requirement,
             language.split(","),
             self.service_providers,
+            {"machine": 1},
+            self.caption_type
         )
 
         vad_aggressiveness = 2
@@ -318,6 +320,8 @@ class TranscribeHandler(BaseHandler):
             return
         addr = urllib.quote(addr.encode("utf8"), ":/")
         self.addr = addr
+
+        self.caption_type = self.get_argument("caption_type")
 
         media_name = self.get_argument("media_name", None)
         if media_name == None:
