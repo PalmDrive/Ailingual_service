@@ -47,8 +47,7 @@ class SummarizeHandler(BaseHandler):
                 (task.order, task.result))
             self.summary = task.result[0] if len(task.result) > 0 else ""
 
-        self.cloud_db = lean_cloud_summarize.LeanCloudSummarize()
-        self.cloud_db.add_summary(self.title, self.content, self.summary, self.user_mgr.current_user.id)
+        self.cloud_db.set_summary(self.summary)
         self.text_analysis_id = self.cloud_db.save()
 
         if self.is_async:
@@ -58,7 +57,7 @@ class SummarizeHandler(BaseHandler):
                 self.log_content["notified_client"] = False
                 #self.save_log(True)
         else:
-            self.write(self.json_dumps_utf8(self.response_data()))
+            self.write(self.response_data())
             self.log_content["notified_client"] = False
             self.log_content["request_end_timestamp"] = time.time()
             # self.save_log(True)
@@ -79,7 +78,8 @@ class SummarizeHandler(BaseHandler):
     def response_data(self):
         data = {
             "data": {
-                "summary": "%s" % self.summary,
+                "id" : self.text_analysis_id,
+                "summary": "%s" % self.summary
             }
         }
 
@@ -114,7 +114,8 @@ class SummarizeHandler(BaseHandler):
             self.notify_client(self.response_error(error_code, error_message))
         else:
             self.write(
-                json.dumps(self.response_error(error_code, error_message)))
+                self.response_error(error_code, error_message)
+            )
             self.finish()
 
     def enqueue_tasks(self, task_group, tasks):
@@ -139,7 +140,7 @@ class SummarizeHandler(BaseHandler):
 
         # Login failed
         if not have_user:
-            self.write(json.dumps(error))
+            self.write(error)
             self.finish()
             return
 
@@ -166,7 +167,7 @@ class SummarizeHandler(BaseHandler):
 
         self.client_callback_url = self.get_argument("callback_url", None)
         if self.is_async and (not self.client_callback_url):
-            self.write(json.dumps(self.error_missing_arg("callback_url")))
+            self.write(self.error_missing_arg("callback_url"))
             self.finish()
             return
 
@@ -181,23 +182,24 @@ class SummarizeHandler(BaseHandler):
         self.log_content["method"] = self.request.method
         self.log_content["headers"] = str(self.request.headers)
 
+        self.cloud_db = lean_cloud_summarize.LeanCloudSummarize()
+        self.cloud_db.init_text_analyisis(self.title, self.content, self.user_mgr.current_user.id)
+        self.text_analysis_id = self.cloud_db.save()
+
         if self.is_async:
             tornado.ioloop.IOLoop.current().add_callback(
                 self._handle, self.title, self.content
             )
             self.write(
-                self.json_dumps_utf8(
-                    self.response_success({})
-                )
+                self.response_success({
+                    "data" : {"id" : self.text_analysis_id}
+                })
             )
             self.finish()
             return
         else:
             self._handle(self.title, self.content)
 
-
-    def json_dumps_utf8(self, j):
-        return json.dumps(j, ensure_ascii=False, encoding="utf-8")
 
     def _handle(self, title, content):
         # create a task group to organize summarization tasks

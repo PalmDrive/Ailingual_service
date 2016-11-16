@@ -7,6 +7,7 @@ from xiaobandeng.handlers.error_code import ECODE
 from collections import defaultdict
 from xiaobandeng.handlers import constants
 
+
 class CreateEditorTaskHandler(BaseHandler):
     def get(self, media_id):
         self.media_id = media_id
@@ -29,7 +30,7 @@ class CreateEditorTaskHandler(BaseHandler):
                     self.add_task(task_order, start_time,
                                   fragment.get("start_at"), i)
             else:
-                #have last fragment
+                # have last fragment
                 if fragment:
                     for i in range(len(self.copy_list)):
                         self.add_task(task_order, start_time,
@@ -77,19 +78,20 @@ class BatchAssignUserHandler(BaseHandler):
         media_list = lc.get_media_list_by_media_id(media_task_map.keys())
         for media in media_list:
             task_count = media.get("editor_task_count")
-            cur_task_count = int(media.get("assigned_editor_task"))
+            cur_task_count = int(media.get("assigned_editor_task", 0))
             cur_task_count += len(media_task_map[media.get("media_id")])
 
             if cur_task_count < task_count:
-                media.set("assign_status",constants.LC_MEDIA_ASSIGN_STATUS_PART)
+                media.set("assign_status",
+                          constants.LC_MEDIA_ASSIGN_STATUS_PART)
             if cur_task_count == task_count:
-                media.set("assign_status",constants.LC_MEDIA_ASSIGN_STATUS_ALL)
+                media.set("assign_status", constants.LC_MEDIA_ASSIGN_STATUS_ALL)
 
-            media.set("assigned_editor_task",cur_task_count)
+            media.set("assigned_editor_task", cur_task_count)
             media.save()
 
         # if media_list:
-        #     lc.Media.save_all()
+        # lc.Media.save_all()
 
         try:
             user_mgr = UserMgr()

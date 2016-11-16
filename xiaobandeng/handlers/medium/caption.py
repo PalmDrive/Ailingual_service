@@ -8,17 +8,20 @@ from ..error_code import ECODE
 
 class CaptionHandler(BaseHandler):
     def post(self, media_id):
+        transcript_set = self.get_argument("transcript_set", "1")
+
+        transcript_set_to_set_type_map = {
+            "1": "machine",
+            "2": "ut",
+            "3": "timestamp"
+        }
         lc = LeanCloud()
         media = lc.get_media(media_id)
-        transcript_set = self.get_argument("transcript_set", "1");
-        transcript_set_to_set_type_map = {
-          "1": "machine",
-          "2": "ut",
-          "3": "timestamp"
-        }
+
         transcript_sets = media.get("transcript_sets")
         if transcript_sets.get("timestamp"):
-            self.write_error(self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
+            self.write_error(
+                self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
             return
 
         # if media.get("is_copied"):
@@ -29,12 +32,13 @@ class CaptionHandler(BaseHandler):
         # media.set("caption_media_id", caption_media_id)
 
         # lc.add_media("copied__"+media.get("media_name"), caption_media_id,
-        #              media.get("media_src"), media.get("duration"),
-        #              media.get("company_name"), media.get("requirement"),
+        # media.get("media_src"), media.get("duration"),
+        # media.get("company_name"), media.get("requirement"),
         #              media.get("lan"), media.get("service_providers")
         # )
         # lc.media.set("is_copied",True)
-        all_transcript = lc.get_list(media_id, transcript_set_to_set_type_map[transcript_set])
+        all_transcript = lc.get_list(media_id, transcript_set_to_set_type_map[
+            transcript_set])
         index = 0
 
         text = ""
@@ -56,15 +60,18 @@ class CaptionHandler(BaseHandler):
             text += content
 
         caption_content_list = text.split(u"，")
+        if caption_content_list[-1].strip() == "":
+            caption_content_list.pop()
 
         for content in caption_content_list:
-            fragment_order, start_at, end_at, media_id, fragment_src = (
-                index, 0.00, 0.00, media_id, "" )
+            fragment_order, start_at, end_at, media_id, fragment_src, set_type = (
+                index, 0.00, 0.00, media_id, "", "timestamp")
             lc.set_fragment(fragment_order, start_at, end_at, media_id,
-                            fragment_src, set_type = "timestamp")
+                            fragment_src, set_type)
 
             lc.add_transcription_to_fragment(index, content, "baidu")
             index += 1
+
 
         lc.fragments[0].set("start_at", 0.01)
         lc.save_fragments()
