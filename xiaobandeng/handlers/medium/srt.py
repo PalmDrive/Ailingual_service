@@ -18,8 +18,18 @@ class SrtHandler(BaseHandler):
         # content_key = lc_content_keys[int(source)]
 
         lc = lean_cloud.LeanCloud()
-        fragment_list = lc.get_list(media_id=media_id)
         media = lc.get_media(media_id)
+        transcript_sets_map = media.get("transcript_sets")
+
+        set_type_order = ["timestamp", "ut", "machine"]
+
+        set_type_to_download = "machine"
+        for set_type in set_type_order:
+            if transcript_sets_map.get(set_type):
+                set_type_to_download = set_type
+                break
+        print  'set type :%s'%set_type_to_download
+        fragment_list = lc.get_list(media_id, set_type_to_download)
         provider_list = media.get("service_providers") or ["baidu"]
         content_keys = ["content_" + i for i in provider_list]
 

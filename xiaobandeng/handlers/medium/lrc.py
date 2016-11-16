@@ -29,7 +29,16 @@ class LrcHandler(BaseHandler):
             self.encoding = "utf8"
 
         lc = lean_cloud.LeanCloud()
-        media_list = lc.get_list(media_id=media_id)
+
+        transcript_sets_map = media.get("transcript_sets")
+        set_type_order = ["timestamp", "ut", "machine"]
+        set_type_to_download = "machine"
+        for set_type in set_type_order:
+            if transcript_sets_map.get(set_type):
+                set_type_to_download = set_type
+                break
+
+        media_list = lc.get_list(media_id,set_type_to_download)
 
         if media_list:
             filename = lc.get_media(media_id).get("media_name")
