@@ -139,7 +139,7 @@ class SummarizeHandler(BaseHandler):
         have_user, error = self.check_appinfo()
 
         # Login failed
-        if not authenticated:
+        if not have_user:
             self.write(error)
             self.finish()
             return
@@ -183,7 +183,7 @@ class SummarizeHandler(BaseHandler):
         self.log_content["headers"] = str(self.request.headers)
 
         self.cloud_db = lean_cloud_summarize.LeanCloudSummarize()
-        self.cloud_db.init_text_analyisis(self.title, self.content, self.session_manager.company.id)
+        self.cloud_db.init_text_analyisis(self.title, self.content, self.user_mgr.current_user.id)
         self.text_analysis_id = self.cloud_db.save()
 
         if self.is_async:

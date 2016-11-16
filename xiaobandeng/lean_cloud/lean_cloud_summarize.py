@@ -16,7 +16,7 @@ class LeanCloudSummarize(object):
         if title:
             self.text_analysis.set("title", title)
 
-        text_analysis.set("clientId", client_id)
+        self.text_analysis.set("clientId", client_id)
 
     def set_summary(self, summary):
         if summary:
