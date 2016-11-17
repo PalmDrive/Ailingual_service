@@ -106,6 +106,9 @@ Transcribe API:
 @param (optional) Boolean: force_fragment_length
     The switch to force fragment length. If it's not enforced, then it won't break up a clip longer than preferred length into smaller pieces. 
     Default is False.
+@param (required) String: caption_type
+    crowdsourcing/editor
+    Default is editor.
 
 ```
 
