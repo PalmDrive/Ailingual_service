@@ -19,7 +19,8 @@ class CreateEditorTaskHandler(BaseHandler):
         task_order = 1
         fragment = None
 
-        self.copy_list = [u"校对", u"检查"]
+        # self.copy_list = [u"校对", u"检查"]
+        self.copy_list = [u"校对" ]
 
         while True:
             fragment = self.lc.get_fragment_by_start_at(media_id,
@@ -46,7 +47,7 @@ class CreateEditorTaskHandler(BaseHandler):
             task_order += 1
 
         self.media.set("editor_task_count",
-                       (task_order - 1) * (len(self.copy_list)))
+                       task_order  * (len(self.copy_list)))
 
         self.media.save()
         self.lc.save_tasks()

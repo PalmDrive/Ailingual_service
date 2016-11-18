@@ -70,6 +70,11 @@ Transcribe API:
  
     The display name of the media to be transcribed  
 
+@param (optional) String: client_id
+
+    The client company id if different from the id of API caller.  
+    Default is the same as the API caller's company id.
+
 @param (required) String: addr
 
     The url to the media
@@ -100,12 +105,18 @@ Transcribe API:
         baidu,google
     Default is 'baidu'.
     
-@param (optional) String: callback_url
+@param (optional) Boolean: async
+    Default is True.
+    
+@param (required when async is true) String: callback_url
     The callback url that will be called upon the completion of our transcription process.
     
 @param (optional) Boolean: force_fragment_length
     The switch to force fragment length. If it's not enforced, then it won't break up a clip longer than preferred length into smaller pieces. 
     Default is False.
+@param (required) String: caption_type
+    crowdsourcing/editor
+    Default is editor.
 
 ```
 

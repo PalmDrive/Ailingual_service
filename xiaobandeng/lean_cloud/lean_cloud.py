@@ -9,6 +9,7 @@ CLASS_NAME_TRANSCRIPT = "Transcript"
 CLASS_NAME_MEDIA = "Media"
 CLASS_NAME_CROWDSOURCINGTASK = "CrowdsourcingTask"
 CLASS_NAME_EDITORTASK = "EditorTask"
+CLASS_NAME_COMPANY = "Company"
 
 class LeanCloud(object):
     def __init__(self):
@@ -92,18 +93,28 @@ class LeanCloud(object):
             media_id,
             media_url,
             duration,
-            company_name,
+            creater_id,
+            client_id,
             requirement,
             language,
             service_provider,
-            transcript_sets=None,
+            transcript_sets,
+            caption_type,
     ):
         media = self.Media()
         media.set("media_id", media_id)
         media.set("media_name", media_name)
         media.set("media_src", media_url)
         media.set("duration", duration)
-        media.set("company_name", company_name)
+
+        Company = leancloud.Object.extend(CLASS_NAME_COMPANY)
+
+        creater = Company.create_without_data(creater_id)
+        media.set("creater", creater)
+        if client_id:
+            client = Company.create_without_data(client_id)
+            media.set("client", client)
+
         media.set("transcribed_at", datetime.now())
         media.set("status", "Auto Transcribed")
         media.set("requirement", requirement)
@@ -117,6 +128,8 @@ class LeanCloud(object):
 
         if not transcript_sets:
             media.set("transcript_sets", {"machine": 1})
+
+        media.set("caption_type", caption_type)
 
         self.media = media
         print 'added_media_id:%s' % media_id
