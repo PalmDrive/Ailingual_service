@@ -47,7 +47,7 @@ class CaptionHandler(BaseHandler):
                 content = transcript.get("content_baidu")[0]
                 if not content:
                     continue
-            except TypeError, IndexError:
+            except (TypeError, IndexError):
                 continue
             content = content.replace(u"。", u"，")
             content = content.replace(u"？", u"，")
