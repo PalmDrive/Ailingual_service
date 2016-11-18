@@ -47,7 +47,7 @@ class CreateEditorTaskHandler(BaseHandler):
             task_order += 1
 
         self.media.set("editor_task_count",
-                       (task_order - 1) * (len(self.copy_list)))
+                       task_order  * (len(self.copy_list)))
 
         self.media.save()
         self.lc.save_tasks()

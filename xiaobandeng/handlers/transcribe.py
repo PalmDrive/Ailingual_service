@@ -423,5 +423,5 @@ class TranscribeHandler(BaseHandler):
         client.fetch(addr,
                      callback=functools.partial(self.on_donwload,
                                                 tmp_file, ext, language),
-                     connect_timeout=120,
+                     connect_timeout=300,
                      request_timeout=600, )
