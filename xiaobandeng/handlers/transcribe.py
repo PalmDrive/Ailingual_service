@@ -20,7 +20,6 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 from concurrent.futures import ThreadPoolExecutor
-from tornado.concurrent import run_on_executor
 
 from xiaobandeng.ali_cloud import oss
 from xiaobandeng.lean_cloud import lean_cloud
@@ -157,19 +156,6 @@ class TranscribeHandler(BaseHandler):
                      method="POST",
                      body=urllib.urlencode(resp))
 
-
-    def handle_error(self, error_code, error_message):
-        self.log_content["request_end_time"] = time.time()
-        self.log_content["error_type"] = str(error_code)
-        self.save_log(False)
-
-        if self.is_async:
-            self.notify_client(self.response_error(error_code, error_message))
-        else:
-            self.write(
-                json.dumps(self.response_error(error_code, error_message)))
-            self.finish()
-
     def on_donwload(self, tmp_file, ext, language, response):
         if response.error:
             self.handle_error(*ECODE.ERR_MEDIA_DOWNLOAD_FAILURE)
@@ -199,7 +185,8 @@ class TranscribeHandler(BaseHandler):
             self.media_id,
             self.addr,
             duration,
-            self.company_name,
+            self.session_manager.company.id,
+            self.client_id,
             self.requirement,
             language.split(","),
             self.service_providers,
@@ -301,17 +288,16 @@ class TranscribeHandler(BaseHandler):
         env = os.environ.get("PIPELINE_SERVICE_ENV")
         self.is_prod = (env == "production")
 
-        have_user, error = self.check_appinfo()
+        authenticated, error = self.authenticate()
 
         # Login failed
-        if not have_user:
+        if not authenticated:
             self.write(error)
             self.finish()
             return
 
         # On production, we limit dev options only to admin and editor
-        self.is_superuser = (not self.is_prod) or (
-            self.user_mgr.is_admin() or self.user_mgr.is_editor())
+        self.is_superuser = (not self.is_prod) or (not self.session_manager.is_client_company())
 
         addr = self.get_argument("addr", None)
         if addr == None:
@@ -332,15 +318,13 @@ class TranscribeHandler(BaseHandler):
         self.media_id = str(uuid.uuid4())
         self.language = self.get_argument("lan", "zh")
 
-        self.company_name = None
         if self.is_superuser:
-            self.company_name = self.get_argument("company", None)
+            self.client_id = self.get_argument("client_id", None)
+        else:
+            self.client_id = None
 
-        if not self.company_name:
-            current_user = self.user_mgr.current_user
-            self.company_name = current_user.get('company_name')
-
-        self.company_name = self.company_name.encode("utf8")
+        if not self.client_id:
+            self.client_id = self.session_manager.company.id
 
         if self.is_superuser:
             fragment_length_limit = self.get_argument("max_fragment_length", 10)

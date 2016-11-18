@@ -5,7 +5,6 @@ import uuid
 
 import leancloud
 
-
 # singleton instance
 class UserMgr(object):
     _instance = None
@@ -21,6 +20,7 @@ class UserMgr(object):
     def __init__(self):
         self.User = leancloud.User
         self.user_query = self.User.query
+        self.company = None
 
     def get_user(self, uid):
         try:
