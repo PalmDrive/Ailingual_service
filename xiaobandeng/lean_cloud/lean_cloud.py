@@ -98,7 +98,8 @@ class LeanCloud(object):
             requirement,
             language,
             service_provider,
-            transcript_sets=None,
+            transcript_sets,
+            caption_type,
     ):
         media = self.Media()
         media.set("media_id", media_id)
@@ -127,6 +128,8 @@ class LeanCloud(object):
 
         if not transcript_sets:
             media.set("transcript_sets", {"machine": 1})
+
+        media.set("caption_type", caption_type)
 
         self.media = media
         print 'added_media_id:%s' % media_id

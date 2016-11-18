@@ -1,32 +1,22 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
-
-from xiaobandeng.lean_cloud import lean_cloud
-
-from ..base import BaseHandler
+from .download_base import DownloadHandler
 
 
-class TextHandler(BaseHandler):
-    def get(self, media_id):
-        service_provider = self.get_argument("service_provider", "baidu")
+class TextHandler(DownloadHandler):
+    def handle(self, media, fragment_list, content_keys, sep, encoding):
 
-        lc = lean_cloud.LeanCloud()
-        all_transcript = lc.get_list(media_id=media_id)
-        media = lc.get_media(media_id)
-        content_key = "content_" + service_provider
-
-        if all_transcript:
-
+        if fragment_list:
+            content_key = content_keys[0]
             content = [transcript.get(content_key)[0] if transcript.get(
-                content_key) else "" for transcript in
-                       all_transcript]
+                content_key) else "" for transcript in fragment_list]
 
             filename = media.get("media_name")
             self.set_header("Content-Type", "application/octet-stream")
             self.set_header("Content-Disposition",
                             "attachment; filename=" + filename + ".txt")
-            self.write(''.join(content))
+            self.write((''.join(content)).encode(encoding))
             self.finish()
         else:
             self.write("not exist")

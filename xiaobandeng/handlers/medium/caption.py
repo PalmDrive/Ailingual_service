@@ -47,7 +47,7 @@ class CaptionHandler(BaseHandler):
                 content = transcript.get("content_baidu")[0]
                 if not content:
                     continue
-            except TypeError:
+            except TypeError, IndexError:
                 continue
             content = content.replace(u"。", u"，")
             content = content.replace(u"？", u"，")
@@ -60,6 +60,8 @@ class CaptionHandler(BaseHandler):
             text += content
 
         caption_content_list = text.split(u"，")
+        if caption_content_list[-1].strip() == "":
+            caption_content_list.pop()
 
         for content in caption_content_list:
             fragment_order, start_at, end_at, media_id, fragment_src, set_type = (
@@ -69,6 +71,7 @@ class CaptionHandler(BaseHandler):
 
             lc.add_transcription_to_fragment(index, content, "baidu")
             index += 1
+
 
         lc.fragments[0].set("start_at", 0.01)
         lc.save_fragments()
