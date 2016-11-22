@@ -1,31 +1,32 @@
 # coding:u8
 from ..base import BaseHandler
-from xiaobandeng.lean_cloud.user import UserMgr
 from ..error_code import ECODE
-
+import leancloud
+from xiaobandeng.lean_cloud.user import UserMgr
 
 class SetAppInfoHandler(BaseHandler):
     def post(self, *args, **kwargs):
-        uid = self.get_argument("uid")
-        mgr = UserMgr()
-        user = mgr.get_user(uid)
+        client_id = self.get_argument("client_id")
+        App = leancloud.Object.extend("App")
+        app_query = App.query
+        app_query.equal_to("objectId", client_id)
+        user = app_query.find()
+
         if not user:
             self.write(self.response_error(*ECODE.ERR_USER_NO_THAT_USER))
             self.finish()
             return
-        if user.get("app_id"):
+        else:
+            user = user[0]
+        if user.get("appId"):
             self.write(self.response_error(*ECODE.ERR_USER_HAVE_APP_INFO))
             self.finish()
             return
+        print user,'----'
+        mgr = UserMgr()
         app_info = mgr.create_app_info()
-        user.set("app_id", app_info[0])
-        user.set("app_key", app_info[1])
+        user.set("appId", app_info[0])
+        user.set("appKey", app_info[1])
         user.save()
 
-        res_data = {
-            "data": {"app_id": app_info[0],
-                     "app_key": app_info[1]
-            }
-        }
-
-        self.write(self.response_success(_append=res_data))
+        self.write(self.response_success())
