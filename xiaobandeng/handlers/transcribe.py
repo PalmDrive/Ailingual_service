@@ -298,7 +298,7 @@ class TranscribeHandler(BaseHandler):
 
         # On production, we limit dev options only to admin and editor
         self.is_superuser = (not self.is_prod) or (not self.session_manager.is_client_company())
-
+        print "is_super_user:..",self.is_superuser
         addr = self.get_argument("addr", None)
         if addr == None:
             self.write(self.error_missing_arg("addr"))
@@ -357,6 +357,8 @@ class TranscribeHandler(BaseHandler):
                 self.service_providers = ["google"]
             else:
                 self.service_providers = ["baidu"]
+
+        print 'self.service_providers:',self.service_providers
 
         if self.is_superuser:
             force_fragment_length = self.get_argument("force_fragment_length",

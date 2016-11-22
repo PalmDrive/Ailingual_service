@@ -54,7 +54,6 @@ class CaptionHandler(BaseHandler):
             content = content.replace(u"！", u"，")
             content = content.replace(u",", u"，")
             content = content.replace(u",", u"，")
-            content = content.replace(u".", u"，")
             content = content.replace(u"?", u"，")
             content = content.replace(u"!", u"，")
             text += content
