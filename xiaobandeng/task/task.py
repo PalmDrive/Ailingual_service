@@ -5,7 +5,6 @@ from __future__ import absolute_import
 import datetime
 import logging
 
-
 PENDING_TASKS = 0
 
 
@@ -39,7 +38,7 @@ class TaskGroup(object):
         task.set_group(self)
 
     def check_all(self):
-        #    called by task
+        # called by task
         if all([t.done for t in self.tasks]):
             self.complete()
 
@@ -82,4 +81,3 @@ class Task(object):
             self.completion_callback(self)
         if self._task_group:
             self._task_group.check_all()
-

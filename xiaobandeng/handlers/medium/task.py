@@ -8,21 +8,22 @@ from collections import defaultdict
 from xiaobandeng.handlers import constants
 
 
-class CreateEditorTaskHandler(BaseHandler):
-    def get(self, media_id):
+class EditorTask(object):
+    def __init__(self, media_id):
         self.media_id = media_id
 
         self.lc = lean_cloud.LeanCloud()
         self.media = self.lc.get_media(self.media_id)
+
+    def create(self):
         task_duration = 10 * 60
         start_time = 0
         task_order = 1
-        fragment = None
 
         self.copy_list = [u"校对"]
 
         while True:
-            fragment = self.lc.get_fragment_by_start_at(media_id,
+            fragment = self.lc.get_fragment_by_start_at(self.media_id,
                                                         start_time + task_duration)
             if fragment:
                 fragment = fragment[0]
@@ -50,13 +51,19 @@ class CreateEditorTaskHandler(BaseHandler):
 
         self.media.save()
         self.lc.save_tasks()
-        self.write(self.response_success())
+
 
     def add_task(self, order, start_at, end_at, task_type):
         self.lc.add_task(self.media, order, start_at, end_at,
                          self.media.get("media_name") + self.copy_list[
                              task_type] + u"{第" + str(
                              order) + u"段}", task_type)
+
+
+class CreateEditorTaskHandler(BaseHandler):
+    def get(self, media_id):
+        EditorTask(media_id).create()
+        self.write(self.response_success())
 
 
 class CreateTimelineTaskHandler(BaseHandler):

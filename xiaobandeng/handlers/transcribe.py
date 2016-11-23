@@ -21,6 +21,7 @@ import tornado.ioloop
 import tornado.web
 from concurrent.futures import ThreadPoolExecutor
 
+
 from xiaobandeng.ali_cloud import oss
 from xiaobandeng.lean_cloud import lean_cloud
 from xiaobandeng.medium import convertor
@@ -31,9 +32,9 @@ from xiaobandeng.transcribe import baidu
 from xiaobandeng.transcribe import google
 from xiaobandeng.transcribe.log import TranscriptionLog
 from xiaobandeng.task.task import increase_pending_task
+from xiaobandeng.handlers.medium.task import EditorTask
 from .base import BaseHandler
 from .error_code import ECODE
-
 
 def get_ext(url):
     """Return the filename extension from url, or ""."""
@@ -70,7 +71,7 @@ class TranscribeHandler(BaseHandler):
 
             results = task.result
             # logging.info(
-            #     u"transcript result of %s : %s, duration %f, end_at %f" %
+            # u"transcript result of %s : %s, duration %f, end_at %f" %
             #     (task.file_name, task.result, task.duration, end_at))
 
             # fragment_src = oss.media_fragment_url(
@@ -89,6 +90,8 @@ class TranscribeHandler(BaseHandler):
                 self.cloud_db.add_transcription_to_fragment(
                     task.order, result, task.source_name())
 
+        self.cloud_db.set_transcribe_status(2)
+
         # save all fragments
         self.cloud_db.save()
 
@@ -97,10 +100,15 @@ class TranscribeHandler(BaseHandler):
             self.upload_to_oss(self.media_id, task_group)
             self.cloud_db.batch_update_fragment_url()
 
-        #delete media dir
+        # delete media dir
         print 'deleting media clip dir...'
         shutil.rmtree(self.tmp_media_dir)
 
+        if self.create_editor_task:
+            EditorTask(self.media_id).create()
+            print 'editor_task is created..'
+
+        self.cloud_db.set_transcribe_status(3)
 
         if self.is_async:
             if self.client_callback_url:
@@ -108,6 +116,7 @@ class TranscribeHandler(BaseHandler):
             else:
                 self.log_content["notified_client"] = False
                 self.save_log(True)
+
         else:
             self.write(self.response_data())
             self.log_content["notified_client"] = False
@@ -179,27 +188,15 @@ class TranscribeHandler(BaseHandler):
             self.handle_error(*ECODE.ERR_MEDIA_UNSUPPORTED_FORMAT)
             return
 
-        self.cloud_db = lean_cloud.LeanCloud()
-        self.cloud_db.add_media(
-            self.media_name,
-            self.media_id,
-            self.addr,
-            duration,
-            self.session_manager.company.id,
-            self.client_id,
-            self.requirement,
-            language.split(","),
-            self.service_providers,
-            {"machine": 1},
-            self.caption_type
-        )
+        self.cloud_db.set_duration(duration)
+        self.cloud_db.set_transcribe_status(1)
 
         vad_aggressiveness = 2
 
         audio_dir, starts, is_voices, break_pause = vad.slice(
             vad_aggressiveness, wave_file_name)
 
-        #wave file name
+        # wave file name
         os.remove(wave_file_name)
         tmp_file.close()
         wav.close()
@@ -297,8 +294,9 @@ class TranscribeHandler(BaseHandler):
             return
 
         # On production, we limit dev options only to admin and editor
-        self.is_superuser = (not self.is_prod) or (not self.session_manager.is_client_company())
-        print "is_super_user:..",self.is_superuser
+        self.is_superuser = (not self.is_prod) or (
+        not self.session_manager.is_client_company())
+        print "is_super_user:..", self.is_superuser
         addr = self.get_argument("addr", None)
         if addr == None:
             self.write(self.error_missing_arg("addr"))
@@ -317,6 +315,12 @@ class TranscribeHandler(BaseHandler):
         self.media_name = media_name.encode("utf8")
         self.media_id = str(uuid.uuid4())
         self.language = self.get_argument("lan", "zh")
+        self.create_editor_task = self.get_argument("create_editor_task",
+                                                    "false")
+        if self.create_editor_task == "false":
+            self.create_editor_task = False
+        else:
+            self.create_editor_task = True
 
         if self.is_superuser:
             self.client_id = self.get_argument("client_id", None)
@@ -358,7 +362,7 @@ class TranscribeHandler(BaseHandler):
             else:
                 self.service_providers = ["baidu"]
 
-        print 'self.service_providers:',self.service_providers
+        print 'self.service_providers:', self.service_providers
 
         if self.is_superuser:
             force_fragment_length = self.get_argument("force_fragment_length",
@@ -395,6 +399,8 @@ class TranscribeHandler(BaseHandler):
         self.log_content["method"] = self.request.method
         self.log_content["headers"] = str(self.request.headers)
 
+
+
         if self.is_async:
             tornado.ioloop.IOLoop.current().add_callback(
                 self._handle, self.addr, self.language
@@ -403,7 +409,7 @@ class TranscribeHandler(BaseHandler):
                 self.response_success(
                     {
                         "data": {
-                        "media_id": self.media_id
+                            "media_id": self.media_id
                         }
                     }
                 )
@@ -427,3 +433,20 @@ class TranscribeHandler(BaseHandler):
                                                 tmp_file, ext, language),
                      connect_timeout=300,
                      request_timeout=600, )
+
+
+        self.cloud_db = lean_cloud.LeanCloud()
+        self.cloud_db.add_media(
+            self.media_name,
+            self.media_id,
+            self.addr,
+            0,
+            self.session_manager.company.id,
+            self.client_id,
+            self.requirement,
+            language.split(","),
+            self.service_providers,
+            {"machine": 1},
+            self.caption_type
+        )
+        self.cloud_db.save_media()
