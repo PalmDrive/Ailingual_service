@@ -121,6 +121,7 @@ class LeanCloud(object):
         media.set("assign_status", constants.LC_MEDIA_ASSIGN_STATUS_NONE)
         media.set("completion_status", 0)
         media.set("lan", language)
+        media.set("transcribe_status",0)
 
         if not service_provider:
             service_provider = []
@@ -136,6 +137,17 @@ class LeanCloud(object):
 
     def save_fragments(self):
         self.Fragment.save_all(self.fragments.values())
+
+    def save_media(self):
+        self.media.save()
+
+    def set_duration(self,duration):
+        self.media.set("duration",duration)
+        self.media.save()
+
+    def set_transcribe_status(self,status):
+        self.media.set("transcribe_status",status)
+        self.media.save()
 
     def save(self):
         # try:
