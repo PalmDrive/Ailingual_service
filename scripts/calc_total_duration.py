@@ -157,7 +157,11 @@ def turn_date(sec):
     d =datetime.timedelta(seconds=sec)
     return a+d-a
 
-print 'length:',len(name_list)
-print 'seconds',total
-print 'minutes',total/60.0
-print 'hour:',turn_date(total)
+s=""
+s+= 'length:%s'%len(name_list)
+s+= 'seconds:%s'%total
+s+= 'minutes:%s'%(total/60.0)
+s+= 'hour:%s'%turn_date(total)
+
+import os
+os.system("say +'"+s+"'")

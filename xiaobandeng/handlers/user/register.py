@@ -7,26 +7,29 @@ from xiaobandeng.lean_cloud.user import UserMgr
 class SetAppInfoHandler(BaseHandler):
     def post(self, *args, **kwargs):
         client_id = self.get_argument("client_id")
-        App = leancloud.Object.extend("App")
-        app_query = App.query
-        app_query.equal_to("objectId", client_id)
-        user = app_query.find()
 
-        if not user:
-            self.write(self.response_error(*ECODE.ERR_USER_NO_THAT_USER))
+        Company = leancloud.Object.extend("Company")
+        App = leancloud.Object.extend("App")
+        company_query = Company.query
+        company_query.equal_to("objectId", client_id)
+        company = company_query.find()
+
+        if not company:
+            self.write(self.response_error(*ECODE.ERR_COMPANY_NO_THAT_COMPANY))
             self.finish()
             return
         else:
-            user = user[0]
-        if user.get("appId"):
-            self.write(self.response_error(*ECODE.ERR_USER_HAVE_APP_INFO))
-            self.finish()
-            return
-        print user,'----'
+            company = company[0]
+
+        app = App()
+
+
         mgr = UserMgr()
         app_info = mgr.create_app_info()
-        user.set("appId", app_info[0])
-        user.set("appKey", app_info[1])
-        user.save()
+        app.set("appId", app_info[0])
+        app.set("appKey", app_info[1])
+
+        app.set("client",company)
+        app.save()
 
         self.write(self.response_success())
