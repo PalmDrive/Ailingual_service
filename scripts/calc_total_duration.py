@@ -151,6 +151,8 @@ for name in name_list:
     print media.get("duration")
     total+=media.get("duration")
 
+    media.set("company_name","网易云课堂")
+    media.save()
 
 def turn_date(sec):
     a=datetime.datetime(1970,1,1,0,0,0)
@@ -162,6 +164,7 @@ s+= 'length:%s'%len(name_list)
 s+= 'seconds:%s'%total
 s+= 'minutes:%s'%(total/60.0)
 s+= 'hour:%s'%turn_date(total)
+print s
 
 import os
-os.system("say +'"+s+"'")
+os.system("say ok")
