@@ -8,22 +8,22 @@ from collections import defaultdict
 from xiaobandeng.handlers import constants
 
 
-class CreateEditorTaskHandler(BaseHandler):
-    def get(self, media_id):
+class EditorTask(object):
+    def __init__(self, media_id):
         self.media_id = media_id
 
         self.lc = lean_cloud.LeanCloud()
         self.media = self.lc.get_media(self.media_id)
+
+    def create(self):
         task_duration = 10 * 60
         start_time = 0
         task_order = 1
-        fragment = None
 
-        # self.copy_list = [u"校对", u"检查"]
-        self.copy_list = [u"校对" ]
+        self.copy_list = [u"校对"]
 
         while True:
-            fragment = self.lc.get_fragment_by_start_at(media_id,
+            fragment = self.lc.get_fragment_by_start_at(self.media_id,
                                                         start_time + task_duration)
             if fragment:
                 fragment = fragment[0]
@@ -36,7 +36,7 @@ class CreateEditorTaskHandler(BaseHandler):
                     for i in range(len(self.copy_list)):
                         self.add_task(task_order, start_time,
                                       self.media.get("duration"), i)
-                #is first fragment and <10min
+                # is first fragment and <10min
                 else:
                     for i in range(len(self.copy_list)):
                         self.add_task(task_order, start_time,
@@ -47,11 +47,11 @@ class CreateEditorTaskHandler(BaseHandler):
             task_order += 1
 
         self.media.set("editor_task_count",
-                       task_order  * (len(self.copy_list)))
+                       task_order * (len(self.copy_list)))
 
         self.media.save()
         self.lc.save_tasks()
-        self.write(self.response_success())
+
 
     def add_task(self, order, start_at, end_at, task_type):
         self.lc.add_task(self.media, order, start_at, end_at,
@@ -59,6 +59,31 @@ class CreateEditorTaskHandler(BaseHandler):
                              task_type] + u"{第" + str(
                              order) + u"段}", task_type)
 
+
+class CreateEditorTaskHandler(BaseHandler):
+    def get(self, media_id):
+        EditorTask(media_id).create()
+        self.write(self.response_success())
+
+
+class CreateTimelineTaskHandler(BaseHandler):
+    def post(self, media_id):
+        self.media_id = media_id
+
+        self.lc = lean_cloud.LeanCloud()
+        self.media = self.lc.get_media(self.media_id)
+        task_order = 1
+
+        self.add_task(task_order, 0,
+                      self.media.get("duration"))
+
+        self.lc.save_tasks()
+        self.write(self.response_success())
+
+    def add_task(self, order, start_at, end_at):
+        self.lc.add_task(self.media, order, start_at, end_at,
+                         self.media.get("media_name") + u"对轴",
+                         2)  # task_type:对轴类型
 
 class BatchAssignUserHandler(BaseHandler):
     def post(self):

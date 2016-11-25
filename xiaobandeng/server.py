@@ -17,6 +17,7 @@ from xiaobandeng.handlers.medium.lrc import LrcHandler
 from xiaobandeng.handlers.medium.srt import SrtHandler
 from xiaobandeng.handlers.medium.caption import CaptionHandler
 from xiaobandeng.handlers.medium.task import CreateEditorTaskHandler
+from xiaobandeng.handlers.medium.task import CreateTimelineTaskHandler
 from xiaobandeng.handlers.medium.text import TextHandler
 
 from xiaobandeng.handlers.transcribe import TranscribeHandler
@@ -34,6 +35,7 @@ def make_app(use_autoreload):
                                        (r"/medium/(.*)/txt", TextHandler),
                                        (r"/medium/(.*)/caption", CaptionHandler),
                                        (r"/medium/(.*)/create_task", CreateEditorTaskHandler),
+                                       (r"/medium/(.*)/create_timeline_task", CreateTimelineTaskHandler),
                                        (r"/medium/bath_assign_user", BatchAssignUserHandler),
                                        (r"/user/set_app_info", SetAppInfoHandler),
                                        (r"/summarize", SummarizeHandler),

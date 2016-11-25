@@ -1,8 +1,5 @@
 # coding:utf8
 from __future__ import absolute_import
-import os, sys
-
-sys.path.append("/Users/lijim001/my_code/palmdrive/pipeline_service")
 
 from xiaobandeng.config import load_config
 from xiaobandeng.lean_cloud import init
