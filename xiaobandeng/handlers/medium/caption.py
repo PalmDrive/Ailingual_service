@@ -24,19 +24,6 @@ class CaptionHandler(BaseHandler):
                 self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
             return
 
-        # if media.get("is_copied"):
-        # self.write(self.response_success())
-        # return
-
-        # caption_media_id = str(uuid.uuid4())
-        # media.set("caption_media_id", caption_media_id)
-
-        # lc.add_media("copied__"+media.get("media_name"), caption_media_id,
-        # media.get("media_src"), media.get("duration"),
-        # media.get("company_name"), media.get("requirement"),
-        #              media.get("lan"), media.get("service_providers")
-        # )
-        # lc.media.set("is_copied",True)
         all_transcript = lc.get_list(media_id, transcript_set_to_set_type_map[
             transcript_set])
         index = 0
