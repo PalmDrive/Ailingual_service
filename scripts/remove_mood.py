@@ -120,7 +120,6 @@ name_list = [
     "1-2.6 类型转换.mp4",
     "1-2.5 优先级.mp4",
 ]
-id_name_map ={}
 
 total = 0
 for name in name_list:
@@ -148,8 +147,6 @@ for name in name_list:
 
     media = media_list[0]
     print media_name,
-    id_name_map[media.get("media_id")] = media_name
-
     print media.get("duration")
     total+=media.get("duration")
 
@@ -161,16 +158,12 @@ def turn_date(sec):
     d =datetime.timedelta(seconds=sec)
     return a+d-a
 
-import json
-
-print json.dumps(id_name_map)
-
-# s="\n"
-# s+= 'length:%s'%len(name_list)
+s="\n"
+s+= 'length:%s'%len(name_list)
 # s+= 'seconds:%s'%total
 # s+= 'minutes:%s'%(total/60.0)
 # s+= 'hour:%s'%turn_date(total)
-# print s
+print s
 
 import os
 os.system("say ok")
