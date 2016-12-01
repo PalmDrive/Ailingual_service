@@ -19,6 +19,7 @@ class DownloadHandler(BaseHandler):
 
         lc = lean_cloud.LeanCloud()
         media = lc.get_media(media_id)
+        self.media = media
         transcript_sets_map = media.get("transcript_sets")
 
         set_type_order = ["timestamp", "ut", "machine"]
@@ -41,8 +42,26 @@ class DownloadHandler(BaseHandler):
             sep = "\n"
             encoding = "utf8"
 
+        self.prepare_fragment_list(fragment_list)
+
         self.handle(media, fragment_list, content_keys, sep,
                     encoding)
 
+    def prepare_fragment_list(self, fragment_list):
 
+        company = self.media.get("creater")
+        company.fetch()
 
+        for fragment in fragment_list:
+            content = fragment.get("content_baidu", [""])[0]
+            # 对于网易云课堂的去掉语气助词
+            #啊|啦|唉|呢|吧|了|哇|呀|吗||哦|哈|哟|么
+            re_mood_words = u'\u554a|\u5566|\u5509|\u5462|\u5427|\u4e86|\u54c7|\u5440|\u5417|\u54e6|\u54c8|\u54df|\u4e48'
+
+            if company.get("name") == u"网易云课堂":
+                baidu_content = re.subn(re_mood_words, "", content)[0]
+                print '--'*20
+                print content
+                print baidu_content
+                print '--'*20
+            fragment.set("content_baidu", [baidu_content])
