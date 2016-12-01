@@ -49,7 +49,7 @@ class DownloadHandler(BaseHandler):
 
     def prepare_fragment_list(self, fragment_list):
 
-        company = self.media.get("creater")
+        company = self.media.get("client")
         company.fetch()
 
         for fragment in fragment_list:
