@@ -179,15 +179,8 @@ class LeanCloud(object):
             if fragment.get("fragment_src"):
                 fragments.append(fragment)
         if fragments:
-            # try:
-            # self.Fragment.save_all(fragments)
             for i in fragments:
                 i.save()
-                # except Exception as e:
-                # print e.code
-                # print e.error
-                # print '--------------'
-                # print 'updated fragments url'
 
     def get_list(self, media_id, set_type="machine"):
         total_data = []
