@@ -19,13 +19,15 @@ class CaptionHandler(BaseHandler):
         media = lc.get_media(media_id)
 
         transcript_sets = media.get("transcript_sets")
-        if transcript_sets.get("timestamp"):
-            self.write_error(
-                self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
+        set_name = transcript_set_to_set_type_map[transcript_set]
+        print "set_name:",set_name
+
+        if transcript_sets.get(set_name):
+            print ECODE.CAPTION_EXISTS_TRANSCRIPT
+            self.write(self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
             return
 
-        all_transcript = lc.get_list(media_id, transcript_set_to_set_type_map[
-            transcript_set])
+        all_transcript = lc.get_list(media_id, set_name)
         index = 0
 
         text = ""
