@@ -162,19 +162,16 @@ class LeanCloud(object):
         return self.editor_task_query.find()
 
     def save(self):
-        # try:
-        # batch save all fragments
         self.save_fragments()
-        relation = self.media.relation("containedTranscripts")
-        for fragment in self.fragments.values():
-            relation.add(fragment)
-        # save media
-        self.media.save()
-        # print "transcript and media saved to lean cloud"
-        # except leancloud.LeanCloudError as e:
-        # print e
-        # raise
 
+        values = self.fragments.values()
+        save_count = len(values) / 800
+
+        for i in range(save_count+1):
+            relation = self.media.relation("containedTranscripts")
+            for fragment in values[slice(i*800,(i+1)*800)]:
+                relation.add(fragment)
+            self.media.save()
 
     def batch_update_fragment_url(self):
         fragments = []

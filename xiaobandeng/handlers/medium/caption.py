@@ -22,7 +22,7 @@ class CaptionHandler(BaseHandler):
         set_name = transcript_set_to_set_type_map[transcript_set]
         print "set_name:",set_name
 
-        if transcript_sets.get(set_name):
+        if transcript_sets.get("timestamp"):
             print ECODE.CAPTION_EXISTS_TRANSCRIPT
             self.write(self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
             return
@@ -65,8 +65,6 @@ class CaptionHandler(BaseHandler):
         lc.save_fragments()
 
         transcript_sets["timestamp"] = 1
-
-        print transcript_sets
 
         media.set("transcript_sets", transcript_sets)
         media.save()
