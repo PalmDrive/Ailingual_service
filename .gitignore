@@ -5,6 +5,7 @@ xiaobandeng.iml
 env
 *.pyc
 xiaobandeng/nohup.out
+xiaobandeng/config
 xiaobandeng/config/staging.json
 xiaobandeng/config/production.json
 .idea/
