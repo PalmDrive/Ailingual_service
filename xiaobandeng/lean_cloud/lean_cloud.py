@@ -157,9 +157,9 @@ class LeanCloud(object):
         :param media_id:
         :return:
         '''
-        self.media_query.equal_to("media_id", media_id)
-        self.media_query.equal_to("task_type", task_type)
-        return self.media_query.find()
+        self.editor_task_query.equal_to("media_id", media_id)
+        self.editor_task_query.equal_to("task_type", task_type)
+        return self.editor_task_query.find()
 
     def save(self):
         # try:
