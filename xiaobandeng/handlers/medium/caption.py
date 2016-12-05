@@ -17,13 +17,15 @@ class CaptionHandler(BaseHandler):
         }
         lc = LeanCloud()
         media = lc.get_media(media_id)
-
         transcript_sets = media.get("transcript_sets")
+        transcript_sets["timestamp"] = 1
+        media.set("transcript_sets", transcript_sets)
+        media.save()
+
         set_name = transcript_set_to_set_type_map[transcript_set]
         print "set_name:",set_name
 
         if transcript_sets.get("timestamp"):
-            print ECODE.CAPTION_EXISTS_TRANSCRIPT
             self.write(self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
             return
 
@@ -60,14 +62,9 @@ class CaptionHandler(BaseHandler):
             lc.add_transcription_to_fragment(index, content, "baidu")
             index += 1
 
-
         lc.fragments[0].set("start_at", 0.01)
         lc.save_fragments()
 
-        transcript_sets["timestamp"] = 1
-
-        media.set("transcript_sets", transcript_sets)
-        media.save()
 
         self.write(self.response_success())
         self.finish()
