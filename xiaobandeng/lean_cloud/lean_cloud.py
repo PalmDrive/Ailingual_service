@@ -1,3 +1,4 @@
+#coding:utf8
 from __future__ import absolute_import
 
 import logging
@@ -10,6 +11,7 @@ CLASS_NAME_MEDIA = "Media"
 CLASS_NAME_CROWDSOURCINGTASK = "CrowdsourcingTask"
 CLASS_NAME_EDITORTASK = "EditorTask"
 CLASS_NAME_COMPANY = "Company"
+
 
 class LeanCloud(object):
     def __init__(self):
@@ -121,7 +123,7 @@ class LeanCloud(object):
         media.set("assign_status", constants.LC_MEDIA_ASSIGN_STATUS_NONE)
         media.set("completion_status", 0)
         media.set("lan", language)
-        media.set("transcribe_status",0)
+        media.set("transcribe_status", 0)
 
         if not service_provider:
             service_provider = []
@@ -141,13 +143,23 @@ class LeanCloud(object):
     def save_media(self):
         self.media.save()
 
-    def set_duration(self,duration):
-        self.media.set("duration",duration)
+    def set_duration(self, duration):
+        self.media.set("duration", duration)
         self.media.save()
 
-    def set_transcribe_status(self,status):
-        self.media.set("transcribe_status",status)
+    def set_transcribe_status(self, status):
+        self.media.set("transcribe_status", status)
         self.media.save()
+
+    def get_editor_task(self, media_id, task_type):
+        '''
+        获取 editorTask 指定类型的 任务
+        :param media_id:
+        :return:
+        '''
+        self.media_query.equal_to("media_id", media_id)
+        self.media_query.equal_to("task_type", task_type)
+        return self.media_query.find()
 
     def save(self):
         # try:
