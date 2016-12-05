@@ -73,9 +73,11 @@ class CreateTimelineTaskHandler(BaseHandler):
         self.lc = lean_cloud.LeanCloud()
         self.media = self.lc.get_media(self.media_id)
         task_order = 1
-
-        self.add_task(task_order, 0,
-                      self.media.get("duration"))
+        if self.lc.get_editor_task(media_id, constants.TASK_TYPE_TIMELINE):
+            self.write(self.response_success())
+            self.finish()
+            return
+        self.add_task(task_order, 0, self.media.get("duration"))
 
         self.lc.save_tasks()
         self.write(self.response_success())
@@ -83,7 +85,8 @@ class CreateTimelineTaskHandler(BaseHandler):
     def add_task(self, order, start_at, end_at):
         self.lc.add_task(self.media, order, start_at, end_at,
                          self.media.get("media_name") + u"对轴",
-                         2)  # task_type:对轴类型
+                         constants.TASK_TYPE_TIMELINE)  # task_type:对轴类型
+
 
 class BatchAssignUserHandler(BaseHandler):
     def post(self):
