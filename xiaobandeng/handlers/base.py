@@ -37,7 +37,8 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def options(self, *args, **kwargs):
         self.set_header("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
-
+        self.finish()
+        return
     def authenticate(self):
         self.session_manager = SessionMgr()
         app_id = self.request.headers.get("app_id", "")
