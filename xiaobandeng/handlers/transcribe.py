@@ -63,6 +63,7 @@ class TranscribeHandler(BaseHandler):
     def transcription_callback(self, task_group):
         # warn: this method will change task.result
         # punc_task_group(task_group)
+        logging.info("taskGroup callback <<<<<<<<<<<<<<<<<")
 
         for task in task_group.tasks:
             # for play
@@ -92,8 +93,11 @@ class TranscribeHandler(BaseHandler):
 
         self.cloud_db.set_transcribe_status(2)
 
+
+        logging.info("save media fragments >>>>>>>>>>>>>>")
         # save all fragments
         self.cloud_db.save()
+        logging.info("save media fragments <<<<<<<<<<<<<<")
 
         # Upload media clips to Aliyun OSS
         if self.upload_oss:
@@ -106,7 +110,7 @@ class TranscribeHandler(BaseHandler):
 
         if self.create_editor_task:
             EditorTask(self.media_id).create()
-            print 'editor_task is created..'
+            logging.info('editor_task is created..')
 
         self.cloud_db.set_transcribe_status(3)
 
@@ -175,6 +179,7 @@ class TranscribeHandler(BaseHandler):
         tmp_file.flush()
 
         try:
+            logging.info("convert_to_wav >>>>>>>>>")
             wave_file_name = convertor.convert_to_wav(tmp_file.name)
 
             wav = wave.open(wave_file_name, "rb")
@@ -182,25 +187,29 @@ class TranscribeHandler(BaseHandler):
 
             self.log_content["media_duration"] = duration
         except Exception:
-            logging.exception(
+            logging.error(
                 'exception caught in converting media type - ' + ext)
             traceback.print_exc()
             self.handle_error(*ECODE.ERR_MEDIA_UNSUPPORTED_FORMAT)
             return
+        logging.info("convert_to_wav  over<<<<<<<<<<<<")
 
         self.cloud_db.set_duration(duration)
         self.cloud_db.set_transcribe_status(1)
 
+        logging.info("vad slice >>>>>>>>>>>>>")
         vad_aggressiveness = 2
-
         audio_dir, starts, is_voices, break_pause = vad.slice(
             vad_aggressiveness, wave_file_name)
+
+        logging.info("vad slice over <<<<<<<<<<<<<<")
 
         # wave file name
         os.remove(wave_file_name)
         tmp_file.close()
         wav.close()
-        print 'removed temp file.'
+
+        print 'removed temp files.'
 
         starts, durations = preprocessor.preprocess_clip_length(
             audio_dir,
@@ -216,6 +225,8 @@ class TranscribeHandler(BaseHandler):
         self.tmp_media_dir = basedir
 
         # create a task group to organize transcription tasks
+        logging.info("creating taskGroup >>>>>>>>>")
+
         task_group = TaskGroup(self.transcription_callback)
         if "baidu" in self.service_providers:
             try:
