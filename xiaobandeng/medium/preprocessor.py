@@ -6,7 +6,7 @@ import wave
 
 def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_length=10,
                            force_preferred_length=False):
-    print('break pause: %f' % break_pause)
+    # print('break pause: %f' % break_pause)
     # length limit of audio for VOP api
     upper_length_limit = 30
     lower_length_limit = 1
@@ -53,8 +53,8 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
                 # print ('start processing clip %s duration %f, current total duration %f'
                 #        % (file_name, duration, clip_duration))
 
-                if not is_voices[i]:
-                    print('preprocessor----pause time: %f' % duration)
+                # if not is_voices[i]:
+                #     print('preprocessor----pause time: %f' % duration)
                 # if the current clip is a breaking pause (long enough), then break it
                 if (not is_voices[i]) \
                         and duration >= break_pause \
