@@ -69,7 +69,7 @@ def vad_collector(sample_rate, frame_duration_ms,
                 del voiced_frames[-len(ring_buffer):]
                 if len(voiced_frames) > 0:
                     duration = float(len(voiced_frames)*frame_duration_ms)/1000
-                    print "clip start %s , duration %s" % (clip_start, duration)
+                    # print "clip start %s , duration %s" % (clip_start, duration)
                     yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, duration
 
                 # start a voiced chunk
@@ -85,7 +85,7 @@ def vad_collector(sample_rate, frame_duration_ms,
                 # end a voiced chunk
                 sys.stdout.write('-(%s)' % (frame.timestamp + frame.duration))
                 duration = float(len(voiced_frames) * frame_duration_ms) / 1000
-                print "clip start %s , duration %s" % (clip_start, duration)
+                # print "clip start %s , duration %s" % (clip_start, duration)
                 yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, duration
 
                 # start a unvoiced chunk
@@ -97,7 +97,7 @@ def vad_collector(sample_rate, frame_duration_ms,
     sys.stdout.write('\n')
     if voiced_frames:
         duration = float(len(voiced_frames) * frame_duration_ms) / 1000
-        print "clip start %s , duration %s" % (clip_start, duration)
+        # print "clip start %s , duration %s" % (clip_start, duration)
         yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, duration
 
 
@@ -116,7 +116,7 @@ def slice(aggressive, filename):
     pause_durations = []
     for i, (segment, start, is_voice, duration) in enumerate(segments):
         path = dirpath + '/chunk-%d.wav' % i
-        print(' Writing %s' % (path,))
+        # print(' Writing %s' % (path,))
         write_wave(path, segment, sample_rate)
         starts.append(start)
         is_voices.append(is_voice)
@@ -126,7 +126,7 @@ def slice(aggressive, filename):
 
     pause_durations = sorted(pause_durations)
     break_pause = statistics.median(pause_durations)
-    print "calculated break pause %s" % break_pause
+    # print "calculated break pause %s" % break_pause
 
     if break_pause > 0.7:
         break_pause = 0.7
