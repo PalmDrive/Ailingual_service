@@ -50,11 +50,11 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
                 frames = f.getnframes()
                 rate = f.getframerate()
                 duration = frames / float(rate)
-                print ('start processing clip %s duration %f, current total duration %f'
-                       % (file_name, duration, clip_duration))
+                # print ('start processing clip %s duration %f, current total duration %f'
+                #        % (file_name, duration, clip_duration))
 
                 if not is_voices[i]:
-                    print('pause time: %f' % duration)
+                    print('preprocessor----pause time: %f' % duration)
                 # if the current clip is a breaking pause (long enough), then break it
                 if (not is_voices[i]) \
                         and duration >= break_pause \
@@ -65,9 +65,9 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
                         clip_starts.append(clip_start)
                         clip_durations.append(clip_duration)
                         outfile = out_file_path(audio_dir, output_count)
-                        print('break pause: combine %d clips into %s - clip_duration %f'
-                              % (clip_count, outfile, clip_duration))
-                        print('\nstart at %f end_at: %f\n' % (clip_start, clip_start + clip_duration))
+                        # print('break pause: combine %d clips into %s - clip_duration %f'
+                        #       % (clip_count, outfile, clip_duration))
+                        # print('\nstart at %f end_at: %f\n' % (clip_start, clip_start + clip_duration))
                         output_count += 1
                     clip_duration = 0
                     data = []
@@ -82,21 +82,21 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
 
                     if clip_count == 0:
                         clip_start = starts[i]
-                        print('clip start 1: %f' % clip_start)
+                        # print('clip start 1: %f' % clip_start)
                     clip_count += 1
                     if is_voices[i]:
                         voiced_clip_count += 1
-                    print (
-                        'added to the previous clip %s duration %f - total duration %f' % (
-                            file_name, duration, clip_duration))
+                    # print (
+                    #     'added to the previous clip %s duration %f - total duration %f' % (
+                    #         file_name, duration, clip_duration))
                 else:
                     if voiced_clip_count > 0:
                         write_previous_clip(audio_dir, output_count, data)
                         clip_starts.append(clip_start)
                         clip_durations.append(clip_duration)
                         outfile = out_file_path(audio_dir, output_count)
-                        print('combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
-                        print('\nstart at %f end_at: %f\n' % (clip_start, clip_start + clip_duration))
+                        # print('combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
+                        # print('\nstart at %f end_at: %f\n' % (clip_start, clip_start + clip_duration))
                         output_count += 1
                     clip_duration = 0
                     data = []
@@ -111,14 +111,14 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
                             extract_slice(f, outfile,
                                           long(j * duration / n * 1000),
                                           long((j + 1) * duration / n * 1000))
-                            print('slice audio %s into sub-audio %s' % (file_name, outfile))
+                            # print('slice audio %s into sub-audio %s' % (file_name, outfile))
                             clip_duration = duration / n
                             clip_start = starts[i] + j * clip_duration
                             clip_starts.append(clip_start)
                             clip_durations.append(clip_duration)
-                            print('clip start 3: %f' % (clip_start))
+                            # print('clip start 3: %f' % (clip_start))
                             output_count += 1
-                            print('\nstart at %f end_at: %f\n' % (clip_start, clip_start + duration))
+                            # print('\nstart at %f end_at: %f\n' % (clip_start, clip_start + duration))
                     else:
                         clip_duration += duration
                         data.append([f.getparams(), f.readframes(f.getnframes())])
@@ -126,7 +126,7 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
 
                         if clip_count == 0:
                             clip_start = starts[i]
-                            print('clip start 2: %f' % clip_start)
+                            # print('clip start 2: %f' % clip_start)
                         clip_count += 1
                         if is_voices[i]:
                             voiced_clip_count += 1
@@ -138,8 +138,8 @@ def preprocess_clip_length(audio_dir, starts, is_voices, break_pause, preferred_
         clip_starts.append(clip_start)
         clip_durations.append(clip_duration)
         outfile = out_file_path(audio_dir, output_count)
-        print('combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
-        print('\nstart at %f end_at: %f\n' % (clip_start, clip_start + clip_duration))
+        # print('combine %d clips into %s - clip_duration %f' % (clip_count, outfile, clip_duration))
+        # print('\nstart at %f end_at: %f\n' % (clip_start, clip_start + clip_duration))
 
     return clip_starts, clip_durations
 
