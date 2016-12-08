@@ -56,8 +56,8 @@ def vad_collector(sample_rate, frame_duration_ms,
     voiced_frames = []
     clip_start = 0.0
     for frame in frames:
-        sys.stdout.write(
-            '1' if vad.is_speech(frame.bytes, sample_rate) else '0')
+        # sys.stdout.write(
+        #     '1' if vad.is_speech(frame.bytes, sample_rate) else '0')
         voiced_frames.append(frame)
         ring_buffer.append(frame)
         if not triggered:
@@ -76,14 +76,14 @@ def vad_collector(sample_rate, frame_duration_ms,
                 triggered = True
                 voiced_frames = new_voiced_frames
                 clip_start = ring_buffer[0].timestamp
-                sys.stdout.write('+(%s)' % (clip_start,))
+                # sys.stdout.write('+(%s)' % (clip_start,))
                 ring_buffer.clear()
         else:
             num_unvoiced = len([f for f in ring_buffer
                                 if not vad.is_speech(f.bytes, sample_rate)])
             if num_unvoiced >= 0.4 * ring_buffer.maxlen:
                 # end a voiced chunk
-                sys.stdout.write('-(%s)' % (frame.timestamp + frame.duration))
+                # sys.stdout.write('-(%s)' % (frame.timestamp + frame.duration))
                 duration = float(len(voiced_frames) * frame_duration_ms) / 1000
                 # print "clip start %s , duration %s" % (clip_start, duration)
                 yield b''.join([f.bytes for f in voiced_frames]), clip_start, triggered, duration
@@ -94,7 +94,7 @@ def vad_collector(sample_rate, frame_duration_ms,
                 clip_start = frame.timestamp + frame.duration
                 ring_buffer.clear()
 
-    sys.stdout.write('\n')
+    # sys.stdout.write('\n')
     if voiced_frames:
         duration = float(len(voiced_frames) * frame_duration_ms) / 1000
         # print "clip start %s , duration %s" % (clip_start, duration)
