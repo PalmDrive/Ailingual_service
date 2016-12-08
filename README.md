@@ -127,27 +127,27 @@ Transcribe API:
 外包时transcribe接口需要传的参数：
     addr=
     media_name=
-    lan=
+    lan=zh
     client_id=
     requirement=字幕
     async=true
     max_fragment_length=10
     caption_type=editor
     create_editor_task=true
-    callback_url=http://url
+    callback_url=http://www.baidu.com
 
 众包时transcribe接口需要传的参数：
     addr=
     media_name=
-    lan=
     client_id=
+    lan=zh
     requirement=字幕
     async=true
     max_fragment_length=16
     caption_type=crowdsourcing
-    callback_url=http://url
+    callback_url=http://www.baidu.com
     upload_oss=true
-    force_fragment_length: true
+    force_fragment_length=true
 
 ```
 
