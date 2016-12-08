@@ -122,6 +122,32 @@ Transcribe API:
 @param (required) String: caption_type
     crowdsourcing/editor
     Default is editor.
+    
+    
+外包时transcribe接口需要传的参数：
+    addr=
+    media_name=
+    lan=
+    client_id=
+    requirement=字幕
+    async=true
+    max_fragment_length=10
+    caption_type=editor
+    create_editor_task=true
+    callback_url=http://url
+
+众包时transcribe接口需要传的参数：
+    addr=
+    media_name=
+    lan=
+    client_id=
+    requirement=字幕
+    async=true
+    max_fragment_length=16
+    caption_type=crowdsourcing
+    callback_url=http://url
+    upload_oss=true
+    force_fragment_length: true
 
 ```
 
