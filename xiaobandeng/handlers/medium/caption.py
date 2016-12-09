@@ -10,24 +10,28 @@ class CaptionHandler(BaseHandler):
     def post(self, media_id):
         transcript_set = self.get_argument("transcript_set", "1")
 
+
         transcript_set_to_set_type_map = {
             "1": "machine",
             "2": "ut",
             "3": "timestamp"
         }
+
         lc = LeanCloud()
         media = lc.get_media(media_id)
         transcript_sets = media.get("transcript_sets")
+
+        if transcript_sets.get("timestamp"):
+            self.write(self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
+            return
+
         transcript_sets["timestamp"] = 1
         media.set("transcript_sets", transcript_sets)
         media.save()
 
         set_name = transcript_set_to_set_type_map[transcript_set]
         print "set_name:",set_name
-
-        if transcript_sets.get("timestamp"):
-            self.write(self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
-            return
+        print
 
         all_transcript = lc.get_list(media_id, set_name)
         index = 0
@@ -64,7 +68,6 @@ class CaptionHandler(BaseHandler):
 
         lc.fragments[0].set("start_at", 0.01)
         lc.save_fragments()
-
 
         self.write(self.response_success())
         self.finish()
