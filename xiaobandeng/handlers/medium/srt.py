@@ -42,6 +42,8 @@ class SrtHandler(DownloadHandler):
                     content_list = fragment.get(content_key)
 
                     content = content_list[0] if content_list else ""
+                    if not content:
+                        continue
                     content = re.sub(u"[,，。?？!！]", " ", content)
                     content = content.replace(u'\xa0', " ")
                     self.write(content.encode(encoding))

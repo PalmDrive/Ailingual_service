@@ -110,9 +110,12 @@ class TranscribeHandler(BaseHandler):
 
         if self.create_editor_task:
             EditorTask(self.media_id).create()
-            logging.info('editor_task is created..')
+            logging.info('editor_task is created...')
+            self.cloud_db.set_transcribe_status(3)
 
-        self.cloud_db.set_transcribe_status(3)
+        else:
+            logging.info('editor_task not create...')
+
 
         if self.is_async:
             if self.client_callback_url:
