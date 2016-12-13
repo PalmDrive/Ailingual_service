@@ -231,11 +231,6 @@ class TranscribeHandler(BaseHandler):
         if "baidu" in self.service_providers:
             try:
                 lan = language
-                if self.is_prod:
-                    if "zh" in language.split(","):
-                        lan = "zh"
-                    else:
-                        raise Exception
                 baidu_speech_service = baidu.BaiduNLP()
                 baidu_tasks = baidu_speech_service.batch_vop_tasks(
                     file_list, starts, durations, lan)
@@ -247,11 +242,6 @@ class TranscribeHandler(BaseHandler):
         if "google" in self.service_providers:
             try:
                 lan = language
-                if self.is_prod:
-                    if "en" in language.split(","):
-                        lan = "en"
-                    else:
-                        raise Exception
                 google_speech_service = google.GoogleASR()
                 google_tasks = google_speech_service.batch_vop_tasks(
                     file_list, starts, durations, lan)
@@ -365,13 +355,7 @@ class TranscribeHandler(BaseHandler):
             self.service_providers = self.get_argument(
                 "service_providers", "baidu").split(",")
         else:
-            lans = self.language.split(",")
-            if len(lans) > 1:
-                self.service_providers = ["baidu", "google"]
-            elif "en" in lans:
-                self.service_providers = ["google"]
-            else:
-                self.service_providers = ["baidu"]
+            self.service_providers = ["baidu"]
 
         print 'self.service_providers:', self.service_providers
 
