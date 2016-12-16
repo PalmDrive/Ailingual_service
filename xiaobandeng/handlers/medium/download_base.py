@@ -22,7 +22,7 @@ class DownloadHandler(BaseHandler):
         self.media = media
         transcript_sets_map = media.get("transcript_sets")
 
-        set_type_order = ["timestamp", "ut", "machine"]
+        set_type_order = [ "ut","timestamp", "machine"]
 
         set_type_to_download = "machine"
         for set_type in set_type_order:
@@ -57,6 +57,8 @@ class DownloadHandler(BaseHandler):
             if company.get("name") == u"网易云课堂":
                 # 对于网易云课堂的去掉语气助词
                 #啊|啦|唉|呢|吧|了|哇|呀|吗||哦|哈|哟|么
-                re_mood_words = u'\u554a|\u5566|\u5509|\u5462|\u5427|\u4e86|\u54c7|\u5440|\u5417|\u54e6|\u54c8|\u54df|\u4e48'
+                # re_mood_words = u'\u554a|\u5566|\u5509|\u5462|\u5427|\u4e86|\u54c7|\u5440|\u5417|\u54e6|\u54c8|\u54df|\u4e48'
+                #啊|啦|唉|呢|吧|哇|呀|吗|哦|哈|哟
+                re_mood_words = u'\u554a|\u5566|\u5509|\u5462|\u5427|\u54c7|\u5440|\u5417|\u54e6|\u54c8|\u54df'
                 baidu_content = re.subn(re_mood_words, "", content)[0]
                 fragment.set("content_baidu", [baidu_content])
