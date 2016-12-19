@@ -22,7 +22,7 @@ class DownloadHandler(BaseHandler):
         self.media = media
         transcript_sets_map = media.get("transcript_sets")
 
-        set_type_order = [ "ut","timestamp", "machine"]
+        set_type_order = [ "timestamp", "ut", "machine"]
 
         set_type_to_download = "machine"
         for set_type in set_type_order:
