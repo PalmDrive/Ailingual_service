@@ -42,7 +42,7 @@ class TaskBaidu(TranscriptionTask):
 
     def start(self):
         try:
-            logging.info('start baidu vop on %s' % self.file_name)
+            # logging.info('start baidu vop on %s' % self.file_name)
             self.fetch(self.url)
         except Exception as e:
             logging.exception(

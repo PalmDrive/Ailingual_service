@@ -395,7 +395,6 @@ class TranscribeHandler(BaseHandler):
         self.log_content["headers"] = str(self.request.headers)
 
 
-
         if self.is_async:
             tornado.ioloop.IOLoop.current().add_callback(
                 self._handle, self.addr, self.language
@@ -427,7 +426,7 @@ class TranscribeHandler(BaseHandler):
                      callback=functools.partial(self.on_donwload,
                                                 tmp_file, ext, language),
                      connect_timeout=300,
-                     request_timeout=600, )
+                     request_timeout=600,)
 
 
         self.cloud_db = lean_cloud.LeanCloud()
