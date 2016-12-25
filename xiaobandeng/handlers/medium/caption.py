@@ -9,7 +9,7 @@ from ..error_code import ECODE
 class CaptionHandler(BaseHandler):
     def post(self, media_id):
         transcript_set = self.get_argument("transcript_set", "1")
-
+        timeline_task_id = self.get_argument("timeline_task_id")
 
         transcript_set_to_set_type_map = {
             "1": "machine",
@@ -20,22 +20,26 @@ class CaptionHandler(BaseHandler):
         lc = LeanCloud()
         media = lc.get_media(media_id)
         transcript_sets = media.get("transcript_sets")
-
-        if transcript_sets.get("timestamp"):
-            self.write(self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
-            return
-
         transcript_sets["timestamp"] = 1
         media.set("transcript_sets", transcript_sets)
         media.save()
 
-        set_name = transcript_set_to_set_type_map[transcript_set]
-        print "set_name:",set_name
-        print
+        set_type = transcript_set_to_set_type_map[transcript_set]
+        print "timeline from type :", set_type
 
-        all_transcript = lc.get_list(media_id, set_name)
+        timeline_task = lc.get_editor_task(timeline_task_id)
+
+        called = timeline_task.get("created_transcript", "no")
+        if called == "yes":
+            self.write(self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
+            return
+
+        timeline_task.set("created_transcript", "yes")
+        timeline_task.save()
+
+        all_transcript = lc.get_transcript_list_by_timeline_task(timeline_task,
+                                                      set_type)
         index = 0
-
         text = ""
         for transcript in all_transcript:
             try:
@@ -66,7 +70,7 @@ class CaptionHandler(BaseHandler):
             lc.add_transcription_to_fragment(index, content, "baidu")
             index += 1
 
-        lc.fragments[0].set("start_at", 0.01)
+        lc.fragments[0].set("start_at", timeline_task.get("start_at")+0.01)
         lc.save_fragments()
 
         self.write(self.response_success())

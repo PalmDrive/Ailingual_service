@@ -1,4 +1,4 @@
-#coding:utf8
+# coding:utf8
 from __future__ import absolute_import
 
 import logging
@@ -33,7 +33,7 @@ class LeanCloud(object):
 
     def set_fragment(
             self, fragment_order, start_at, end_at, media_id, fragment_src,
-            set_type="machine"
+            set_type="machine", task_id=""
     ):
         if fragment_order in self.fragments:
             return
@@ -45,8 +45,10 @@ class LeanCloud(object):
         fragment.set("end_at", end_at)
         fragment.set("fragment_src", fragment_src)
         fragment.set("set_type", set_type)
+        fragment.set("task_id", task_id)
 
         self.fragments[fragment_order] = fragment
+        return fragment
 
     def set_fragment_src(self, fragment, src):
         fragment.set("fragment_src", src)
@@ -151,15 +153,34 @@ class LeanCloud(object):
         self.media.set("transcribe_status", status)
         self.media.save()
 
-    def get_editor_task(self, media_id, task_type):
+    def get_timeline_task(self, proof_task_id):
         '''
-        获取 editorTask 指定类型的 任务
-        :param media_id:
+        获取 timeline 指定类型的 任务
+        :param task_id: 校对任务 id
         :return:
         '''
-        self.editor_task_query.equal_to("media_id", media_id)
-        self.editor_task_query.equal_to("task_type", task_type)
-        return self.editor_task_query.find()
+        self.editor_task_query = self.EditorTask.query
+
+        self.editor_task_query.equal_to("proof_task_id", proof_task_id)
+        task_list = self.editor_task_query.find()
+        if task_list:
+            return task_list[0]
+        else:
+            return None
+
+    def get_editor_task(self, task_id):
+        '''
+        :param task_id: 任务 id
+        :return:
+        '''
+        self.editor_task_query = self.EditorTask.query
+
+        self.editor_task_query.equal_to("objectId", task_id)
+        task_list = self.editor_task_query.find()
+        if task_list:
+            return task_list[0]
+        else:
+            return None
 
     def save(self):
         self.save_fragments()
@@ -167,9 +188,9 @@ class LeanCloud(object):
         values = self.fragments.values()
         save_count = len(values) / 800
 
-        for i in range(save_count+1):
+        for i in range(save_count + 1):
             relation = self.media.relation("containedTranscripts")
-            for fragment in values[slice(i*800,(i+1)*800)]:
+            for fragment in values[slice(i * 800, (i + 1) * 800)]:
                 relation.add(fragment)
             self.media.save()
 
@@ -189,6 +210,42 @@ class LeanCloud(object):
             query = self.fragment_query.equal_to("media_id", media_id)
             query.add_ascending("start_at")
             query.equal_to("set_type", set_type)
+
+            if start:
+                start_at = start.get("start_at")
+            else:
+                start_at = 0
+
+            query.greater_than("start_at", start_at)
+            query.limit(800)
+            result = query.find()
+            total_data.extend(result)
+
+            if len(result) == 800:
+                start = result[-1]
+                batch_fetch(start)
+            else:
+                return
+
+        batch_fetch(0)
+
+        logging.info("fetched :%s" % len(total_data))
+        return total_data
+
+    def get_transcript_list_by_timeline_task(self, timeline_task,
+                                             set_type="machine"):
+        total_data = []
+        media_id = timeline_task.get("media_id")
+        task_start_at = timeline_task.get("start_at")
+        task_end_at = timeline_task.get("end_at")
+
+        def batch_fetch(start):
+            query = self.fragment_query.equal_to("media_id", media_id)
+            query.add_ascending("start_at")
+            query.equal_to("set_type", set_type)
+
+            query.greater_than_or_equal_to("start_at", task_start_at)
+            query.less_than_or_equal_to("start_at", task_end_at)
 
             if start:
                 start_at = start.get("start_at")
@@ -232,6 +289,7 @@ class LeanCloud(object):
         task.set("name", task_name)
         task.set("task_type", task_type)
         self.tasks.append(task)
+        return task
 
     def get_fragment_by_start_at(self, media_id, start_at):
         self.fragment_query.greater_than_or_equal_to("start_at", start_at)

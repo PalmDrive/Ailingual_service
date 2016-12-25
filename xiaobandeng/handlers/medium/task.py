@@ -59,12 +59,10 @@ class EditorTask(object):
                              task_type] + u"{第" + str(
                              order) + u"段}", task_type)
 
-
 class CreateEditorTaskHandler(BaseHandler):
     def get(self, media_id):
         EditorTask(media_id).create()
         self.write(self.response_success())
-
 
 class CreateTimelineTaskHandler(BaseHandler):
     def post(self, media_id):
@@ -72,21 +70,35 @@ class CreateTimelineTaskHandler(BaseHandler):
 
         self.lc = lean_cloud.LeanCloud()
         self.media = self.lc.get_media(self.media_id)
-        task_order = 1
-        if self.lc.get_editor_task(media_id, constants.TASK_TYPE_TIMELINE):
+
+        proof_task_id = self.get_body_argument("proof_task_id")
+        timeline_task = self.lc.get_timeline_task(proof_task_id)
+        if timeline_task:
             self.write(self.response_success())
             self.finish()
             return
-        self.add_task(task_order, 0, self.media.get("duration"))
 
-        self.lc.save_tasks()
+        proof_task = self.lc.get_editor_task(proof_task_id)
+
+        self.add_timeline_task(proof_task)
         self.write(self.response_success())
 
-    def add_task(self, order, start_at, end_at):
-        self.lc.add_task(self.media, order, start_at, end_at,
-                         self.media.get("media_name") + u"对轴",
-                         constants.TASK_TYPE_TIMELINE)  # task_type:对轴类型
+    def add_timeline_task(self, proof_task):
+        """
+        增加一个对轴类型任务
+        :param proof_task: 校对任务
+        :return: None
+        """
+        proof_task_id = proof_task.id
+        order = proof_task.get("task_order")
+        start_at = proof_task.get("start_at")
+        end_at = proof_task.get("end_at")
 
+        task = self.lc.add_task(self.media, order, start_at, end_at,
+                         self.media.get("media_name") + u"对轴"+u"{第" + str(order) + u"段}",
+                         constants.TASK_TYPE_TIMELINE)  # task_type:对轴类型
+        task.set("proof_task_id", proof_task_id)  # set proof task id
+        task.save()
 
 class BatchAssignUserHandler(BaseHandler):
     def post(self):
