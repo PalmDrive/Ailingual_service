@@ -65,7 +65,7 @@ class CaptionHandler(BaseHandler):
             fragment_order, start_at, end_at, media_id, fragment_src, set_type = (
                 index, 0.00, 0.00, media_id, "", "timestamp")
             lc.set_fragment(fragment_order, start_at, end_at, media_id,
-                            fragment_src, set_type)
+                            fragment_src, set_type,timeline_task_id)
 
             lc.add_transcription_to_fragment(index, content, "baidu")
             index += 1
