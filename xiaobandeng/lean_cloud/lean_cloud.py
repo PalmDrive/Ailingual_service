@@ -104,6 +104,7 @@ class LeanCloud(object):
             service_provider,
             transcript_sets,
             caption_type,
+            fields
     ):
         media = self.Media()
         media.set("media_id", media_id)
@@ -126,6 +127,7 @@ class LeanCloud(object):
         media.set("completion_status", 0)
         media.set("lan", language)
         media.set("transcribe_status", 0)
+        media.set("fields", fields)
 
         if not service_provider:
             service_provider = []

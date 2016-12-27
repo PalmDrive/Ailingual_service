@@ -21,7 +21,6 @@ import tornado.ioloop
 import tornado.web
 from concurrent.futures import ThreadPoolExecutor
 
-
 from xiaobandeng.ali_cloud import oss
 from xiaobandeng.lean_cloud import lean_cloud
 from xiaobandeng.medium import convertor
@@ -35,6 +34,7 @@ from xiaobandeng.task.task import increase_pending_task
 from xiaobandeng.handlers.medium.task import EditorTask
 from .base import BaseHandler
 from .error_code import ECODE
+
 
 def get_ext(url):
     """Return the filename extension from url, or ""."""
@@ -73,7 +73,7 @@ class TranscribeHandler(BaseHandler):
             results = task.result
             # logging.info(
             # u"transcript result of %s : %s, duration %f, end_at %f" %
-            #     (task.file_name, task.result, task.duration, end_at))
+            # (task.file_name, task.result, task.duration, end_at))
 
             # fragment_src = oss.media_fragment_url(
             # self.media_id, task.file_name
@@ -92,7 +92,6 @@ class TranscribeHandler(BaseHandler):
                     task.order, result, task.source_name())
 
         self.cloud_db.set_transcribe_status(2)
-
 
         logging.info("save media fragments >>>>>>>>>>>>>>")
         # save all fragments
@@ -296,7 +295,7 @@ class TranscribeHandler(BaseHandler):
 
         # On production, we limit dev options only to admin and editor
         self.is_superuser = (not self.is_prod) or (
-        not self.session_manager.is_client_company())
+            not self.session_manager.is_client_company())
         print "is_super_user:..", self.is_superuser
         addr = self.get_argument("addr", None)
         if addr == None:
@@ -341,6 +340,8 @@ class TranscribeHandler(BaseHandler):
 
         self.requirement = self.get_argument("requirement",
                                              u"字幕,纯文本,关键词,摘要").split(",")
+        self.media_fields = self.get_argument("fields", "")
+        self.media_fields = self.media_fields.split(",")
 
         if self.is_superuser:
             upload_oss = self.get_argument("upload_oss", False)
@@ -394,7 +395,6 @@ class TranscribeHandler(BaseHandler):
         self.log_content["method"] = self.request.method
         self.log_content["headers"] = str(self.request.headers)
 
-
         if self.is_async:
             tornado.ioloop.IOLoop.current().add_callback(
                 self._handle, self.addr, self.language
@@ -426,8 +426,7 @@ class TranscribeHandler(BaseHandler):
                      callback=functools.partial(self.on_donwload,
                                                 tmp_file, ext, language),
                      connect_timeout=300,
-                     request_timeout=600,)
-
+                     request_timeout=600, )
 
         self.cloud_db = lean_cloud.LeanCloud()
         self.cloud_db.add_media(
@@ -441,6 +440,7 @@ class TranscribeHandler(BaseHandler):
             language.split(","),
             self.service_providers,
             {"machine": 1},
-            self.caption_type
+            self.caption_type,
+            self.media_fields,
         )
         self.cloud_db.save_media()
