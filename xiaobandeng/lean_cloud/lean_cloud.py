@@ -33,7 +33,7 @@ class LeanCloud(object):
 
     def set_fragment(
             self, fragment_order, start_at, end_at, media_id, fragment_src,
-            set_type="machine", task_id=""
+            set_type="machine", task_id="",
     ):
         if fragment_order in self.fragments:
             return
@@ -57,7 +57,7 @@ class LeanCloud(object):
             self, fragment_order, content, source_name
     ):
         # this fragment_order is the task_order
-        # is the task index in task_group.tasks
+        # or the task index in task_group.tasks
 
         fragment = self.fragments[fragment_order]
         if fragment:
@@ -69,7 +69,7 @@ class LeanCloud(object):
             fragment.set(key, content_array)
 
     def add_crowdsourcing_task(
-            self, media_id, fragment_id, fragment_order
+            self, media_id, fragment_id, fragment_order,fields
     ):
         crowdsourcing_task = self.CrowdSourcingTask()
         crowdsourcing_task.set("media_id", media_id)
@@ -77,14 +77,16 @@ class LeanCloud(object):
         crowdsourcing_task.set("fragment_order", fragment_order)
         crowdsourcing_task.set("status", 0)
         crowdsourcing_task.set("fragment_type", "Transcript")
+        crowdsourcing_task.set("fields", fields)
         self.crowdsourcing_tasks.append(crowdsourcing_task)
 
-    def batch_create_crowdsourcing_tasks(self, task_group):
+    def batch_create_crowdsourcing_tasks(self, task_group, fields):
         for fragment_order, fragment in self.fragments.iteritems():
             if task_group.tasks[fragment_order].on_oss:
                 self.add_crowdsourcing_task(fragment.get("media_id"),
                                             fragment.id,
-                                            fragment_order)
+                                            fragment_order,
+                                            fields)
             else:
                 print "warnx:\n media id:%s, fragment no url fragment order is:%s" % (
                     self.media.get("media_id"), fragment_order)

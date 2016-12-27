@@ -57,7 +57,7 @@ class TranscribeHandler(BaseHandler):
         oss.upload(media_id, task_group, self.cloud_db)
 
         logging.info("-----upload oss over-------")
-        self.cloud_db.batch_create_crowdsourcing_tasks(task_group)
+        self.cloud_db.batch_create_crowdsourcing_tasks(task_group, self.media_fields)
         logging.info("-----create crowdsourcing tasks over-------")
 
     def transcription_callback(self, task_group):
@@ -85,7 +85,7 @@ class TranscribeHandler(BaseHandler):
                 task.start_time,
                 end_at,
                 self.media_id,
-                "")
+                "", "machine", "", )
 
             for result in results:
                 self.cloud_db.add_transcription_to_fragment(
