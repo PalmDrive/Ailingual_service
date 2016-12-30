@@ -49,13 +49,12 @@ class DownloadHandler(BaseHandler):
 
         company = self.media.get("client")
         company.fetch()
-        last = fragment_list[-1]
 
         for fragment in fragment_list:
             if not fragment.get("end_at") or fragment.get("start_at"):
                 self.response_error(*ECODE.DOWNLOAD_TRANSCRIPT_TIME_ZERO)
                 self.finish()
-                return
+                return False
 
             index = fragment_list.index(fragment_list)
             if index:
@@ -67,7 +66,7 @@ class DownloadHandler(BaseHandler):
                 if (not cur_end_at > cur_start_at) or (cur_start_at < prev_end_at):
                     self.response_error(*ECODE.DOWNLOAD_TRANSCRIPT_TIME_OVERLAPPERD)
                     self.finish()
-                    return
+                    return False
 
             content = fragment.get("content_baidu", [""])[0]
             if company.get("name") == u"网易云课堂":
