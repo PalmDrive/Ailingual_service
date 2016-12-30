@@ -5,7 +5,7 @@ from __future__ import absolute_import
 import re
 import datetime
 from xiaobandeng.lean_cloud import lean_cloud
-
+from xiaobandeng.handlers.error_code import ECODE
 from ..base import BaseHandler
 
 
@@ -21,7 +21,6 @@ class DownloadHandler(BaseHandler):
         media = lc.get_media(media_id)
         self.media = media
         transcript_sets_map = media.get("transcript_sets")
-
         set_type_order = [ "timestamp", "ut", "machine"]
 
         set_type_to_download = "machine"
@@ -43,7 +42,6 @@ class DownloadHandler(BaseHandler):
             encoding = "utf8"
 
         self.prepare_fragment_list(fragment_list)
-
         self.handle(media, fragment_list, content_keys, sep,
                     encoding)
 
@@ -51,8 +49,26 @@ class DownloadHandler(BaseHandler):
 
         company = self.media.get("client")
         company.fetch()
+        last = fragment_list[-1]
 
         for fragment in fragment_list:
+            if not fragment.get("end_at") or fragment.get("start_at"):
+                self.response_error(*ECODE.DOWNLOAD_TRANSCRIPT_TIME_ZERO)
+                self.finish()
+                return
+
+            index = fragment_list.index(fragment_list)
+            if index:
+                prev = fragment_list[index -1]
+                prev_end_at = prev.get("end_at")
+                cur_start_at = fragment.get("start_at")
+                cur_end_at = fragment.get("end_at")
+
+                if (not cur_end_at > cur_start_at) or (cur_start_at < prev_end_at):
+                    self.response_error(*ECODE.DOWNLOAD_TRANSCRIPT_TIME_OVERLAPPERD)
+                    self.finish()
+                    return
+
             content = fragment.get("content_baidu", [""])[0]
             if company.get("name") == u"网易云课堂":
                 # 对于网易云课堂的去掉语气助词

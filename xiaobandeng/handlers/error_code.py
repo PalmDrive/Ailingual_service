@@ -14,5 +14,12 @@ ECODE.ERR_USER_APP_ID_APP_KEY_NOT_MATCH = (200004,"app_key or appid not match")
 ECODE.ERR_COMPANY_NO_THAT_COMPANY = (200002, "company not found")
 
 #transcript
-#200500-200500
+#200500-200600
 ECODE.CAPTION_EXISTS_TRANSCRIPT = (200500, "media exists timestamp transcript")
+
+
+
+#download
+##200600-200700
+ECODE.DOWNLOAD_TRANSCRIPT_TIME_ZERO = (200601,"transcript zero time")
+ECODE.DOWNLOAD_TRANSCRIPT_TIME_OVERLAPPERD = (200602,"transcript  time overlapped")
