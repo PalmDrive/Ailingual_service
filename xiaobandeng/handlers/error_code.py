@@ -4,6 +4,7 @@ ECODE = type("ErrorCode", (), {})()
 # media
 ECODE.ERR_MEDIA_DOWNLOAD_FAILURE = (100003, "Media download error or timeout. Check your media address.")
 ECODE.ERR_MEDIA_UNSUPPORTED_FORMAT = (100004, "Media's format is unsupported. Check your media format.")
+ECODE.ERR_MEDIA_NOT_CBR = (100004, "Media is biterate mode is not CBR. Check your media")
 
 # user
 # 200000-200100

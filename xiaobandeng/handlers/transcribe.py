@@ -20,7 +20,8 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 from concurrent.futures import ThreadPoolExecutor
-
+import mutagen
+import mutagen.mp3
 from xiaobandeng.ali_cloud import oss
 from xiaobandeng.lean_cloud import lean_cloud
 from xiaobandeng.medium import convertor
@@ -177,6 +178,14 @@ class TranscribeHandler(BaseHandler):
         tmp_file.write(response.body)
         tmp_file.flush()
 
+        if ext == 'mp3':
+            mp3file = mutagen.File(tmp_file.name)
+            if mp3file.info.bitrate_mode != mutagen.mp3.BitrateMode.CBR:
+
+                self.handle_error(*ECODE.ERR_MEDIA_NOT_CBR)
+                self.finish()
+                return
+
         try:
             logging.info("convert_to_wav >>>>>>>>>")
             wave_file_name = convertor.convert_to_wav(tmp_file.name)
@@ -296,7 +305,7 @@ class TranscribeHandler(BaseHandler):
         # On production, we limit dev options only to admin and editor
         self.is_superuser = (not self.is_prod) or (
             not self.session_manager.is_client_company())
-        print "is_super_user:..", self.is_superuser
+        print "is_super_user?:..", self.is_superuser
         addr = self.get_argument("addr", None)
         if addr == None:
             self.write(self.error_missing_arg("addr"))
