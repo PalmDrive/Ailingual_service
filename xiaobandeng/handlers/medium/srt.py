@@ -44,9 +44,16 @@ class SrtHandler(DownloadHandler):
                     content = content_list[0] if content_list else ""
                     content = re.sub(u"[,，。?？!！]", " ", content)
                     content = content.replace(u'\xa0', " ")
-                    self.write(content.encode(encoding))
-                    self.write(sep)
+                    try:
+                        self.write(content.encode(encoding))
+                    except UnicodeEncodeError:
+                        for i in content:
+                            try:
+                                self.write(i.encode(encoding))
+                            except UnicodeEncodeError:
+                                self.write(i)
 
+                    self.write(sep)
                 self.write(sep)
             self.finish()
 

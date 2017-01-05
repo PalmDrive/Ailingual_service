@@ -24,3 +24,4 @@ ECODE.CAPTION_EXISTS_TRANSCRIPT = (200500, "media exists timestamp transcript")
 ##200600-200700
 ECODE.DOWNLOAD_TRANSCRIPT_TIME_ZERO = (200601,"transcript zero time")
 ECODE.DOWNLOAD_TRANSCRIPT_TIME_OVERLAPPERD = (200602,"transcript  time overlapped")
+ECODE.DOWNLOAD_TRANSCRIPT_ERROR = (200602,"transcript download error.")
