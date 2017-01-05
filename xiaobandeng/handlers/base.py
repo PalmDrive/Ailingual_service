@@ -82,7 +82,7 @@ class BaseHandler(tornado.web.RequestHandler):
         return True
 
 
-    def response_error(self, code, error):
+    def response_error(self, code, error,body={}):
         data = {
             "status": "failure",
             "error": {
@@ -91,6 +91,7 @@ class BaseHandler(tornado.web.RequestHandler):
             }
         }
 
+        data["error"].update(body)
         return data
 
     def response_success(self, _append={}):
