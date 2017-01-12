@@ -6,6 +6,7 @@ from xiaobandeng.lean_cloud.task import LcTask
 from xiaobandeng.handlers.error_code import ECODE
 from collections import defaultdict
 from xiaobandeng.handlers import constants
+from xiaobandeng.lean_cloud.utils import loop_until_return
 
 
 class EditorTask(object):
@@ -23,8 +24,9 @@ class EditorTask(object):
         self.copy_list = [u"校对"]
 
         while True:
-            fragment = self.lc.get_fragment_by_start_at(self.media_id,
-                                                        start_time + task_duration)
+            fragment = loop_until_return(5, self.lc.get_fragment_by_start_at,
+                                         self.media_id,
+                                         start_time + task_duration)
             if fragment:
                 fragment = fragment[0]
                 for i in range(len(self.copy_list)):
@@ -59,10 +61,12 @@ class EditorTask(object):
                              task_type] + u"{第" + str(
                              order) + u"段}", task_type)
 
+
 class CreateEditorTaskHandler(BaseHandler):
     def get(self, media_id):
         EditorTask(media_id).create()
         self.write(self.response_success())
+
 
 class CreateTimelineTaskHandler(BaseHandler):
     def post(self, media_id):
@@ -95,10 +99,13 @@ class CreateTimelineTaskHandler(BaseHandler):
         end_at = proof_task.get("end_at")
 
         task = self.lc.add_task(self.media, order, start_at, end_at,
-                         self.media.get("media_name") + u"对轴"+u"{第" + str(order) + u"段}",
-                         constants.TASK_TYPE_TIMELINE)  # task_type:对轴类型
+                                self.media.get(
+                                    "media_name") + u"对轴" + u"{第" + str(
+                                    order) + u"段}",
+                                constants.TASK_TYPE_TIMELINE)  # task_type:对轴类型
         task.set("proof_task_id", proof_task_id)  # set proof task id
         task.save()
+
 
 class BatchAssignUserHandler(BaseHandler):
     def post(self):
