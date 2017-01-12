@@ -65,6 +65,7 @@ class DownloadHandler(BaseHandler):
                 cur_start_at = fragment.get("start_at")
                 cur_end_at = fragment.get("end_at")
 
+
                 if (not cur_end_at > cur_start_at) or (
                     cur_start_at < prev_end_at):
                     self.write(self.response_error(
