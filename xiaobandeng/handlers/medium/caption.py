@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import uuid
 from ..base import BaseHandler
 from xiaobandeng.lean_cloud.lean_cloud import LeanCloud
+from xiaobandeng.lean_cloud.utils import loop_until_return
 from ..error_code import ECODE
 
 
@@ -22,7 +23,9 @@ class CaptionHandler(BaseHandler):
         transcript_sets = media.get("transcript_sets")
         transcript_sets["timestamp"] = 1
         media.set("transcript_sets", transcript_sets)
-        media.save()
+
+        loop_until_return(10,lambda :media.save())
+        # media.save()
 
         set_type = transcript_set_to_set_type_map[transcript_set]
         print "timeline from type :", set_type
@@ -33,7 +36,6 @@ class CaptionHandler(BaseHandler):
         if called == "yes":
             self.write(self.response_error(*ECODE.CAPTION_EXISTS_TRANSCRIPT))
             return
-
         timeline_task.set("created_transcript", "yes")
         timeline_task.save()
 

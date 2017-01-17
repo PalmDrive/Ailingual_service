@@ -8,3 +8,9 @@ def loop_until_return(n, f, *args, **kwargs):
             return f(*args, **kwargs)
         except Exception:
             pass
+    else:
+        print '----'*20
+        print f,args,kwargs
+        print 'tried '+str(n)+'times and failed'
+        print '----'*20        
+        
