@@ -21,7 +21,7 @@ class EditorTask(object):
         start_time = 0
         task_order = 1
 
-        self.copy_list = [u"校对"]
+        self.copy_list = [u"内部校对1"]
 
         while True:
             fragment = loop_until_return(5, self.lc.get_fragment_by_start_at,
@@ -100,7 +100,7 @@ class CreateTimelineTaskHandler(BaseHandler):
 
         task = self.lc.add_task(self.media, order, start_at, end_at,
                                 self.media.get(
-                                    "media_name") + u"对轴" + u"{第" + str(
+                                    "media_name") + u"内部校对2" + u"{第" + str(
                                     order) + u"段}",
                                 constants.TASK_TYPE_TIMELINE)  # task_type:对轴类型
         task.set("proof_task_id", proof_task_id)  # set proof task id

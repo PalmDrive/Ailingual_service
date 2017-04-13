@@ -52,5 +52,5 @@ wcwidth==0.1.7
 webrtcvad==2.0.8
 Werkzeug==0.11.11
 psutil==4.3.1
-bosonnlp==2.0.0
+bosonnlp==0.8.0
 mutagen==1.36.0
